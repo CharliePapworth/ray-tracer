@@ -46,10 +46,10 @@ pub fn ray_color(r: &Ray, world: &dyn Traceable, depth: i32) -> Color {
 fn main(){
 
     //Image
-    const IMAGE_WIDTH:i32 = 400;
+    const IMAGE_WIDTH:i32 = 800;
     const IMAGE_HEIGHT:i32 = ((IMAGE_WIDTH as f64)/ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: i32 = 10;
-    const MAX_DEPTH: i32 = 10;
+    const SAMPLES_PER_PIXEL: i32 = 100;
+    const MAX_DEPTH: i32 = 50;
 
     //World
     let mut world = TraceableList::new();

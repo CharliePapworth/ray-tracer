@@ -11,9 +11,20 @@ pub struct Aabb{
 }
 
 #[derive(Clone)]
-pub struct BvhNode{
-    left: Box<dyn Traceable>,
-    right: Box<dyn Traceable>,
+pub enum BvhNode{
+    Branch(BvhBranch),
+    Root(BvhRoot),
+}
+
+#[derive(Clone)]
+pub struct BvhBranch{
+    children: (Box<BvhNode>, Box<BvhNode>),
+    bb: Aabb
+}
+
+#[derive(Clone)]
+pub struct BvhRoot{
+    traceable: Box<dyn Traceable>,
     bb: Aabb
 }
 
@@ -42,20 +53,20 @@ impl Aabb{
             let t_max = t1.min(t_max);
 
             if t_max <= t_min{
-                return false
+                return false;
             }
         }
-        true
+        return true
     }
 
     pub fn surrounding_box(box_0: Aabb, box_1: Aabb) -> Aabb{
         let small = Point3::new(box_0.min().x().min(box_1.min().x()),
-                                     box_0.min().y().min(box_1.min().y()),
-                                     box_0.min().z().min(box_1.min().z()));
+                                box_0.min().y().min(box_1.min().y()),
+                                box_0.min().z().min(box_1.min().z()));
 
         let big = Point3::new(box_0.max().x().max(box_1.max().x()),
-                                   box_0.max().y().max(box_1.max().y()),
-                                   box_0.max().z().max(box_1.max().z()));
+                              box_0.max().y().max(box_1.max().y()),
+                              box_0.max().z().max(box_1.max().z()));
 
         Aabb::new(small, big)
     }
@@ -68,54 +79,63 @@ impl Aabb{
     }
 }
 
+impl BvhBranch{
+    pub fn new(left: TraceableList, right: TraceableList, bb: Aabb) -> BvhNode{
+        BvhNode::Branch(BvhBranch{children: (Box::new(BvhNode::new(left)), Box::new(BvhNode::new(right))), bb})
+    }
+
+    fn left(&self) -> &BvhNode{
+        &*(self.children.0)
+    }
+
+    fn right(&self) -> &BvhNode{
+        &*(self.children.1)
+    }
+
+    fn children(&self) -> (&BvhNode, &BvhNode){
+        (&*(self.children.0), &*(self.children.1))
+    }
+}
+
+impl BvhRoot{
+    pub fn new(traceable: Box<dyn Traceable>, bb: Aabb) -> BvhNode{
+        BvhNode::Root(BvhRoot{traceable, bb})
+    }
+}
 
 impl BvhNode{
     pub fn new(mut objects: TraceableList) -> BvhNode{
         let object_span = objects.len();
-        let left: Box<dyn Traceable>;
-        let right: Box<dyn Traceable>;
         match object_span {
             1 => {
-                //On the slim chance object_span equals 1, simply clone
-                //the object. This stops us having to check for None in
-                //each child, and makes tree traversal smoother.
-                left = objects.remove(0);
-                right = left.clone();
-            }
-            2 => {
-                right = objects.remove(1);
-                left = objects.remove(0);
+                let traceable = objects.remove(0);
+                let bb = traceable.bounding_box().expect("A primitive within the TraceableList cannot be bound");
+                return BvhRoot::new(traceable, bb)
+
             } 
+            
             _ => {
                 let axis = fastrand::i8(0..3);
                 objects.sort_by(|a, b| Aabb::box_compare(a,b, axis));
                 let mid = object_span/2;
                 let right_objs = objects.split_off(mid);
                 let left_objs = objects;
-                left = Box::new(BvhNode::new(left_objs));
-                right = Box::new(BvhNode::new(right_objs));
+                let bb_left = left_objs.bounding_box().expect("A primitive within the TraceableList cannot be bound");
+                let bb_right = right_objs.bounding_box().expect("A primitive within the TraceableList cannot be bound");
+                return BvhBranch::new(left_objs, right_objs, Aabb::surrounding_box(bb_left, bb_right))
             }
-        }
-
-        match(left.bounding_box(), right.bounding_box()){
-            (Some(box_left), Some(box_right)) => {
-                let bb = Aabb::surrounding_box(box_left, box_right);
-                BvhNode{left, right, bb}
-            }
-            (_, _) => panic!("A primitive within the TraceableList cannot be bound"),
-
         }
     }
 }
 
-impl Hit for BvhNode{
+impl Hit for BvhBranch{
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         if !self.bb.hit(r, t_min, t_max){
             return None
         } 
 
-        let hit_left = self.left.hit(r, t_min, t_max);
-        let hit_right = self.right.hit(r, t_min, t_max);
+        let hit_left = self.left().hit(r, t_min, t_max);
+        let hit_right = self.right().hit(r, t_min, t_max);
         match(hit_left, hit_right){
             (None, None) => None,
             (Some(_), None) => hit_left,
@@ -133,6 +153,30 @@ impl Hit for BvhNode{
     
     fn bounding_box(&self) -> Option<Aabb> {
         Some(self.bb)
+    }
+}
+
+impl Hit for BvhRoot{
+    fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>{
+        self.traceable.hit(r, t_min, t_max)
+    }
+    fn bounding_box(&self) -> Option<Aabb>{
+        Some(self.bb)
+    }
+}
+
+impl Hit for BvhNode{
+    fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>{
+        match self{
+            BvhNode::Branch(x) => x.hit(r, t_min, t_max),
+            BvhNode::Root(x) => x.hit(r, t_min, t_max)
+        }
+    }
+    fn bounding_box(&self) -> Option<Aabb>{
+        match self{
+            BvhNode::Branch(x) => x.bounding_box(),
+            BvhNode::Root(x) => x.bounding_box()
+        }
     }
 }
 
@@ -161,12 +205,12 @@ mod tests {
     #[test]
     fn test_aabb_hit(){
 
-        let min = Point3::new(0.0, 0.0, 0.0);
+        let min = Point3::new(-10.0, -10.0, -10.0);
         let max = Point3::new(10.0, 10.0, 10.0);
         let aabb = Aabb::new(min, max);
 
         //Case 1: Hit
-        let r = Ray::new(Vec3::new(-10.0, 5.0, 5.0), Vec3::new( 1.0, 0.0, 0.0));
+        let r = Ray::new(Vec3::new(20.0, 5.0, 5.0), Vec3::new( -1.0, 0.5, -0.2));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, true);
 
@@ -178,8 +222,6 @@ mod tests {
         let r = Ray::new(Vec3::new(-10.0, 10.01, 5.0), Vec3::new( 1.0, 0.0, 0.0));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, false);
-
-
     }
 
     #[test]

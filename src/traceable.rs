@@ -148,12 +148,14 @@ impl Hit for TraceableList{
            None
         }else{
             let mut output_box = Aabb::default();
-            let first_box = true;
+            let mut first_box = true;
             for traceable in &self.list{
-                let temp_option = traceable.bounding_box();
-                match (temp_option, first_box){
+                match (traceable.bounding_box(), first_box){
                     (None,_) => {return None}
-                    (Some(temp_box),true) => {output_box = temp_box;}
+                    (Some(temp_box),true) => {
+                        output_box = temp_box;
+                        first_box = false;
+                    }
                     (Some(temp_box), false) => {output_box = Aabb::surrounding_box(output_box, temp_box);}
                 }
             }
