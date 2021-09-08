@@ -3,10 +3,9 @@ use crate::ray::*;
 use crate::traceable::*;
 use crate::util::*;
 
-
 #[derive(Default, Clone, Copy)]
 pub struct Lambertian{
-    albedo: Color
+    pub albedo: Color
 }
 
 #[derive(Default, Clone, Copy)]
@@ -128,8 +127,8 @@ mod tests {
         let mat = Lambertian::new(albedo);
         let s = Box::new(Sphere::new(Point3::new(1.0,0.0,0.0), 1.0, mat));
         let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
-        let mut rec = HitRecord::default();
-        let hit = s.hit(&r, 0.0, 100.0 ,&mut rec);
+        let hit = s.hit(&r, 0.0, 100.0);
+        let rec = hit.unwrap();
         
         //Case 1: Scatter direction is non-degenerate
         let scatter_result = mat.deterministic_scatter(&rec, Vec3::new(-1.0, 0.0, 0.0));
@@ -155,8 +154,8 @@ mod tests {
         let mat = Metal::new(albedo, 20.0);
         let s = Box::new(Sphere::new(Point3::new(1.0,0.0,0.0), 1.0, mat));
         let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
-        let mut rec = HitRecord::default();
-        let hit = s.hit(&r, 0.0, 100.0 ,&mut rec);
+        let hit = s.hit(&r, 0.0, 100.0);
+        let rec = hit.unwrap();
         
         //Case 1: Ray reflects
         let scatter_result = mat.deterministic_scatter(&r, &rec, Vec3::new(0.0, 0.0, 0.0));

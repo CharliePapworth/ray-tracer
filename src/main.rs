@@ -10,6 +10,7 @@ mod traceable;
 mod camera;
 mod material;
 mod util;
+mod bvh;
 
 use crate::vec::*;
 use crate::ray::*;
@@ -19,20 +20,18 @@ use crate::camera::*;
 use crate::material::*;
 use crate::util::*;
 
-
 use std::f64::INFINITY;
 use std::fs::OpenOptions;
 use std::io::Write;
 
-pub fn ray_color(r: &Ray, world: &TraceableList, depth: i32) -> Color {
-    let mut rec = HitRecord::default();
+pub fn ray_color(r: &Ray, world: &dyn Traceable, depth: i32) -> Color {
 
     //If we've exceeded the ray bounce limit, no more light is gathered.
     if depth <= 0{
         return Color::new(0.0,0.0,0.0)
     }
 
-    let result = world.trace(r, 0.001, INFINITY, &mut rec);
+    let result = world.trace(r, 0.001, INFINITY);
     match result{
         TraceResult::Scattered((attenuation, scattered)) => attenuation.elementwise_mult(&ray_color(&scattered, world, depth-1)),
         TraceResult::Absorbed => Color::new(0.0, 0.0, 0.0),
@@ -47,9 +46,9 @@ pub fn ray_color(r: &Ray, world: &TraceableList, depth: i32) -> Color {
 fn main(){
 
     //Image
-    const IMAGE_WIDTH:i32 = 400;
+    const IMAGE_WIDTH:i32 = 800;
     const IMAGE_HEIGHT:i32 = ((IMAGE_WIDTH as f64)/ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: i32 = 50;
+    const SAMPLES_PER_PIXEL: i32 = 100;
     const MAX_DEPTH: i32 = 50;
 
     //World
@@ -93,6 +92,8 @@ fn main(){
     world.add(sphere_center);
     world.add(sphere_left);
     world.add(sphere_right);
+
+    let world = world.to_Bvh();
 
     //Camera
     let look_from = Point3::new(13.0, 2.0, 3.0);
