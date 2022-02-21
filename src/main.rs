@@ -5,6 +5,8 @@ extern crate fastrand;
 extern crate tobj;
 extern crate num_cpus;
 extern crate enum_dispatch;
+extern crate eframe;
+
 
 mod vec;
 mod ray;
@@ -19,6 +21,7 @@ mod triangle;
 mod scenes;
 mod primitive;
 mod bounding_box;
+mod gui;
 
 use crate::vec::*;
 use crate::ray::*;
@@ -28,6 +31,7 @@ use crate::util::*;
 use crate::material::*;
 use crate::bounding_box::*;
 use crate::enum_dispatch::*;
+use crate::gui::*;
 
 use std::f64::INFINITY;
 use std::fs::File;
@@ -70,9 +74,9 @@ fn main(){
 
     //Image
     let aspect_ratio = 3.0/2.0;
-    let image_width = 400;
+    let image_width = 200;
     let image_height=  ((image_width as f64)/aspect_ratio) as i32;
-    let samples_per_pixel = 500;
+    let samples_per_pixel = 50;
     let max_depth=  50;
 
     //Camera
@@ -108,9 +112,13 @@ fn main(){
 
     //Write to file
     let unlocked_data = shared_data.lock().unwrap();
-    for pixel in unlocked_data.pixel_colors.iter() {
-        pixel.write_color(&mut file, samples_per_pixel);
-    }
+    // for pixel in unlocked_data.pixel_colors.iter() {
+    //     pixel.write_color(&mut file, samples_per_pixel);
+    // }
+
+    let app = TemplateApp::default();
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(Box::new(app), native_options);
 }
 
 pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color where T: Hit {
