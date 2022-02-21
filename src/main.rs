@@ -24,6 +24,8 @@ mod primitive;
 mod bounding_box;
 mod gui;
 
+use eframe::egui::Vec2;
+
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
@@ -77,7 +79,7 @@ fn main(){
 
     //Image
     let aspect_ratio = 3.0/2.0;
-    let image_width = 1200;
+    let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as i32;
     let samples_per_pixel = 500;
     let max_depth=  50;
@@ -122,7 +124,8 @@ fn main(){
     // }
 
     let mut app = TemplateApp{thread_output: Arc::clone(&shared_data), size: [image_width as usize, image_height as usize]};
-    let native_options = eframe::NativeOptions::default();
+    let mut native_options = eframe::NativeOptions::default();
+    native_options.initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
     eframe::run_native(Box::new(app), native_options);
 }
 
@@ -148,7 +151,7 @@ pub fn initialise_file(path: &str, image_width: i32, image_height: i32) -> File{
                                     .open(path)
                                     .unwrap();
     write!(file, "P3\n{} {} \n255\n", image_width, image_height).unwrap();
-    println!("{}",image_width*image_height);
+    //println!("{}",image_width*image_height);
     file
 }
 
@@ -181,7 +184,7 @@ pub fn report_data(shared_data: Arc<Mutex<OutputData>>, pixel_colors: Vec<Color>
      unlocked_data.completed_samples += 1;
      let new_progress = ((current_calculations) * 100 /total_calculations) as i64;
      if new_progress - progress >= 1 {
-         println!("{}", new_progress);
+         //println!("{}", new_progress);
          unlocked_data.progress += 1;
      }
  }

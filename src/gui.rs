@@ -27,6 +27,10 @@ impl epi::App for TemplateApp {
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
+        let input = self.thread_output.lock().unwrap();
+        let scale = _ctx.pixels_per_point();
+        //_frame.set_window_size(Vec2::new(scale * (self.size[0] + 200) as f32, scale * self.size[1] as f32));
+
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         #[cfg(feature = "persistence")]
@@ -65,7 +69,7 @@ impl epi::App for TemplateApp {
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.heading("Side Panel");
-
+            
             let mut label = "hello world".to_owned();
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
@@ -74,22 +78,23 @@ impl epi::App for TemplateApp {
 
             let mut value = 2f32;
             ui.add(egui::Slider::new(&mut value, 0.0..=10.0).text("value"));
-            ui.allocate_exact_size(Vec2::new(100f32, 100f32), Sense{click: true, drag: true, focusable: false});
             if ui.button("Increment").clicked() {
                 value += 1.0;
             }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let input = thread_output.lock().unwrap();
 
+            let input = thread_output.lock().unwrap();
             let rgbas = colors_to_rgba(&input.pixel_colors, input.completed_samples);
             let image = epi::Image::from_rgba_unmultiplied(*size, &rgbas);
             // The central panel the region left after adding TopPanel's and SidePanel's
             let texture_id = frame.alloc_texture(image);
             ui.image(texture_id, [size[0] as f32, size[1] as f32]);
-
-            egui::warn_if_debug_build(ui);
+            let scale = ctx.pixels_per_point();
+            //ui.set_min_width(scale * size[0] as f32);
+            //ui.set_min_height(scale * size[1] as f32);
+            //(Vec2::new(scale * size[0] as f32, scale * size[1] as f32));
         });
 
         if false {
