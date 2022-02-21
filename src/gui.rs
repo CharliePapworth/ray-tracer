@@ -1,32 +1,19 @@
-use eframe::{egui::{self, TextureId}, epi};
+use eframe::{egui::{self, TextureId, Sense, Vec2}, epi};
 use image::Pixel;
 
 use crate::vec::*;
+use crate::*;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
-    label: String,
-    pub pixels: Vec<Color>,
-    pub size: [usize; 2],
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
-    value: f32,
+    pub thread_output: Arc<Mutex<OutputData>>,
+    pub size: [usize; 2],
 }
 
-impl Default for TemplateApp {
-    fn default() -> Self {
-        Self {
-            // Example stuff:
-            pixels: Vec::new(),
-            size: [0,0],
-            label: "Hello World!".to_owned(),
-            value: 2.7,
-        }
-    }
-}
 
 impl epi::App for TemplateApp {
     fn name(&self) -> &str {
@@ -58,7 +45,7 @@ impl epi::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self {pixels,size, label, value} = self;
+        let Self {thread_output, size} = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -79,39 +66,29 @@ impl epi::App for TemplateApp {
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.heading("Side Panel");
 
+            let mut label = "hello world".to_owned();
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
-                ui.text_edit_singleline(label);
+                ui.text_edit_singleline(&mut label);
             });
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
+            let mut value = 2f32;
+            ui.add(egui::Slider::new(&mut value, 0.0..=10.0).text("value"));
+            ui.allocate_exact_size(Vec2::new(100f32, 100f32), Sense{click: true, drag: true, focusable: false});
             if ui.button("Increment").clicked() {
-                *value += 1.0;
+                value += 1.0;
             }
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to("eframe", "https://github.com/emilk/egui/tree/master/eframe");
-                });
-            });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let rgbas = colors_to_rgba(&pixels);
+            let input = thread_output.lock().unwrap();
+
+            let rgbas = colors_to_rgba(&input.pixel_colors, input.completed_samples);
             let image = epi::Image::from_rgba_unmultiplied(*size, &rgbas);
             // The central panel the region left after adding TopPanel's and SidePanel's
             let texture_id = frame.alloc_texture(image);
             ui.image(texture_id, [size[0] as f32, size[1] as f32]);
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
+
             egui::warn_if_debug_build(ui);
         });
 
@@ -126,11 +103,12 @@ impl epi::App for TemplateApp {
     }
 }
 
-pub fn colors_to_rgba(colors: &Vec<Color>) -> Vec<u8>{
+pub fn colors_to_rgba(colors: &Vec<Color>, samples: i64) -> Vec<u8>{
     let mut rgbas = Vec::<u8>::with_capacity(colors.len() * 4);
     for color in colors{
+     let rgb = color.scale_colors(samples);
         for i in 0..3{
-            rgbas.push((color[i] * 5.0) as u8);
+            rgbas.push(rgb[i]);
         }
         rgbas.push(255);
     }

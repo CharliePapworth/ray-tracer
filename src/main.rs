@@ -46,7 +46,7 @@ use std::thread;
 use std::thread::JoinHandle;
 
 #[derive (Copy, Clone)]
-pub struct ImageData {
+pub struct InputData {
     pub image_width: i32,
     pub image_height:i32,
     pub samples_per_pixel: i32,
@@ -54,15 +54,16 @@ pub struct ImageData {
 }
 
 #[derive (Clone)]
-pub struct SceneData<H> where H: Hit{
+pub struct StaticData<H> where H: Hit{
     pub world: H,
     pub background: Color,
     pub cam: Camera,    
 }
 
 #[derive (Clone)]
-pub struct SharedData{
+pub struct OutputData{
     pub pixel_colors: Vec<Color>,
+    pub completed_samples: i64,
     pub current_calculations: i64,
     pub total_calculations: i64,
     pub progress: i64,
@@ -71,14 +72,14 @@ pub struct SharedData{
 fn main(){
 
     //Scene
-    let (world, background, look_from, look_at) = scenes::obj_test();
+    let (world, background, look_from, look_at) = scenes::sphere_world();
     let world = world.to_Bvh();
 
     //Image
     let aspect_ratio = 3.0/2.0;
-    let image_width = 200;
+    let image_width = 1200;
     let image_height=  ((image_width as f64)/aspect_ratio) as i32;
-    let samples_per_pixel = 50;
+    let samples_per_pixel = 500;
     let max_depth=  50;
 
     //Camera
@@ -92,35 +93,35 @@ fn main(){
     let mut file = initialise_file(path, image_width, image_height);
    
     //Shared data
-    let num_threads = (num_cpus::get()) as i32;
+    let num_threads = (num_cpus::get() - 4) as i32;
     let samples = ((samples_per_pixel as f64) / (num_threads as f64)).ceil() as i32;
     let pixel_colors = vec![Color::new(0.0,0.0,0.0); (image_width * image_height) as usize];
     let current_calculations = 0;
+    let completed_samples = 0;
     let total_calculations = (image_height * image_width * samples_per_pixel) as i64;
     let progress = 0;
     
     //Package data
-    let shared_data = Arc::new(Mutex::new(SharedData {pixel_colors, current_calculations, total_calculations, progress }));
-    let image_data = ImageData { image_width, image_height, samples_per_pixel, max_depth };
-    let scene_data = Arc::new(SceneData { world, background, cam });
+    let shared_data = Arc::new(Mutex::new(OutputData {pixel_colors, completed_samples, current_calculations, total_calculations, progress }));
+    let image_data = InputData { image_width, image_height, samples_per_pixel, max_depth };
+    let scene_data = Arc::new(StaticData { world, background, cam });
 
     //Threading
-    let handles = initialise_threads(image_data.clone(), Arc::clone(&scene_data), samples, Arc::clone(&shared_data), num_threads);
     let main_thread_samples = samples_per_pixel - samples * (num_threads - 1);
-    iterate_image(image_data.clone(), Arc::clone(&scene_data), main_thread_samples, Arc::clone(&shared_data));
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    initialise_threads(image_data.clone(), Arc::clone(&scene_data), samples, Arc::clone(&shared_data), num_threads);
+    initialise_threads(image_data.clone(), Arc::clone(&scene_data), main_thread_samples, Arc::clone(&shared_data), 1);
+    //iterate_image(image_data.clone(), Arc::clone(&scene_data), main_thread_samples, Arc::clone(&shared_data));
+    // for handle in handles {
+    //     handle.join().unwrap();
+    // }
 
     //Write to file
-    let unlocked_data = shared_data.lock().unwrap();
+    //let unlocked_data = shared_data.lock().unwrap();
     // for pixel in unlocked_data.pixel_colors.iter() {
     //     pixel.write_color(&mut file, samples_per_pixel);
     // }
 
-    let mut app = TemplateApp::default();
-    app.size = [image_width as usize, image_height as usize];
-    app.pixels = unlocked_data.pixel_colors.clone();
+    let mut app = TemplateApp{thread_output: Arc::clone(&shared_data), size: [image_width as usize, image_height as usize]};
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(Box::new(app), native_options);
 }
@@ -151,7 +152,7 @@ pub fn initialise_file(path: &str, image_width: i32, image_height: i32) -> File{
     file
 }
 
-pub fn initialise_threads<H>(image_data: ImageData, scene_data: Arc<SceneData<H>>, samples: i32, shared_data: Arc<Mutex<SharedData>>, num_threads: i32) -> Vec<JoinHandle<()>>
+pub fn initialise_threads<H>(image_data: InputData, scene_data: Arc<StaticData<H>>, samples: i32, shared_data: Arc<Mutex<OutputData>>, num_threads: i32) -> Vec<JoinHandle<()>>
 where H: Hit + 'static {
     let mut handles = vec![];
     for _ in 0..num_threads - 1 {
@@ -163,7 +164,7 @@ where H: Hit + 'static {
     handles
 }
 
-pub fn report_data(shared_data: Arc<Mutex<SharedData>>, pixel_colors: Vec<Color>) {
+pub fn report_data(shared_data: Arc<Mutex<OutputData>>, pixel_colors: Vec<Color>) {
 
      //Acquire lock
      let mut unlocked_data  = shared_data.lock().unwrap();
@@ -177,6 +178,7 @@ pub fn report_data(shared_data: Arc<Mutex<SharedData>>, pixel_colors: Vec<Color>
 
      //Write data and update progress
      unlocked_data.current_calculations += pixel_colors.len() as i64;
+     unlocked_data.completed_samples += 1;
      let new_progress = ((current_calculations) * 100 /total_calculations) as i64;
      if new_progress - progress >= 1 {
          println!("{}", new_progress);
@@ -184,7 +186,7 @@ pub fn report_data(shared_data: Arc<Mutex<SharedData>>, pixel_colors: Vec<Color>
      }
  }
 
-pub fn iterate_image<H>(image_data: ImageData, scene_data: Arc<SceneData<H>>, samples: i32, shared_data: Arc<Mutex<SharedData>>)
+pub fn iterate_image<H>(image_data: InputData, scene_data: Arc<StaticData<H>>, samples: i32, shared_data: Arc<Mutex<OutputData>>)
 where H: Hit + 'static {
 
     let image_height = image_data.image_height as i64;
