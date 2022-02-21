@@ -1,4 +1,7 @@
-use eframe::{egui, epi};
+use eframe::{egui::{self, TextureId}, epi};
+use image::Pixel;
+
+use crate::vec::*;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -6,7 +9,8 @@ use eframe::{egui, epi};
 pub struct TemplateApp {
     // Example stuff:
     label: String,
-
+    pub pixels: Vec<Color>,
+    pub size: [usize; 2],
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
     value: f32,
@@ -16,6 +20,8 @@ impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             // Example stuff:
+            pixels: Vec::new(),
+            size: [0,0],
             label: "Hello World!".to_owned(),
             value: 2.7,
         }
@@ -52,7 +58,7 @@ impl epi::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self { label, value } = self;
+        let Self {pixels,size, label, value} = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -95,8 +101,11 @@ impl epi::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            let rgbas = colors_to_rgba(&pixels);
+            let image = epi::Image::from_rgba_unmultiplied(*size, &rgbas);
             // The central panel the region left after adding TopPanel's and SidePanel's
-
+            let texture_id = frame.alloc_texture(image);
+            ui.image(texture_id, [size[0] as f32, size[1] as f32]);
             ui.heading("eframe template");
             ui.hyperlink("https://github.com/emilk/eframe_template");
             ui.add(egui::github_link_file!(
@@ -116,3 +125,15 @@ impl epi::App for TemplateApp {
         }
     }
 }
+
+pub fn colors_to_rgba(colors: &Vec<Color>) -> Vec<u8>{
+    let mut rgbas = Vec::<u8>::with_capacity(colors.len() * 4);
+    for color in colors{
+        for i in 0..3{
+            rgbas.push((color[i] * 5.0) as u8);
+        }
+        rgbas.push(255);
+    }
+    rgbas
+}
+

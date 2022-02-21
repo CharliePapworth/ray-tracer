@@ -6,6 +6,7 @@ extern crate tobj;
 extern crate num_cpus;
 extern crate enum_dispatch;
 extern crate eframe;
+extern crate image;
 
 
 mod vec;
@@ -32,6 +33,7 @@ use crate::material::*;
 use crate::bounding_box::*;
 use crate::enum_dispatch::*;
 use crate::gui::*;
+use crate::image::*;
 
 use std::f64::INFINITY;
 use std::fs::File;
@@ -116,7 +118,9 @@ fn main(){
     //     pixel.write_color(&mut file, samples_per_pixel);
     // }
 
-    let app = TemplateApp::default();
+    let mut app = TemplateApp::default();
+    app.size = [image_width as usize, image_height as usize];
+    app.pixels = unlocked_data.pixel_colors.clone();
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(Box::new(app), native_options);
 }
