@@ -1,5 +1,4 @@
 use eframe::{egui::{self, TextureId, Sense, Vec2}, epi};
-use image::Pixel;
 
 use crate::vec::*;
 use crate::*;
@@ -44,10 +43,6 @@ impl epi::App for Gui {
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
-        let input = self.thread_output.lock().unwrap();
-        let scale = _ctx.pixels_per_point();
-        //_frame.set_window_size(Vec2::new(scale * (self.size[0] + 200) as f32, scale * self.size[1] as f32));
-
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         #[cfg(feature = "persistence")]
@@ -68,11 +63,6 @@ impl epi::App for Gui {
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
         let Self {thread_output, transmitters, input_data, size, labels} = self;
 
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -89,15 +79,15 @@ impl epi::App for Gui {
                 ui.label("Width:");
                 let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.width));
                 if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match labels.width.parse::<usize>(){
+                    match labels.width.parse::<i32>(){
                         Ok(num) => {
-                            size[0] = num;
+                            input_data.image_width = num;
                         }
                         Err(_) => {
                             labels.width = size[0].to_string();
                         }
                     }
-
+                transmit(transmitters, *input_data);
                 }
                 ui.label("Height:");
                 let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.height));
@@ -116,6 +106,9 @@ impl epi::App for Gui {
         egui::CentralPanel::default().show(ctx, |ui| {
 
             let input = thread_output.lock().unwrap();
+            if input_data.image_height * input_data.image_width == input.pixel_colors.len() as i32 {
+                *size = [input_data.image_width as usize, input_data.image_height as usize];
+            }
             let rgbas = colors_to_rgba(&input.pixel_colors, input.completed_samples);
             let image = epi::Image::from_rgba_unmultiplied(*size, &rgbas);
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -135,6 +128,12 @@ impl epi::App for Gui {
                 ui.label("You would normally chose either panels OR windows.");
             });
         }
+    }
+}
+
+pub fn transmit(transmitters: &Vec<Sender<InputData>>, input_data: InputData){
+    for transmitter in transmitters{
+        transmitter.send(input_data);
     }
 }
 
