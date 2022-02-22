@@ -82,17 +82,25 @@ impl epi::App for Gui {
                     match labels.width.parse::<i32>(){
                         Ok(num) => {
                             input_data.image_width = num;
+                            transmit(transmitters, *input_data);
                         }
                         Err(_) => {
                             labels.width = size[0].to_string();
                         }
                     }
-                transmit(transmitters, *input_data);
                 }
                 ui.label("Height:");
                 let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.height));
                 if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    
+                    match labels.height.parse::<i32>(){
+                        Ok(num) => {
+                            input_data.image_height = num;
+                            transmit(transmitters, *input_data);
+                        }
+                        Err(_) => {
+                            labels.height = size[1].to_string();
+                        }
+                    }
                 }
             });
 
