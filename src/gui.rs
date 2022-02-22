@@ -13,7 +13,8 @@ pub struct Gui {
     pub thread_input_tx: Vec<Sender<InputData>>,
     pub input_data: InputData,
     pub image_data: ImageData,
-    pub labels: Labels
+    pub labels: Labels,
+    pub count: i32
 }
 
 impl Gui{
@@ -21,7 +22,8 @@ impl Gui{
         let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string()};
         let size = [input_data.image_width, input_data.image_height];
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width], image_width: input_data.image_width, image_height: input_data.image_height, samples: 0};
-        Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels}
+        let count = 0;
+        Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels, count}
     }
 }
 
@@ -63,7 +65,7 @@ impl epi::App for Gui {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels} = self;
+        let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -145,6 +147,10 @@ impl epi::App for Gui {
                 ui.label("You would normally chose either panels OR windows.");
             });
         }
+        ctx.request_repaint();
+        *count += 1;
+        println!{"{}", count};
+
     }
 }
 
