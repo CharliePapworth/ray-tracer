@@ -158,7 +158,7 @@ where H: Hit + 'static {
     }
  }
 
-pub fn iterate_image<H>(input_data: InputData, static_data: Arc<StaticData<H>>, samples: i32, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<InputData>)
+pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H>>, samples: i32, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<InputData>)
  -> InputData where H: Hit + 'static {
 
     let image_height = input_data.image_height;
@@ -175,7 +175,10 @@ pub fn iterate_image<H>(input_data: InputData, static_data: Arc<StaticData<H>>, 
                     let message = gui_to_thread_rx.try_recv();
                     match message {
                         Ok(input_data) => return input_data,
-                        Err(_) => {}
+                        Err(_) => {
+                            input_data.run = false;
+                            return input_data;
+                        }
                     }
                 }
         }
