@@ -82,10 +82,6 @@ fn main(){
     let dist_to_focus = 10.0;
     let aperture = 0.0;
     let cam = Camera::new(look_from, look_at, v_up, 20.0, aspect_ratio, aperture, dist_to_focus);
-
-    //Render
-    let path = "results.ppm";
-    let mut file = initialise_file(path, image_width, image_height);
    
     //Shared data
     let num_threads = (num_cpus::get() - 4) as i32;
@@ -99,12 +95,6 @@ fn main(){
     let main_thread_samples = samples_per_pixel - samples * (num_threads - 1);
     let (thread_to_gui_tx, thread_to_gui_rx): (Sender<ImageData>, Receiver<ImageData>) = channel();
     let gui_to_thread_tx = initialise_threads(input_data, Arc::clone(&static_data), samples, main_thread_samples, thread_to_gui_tx, num_threads);
-
-    //Write to file
-    //let unlocked_data = shared_data.lock().unwrap();
-    // for pixel in unlocked_data.pixel_colors.iter() {
-    //     pixel.write_color(&mut file, samples_per_pixel);
-    // }
 
     let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, input_data);
     let mut native_options = eframe::NativeOptions::default();

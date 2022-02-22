@@ -178,7 +178,7 @@ impl IndexMut<usize> for Vec3{
 
 impl Color{
 
-    pub fn write_color<T: std::io::Write>(self, writer: &mut T, samples: i32)
+    pub fn write_color<T: std::io::Write>(self, writer: &mut T, samples: usize)
     {
         let mut r = self.x();
         let mut g = self.y();

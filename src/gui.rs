@@ -74,6 +74,13 @@ impl epi::App for Gui {
                     if ui.button("Quit").clicked() {
                         frame.quit();
                     }
+                    if ui.button("Save").clicked() {
+                        let path = "results.ppm";
+                        let mut file = initialise_file(path, image_data.image_width, image_data.image_height);
+                        for pixel in image_data.pixel_colors.iter() {
+                            pixel.write_color(&mut file, image_data.samples);
+                         }
+                    }
                 });
             });
         });
@@ -149,7 +156,7 @@ impl epi::App for Gui {
         }
         ctx.request_repaint();
         *count += 1;
-        println!{"{}", count};
+        // println!{"{}", count};
 
     }
 }
