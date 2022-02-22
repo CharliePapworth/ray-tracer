@@ -175,9 +175,15 @@ pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H
                     let message = gui_to_thread_rx.try_recv();
                     match message {
                         Ok(input_data) => return input_data,
-                        Err(_) => {
-                            input_data.run = false;
-                            return input_data;
+                        Err(err) => {
+                            match err {
+                                TryRecvError::Empty => {}
+                                TryRecvError::Disconnected => {
+                                    input_data.run = false;
+                                    return input_data;
+                                }
+                            }
+                            
                         }
                     }
                 }
