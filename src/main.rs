@@ -29,22 +29,16 @@ use crate::ray::*;
 use crate::traceable::*;
 use crate::camera::*;
 use crate::util::*;
-use crate::material::*;
-use crate::bounding_box::*;
-use crate::enum_dispatch::*;
 use crate::gui::*;
 
 use std::f64::INFINITY;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::marker::PhantomData;
 use std::sync::Arc;
 use std::sync::Barrier;
-use std::sync::Mutex;
 use std::sync::mpsc::*;
 use std::thread;
-use std::thread::JoinHandle;
 
 #[derive (Copy, Clone)]
 pub struct InputData {
@@ -96,7 +90,6 @@ fn main(){
     //Shared data
     let num_threads = (num_cpus::get() - 4) as i32;
     let samples = ((samples_per_pixel as f64) / (num_threads as f64)).ceil() as i32;
-    let pixel_colors = vec![Color::new(0.0,0.0,0.0); (image_width * image_height) as usize];
     
     //Package data
     let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true };
@@ -113,7 +106,7 @@ fn main(){
     //     pixel.write_color(&mut file, samples_per_pixel);
     // }
 
-    let mut app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, input_data);
+    let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, input_data);
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
     eframe::run_native(Box::new(app), native_options);
@@ -175,7 +168,7 @@ where H: Hit + 'static {
     }
  }
 
-pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H>>, samples: i32, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<InputData>)
+pub fn iterate_image<H>(input_data: InputData, static_data: Arc<StaticData<H>>, samples: i32, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<InputData>)
  -> InputData where H: Hit + 'static {
 
     let image_height = input_data.image_height;
@@ -197,7 +190,7 @@ pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H
                 }
         }
         let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
-        thread_to_gui_tx.send(output);
+        thread_to_gui_tx.send(output).unwrap();
     }
     input_data 
 }
