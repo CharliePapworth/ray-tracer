@@ -7,6 +7,7 @@ extern crate num_cpus;
 extern crate enum_dispatch;
 extern crate eframe;
 extern crate image;
+extern crate crossbeam;
 
 
 mod vec;
@@ -36,6 +37,7 @@ use crate::bounding_box::*;
 use crate::enum_dispatch::*;
 use crate::gui::*;
 use crate::image::*;
+use crate::crossbeam::*;
 
 use std::f64::INFINITY;
 use std::fs::File;
@@ -44,6 +46,7 @@ use std::io::Write;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::mpsc::*;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -52,7 +55,8 @@ pub struct InputData {
     pub image_width: i32,
     pub image_height:i32,
     pub samples_per_pixel: i32,
-    pub max_depth: i32
+    pub max_depth: i32,
+    pub run: bool
 }
 
 #[derive (Clone)]
@@ -104,18 +108,15 @@ fn main(){
     let progress = 0;
     
     //Package data
-    let shared_data = Arc::new(Mutex::new(OutputData {pixel_colors, completed_samples, current_calculations, total_calculations, progress }));
-    let image_data = InputData { image_width, image_height, samples_per_pixel, max_depth };
-    let scene_data = Arc::new(StaticData { world, background, cam });
+    let output_data = Arc::new(Mutex::new(OutputData {pixel_colors, completed_samples, current_calculations, total_calculations, progress }));
+    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true };
+    let static_data = Arc::new(StaticData { world, background, cam });
 
     //Threading
     let main_thread_samples = samples_per_pixel - samples * (num_threads - 1);
-    initialise_threads(image_data.clone(), Arc::clone(&scene_data), samples, Arc::clone(&shared_data), num_threads);
-    initialise_threads(image_data.clone(), Arc::clone(&scene_data), main_thread_samples, Arc::clone(&shared_data), 1);
-    //iterate_image(image_data.clone(), Arc::clone(&scene_data), main_thread_samples, Arc::clone(&shared_data));
-    // for handle in handles {
-    //     handle.join().unwrap();
-    // }
+    let mut senders = initialise_threads(input_data, Arc::clone(&static_data), samples, Arc::clone(&output_data), num_threads);
+    let mut last_sender = initialise_threads(input_data, Arc::clone(&static_data), main_thread_samples, Arc::clone(&output_data), 1);
+    senders.append(&mut last_sender);
 
     //Write to file
     //let unlocked_data = shared_data.lock().unwrap();
@@ -123,7 +124,7 @@ fn main(){
     //     pixel.write_color(&mut file, samples_per_pixel);
     // }
 
-    let mut app = TemplateApp{thread_output: Arc::clone(&shared_data), size: [image_width as usize, image_height as usize]};
+    let mut app = Gui::new(Arc::clone(&output_data), senders, input_data);
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
     eframe::run_native(Box::new(app), native_options);
@@ -155,16 +156,17 @@ pub fn initialise_file(path: &str, image_width: i32, image_height: i32) -> File{
     file
 }
 
-pub fn initialise_threads<H>(image_data: InputData, scene_data: Arc<StaticData<H>>, samples: i32, shared_data: Arc<Mutex<OutputData>>, num_threads: i32) -> Vec<JoinHandle<()>>
+pub fn initialise_threads<H>(input_data: InputData, scene_data: Arc<StaticData<H>>, samples: i32, shared_data: Arc<Mutex<OutputData>>, num_threads: i32) -> Vec<Sender<InputData>>
 where H: Hit + 'static {
-    let mut handles = vec![];
-    for _ in 0..num_threads - 1 {
-        let shared_data = Arc::clone(&shared_data);
-        let scene_data = Arc::clone(&scene_data);
-        let handle = thread::spawn(move || iterate_image(image_data, scene_data, samples, shared_data));
-        handles.push(handle);
+    let mut senders = vec![];
+    for _ in 0..num_threads {
+        let (tx, rx): (Sender<InputData>, Receiver<InputData>) = channel();
+        let output_data = Arc::clone(&shared_data);
+        let static_data = Arc::clone(&scene_data);
+        thread::spawn(move || run_thread(input_data, static_data, samples, output_data, rx));
+        senders.push(tx);
     }
-    handles
+    senders
 }
 
 pub fn report_data(shared_data: Arc<Mutex<OutputData>>, pixel_colors: Vec<Color>) {
@@ -189,24 +191,38 @@ pub fn report_data(shared_data: Arc<Mutex<OutputData>>, pixel_colors: Vec<Color>
      }
  }
 
-pub fn iterate_image<H>(image_data: InputData, scene_data: Arc<StaticData<H>>, samples: i32, shared_data: Arc<Mutex<OutputData>>)
-where H: Hit + 'static {
+ pub fn run_thread<H>(mut input_data: InputData, static_data: Arc<StaticData<H>>, samples: i32, output_data: Arc<Mutex<OutputData>>, rx: Receiver<InputData>)
+ where H: Hit + 'static {
 
-    let image_height = image_data.image_height as i64;
-    let image_width = image_data.image_width as i64;
+    while input_data.run {
+        input_data = iterate_image(input_data, Arc::clone(&static_data), samples, Arc::clone(&output_data), &rx);
+    }
+ }
+
+pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H>>, samples: i32, output_data: Arc<Mutex<OutputData>>, rx: &Receiver<InputData>)
+ -> InputData where H: Hit + 'static {
+
+    let mut image_height = input_data.image_height as i64;
+    let mut image_width = input_data.image_width as i64;
     for _ in 0..samples{
         let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); (image_height*image_width) as usize];
         for j in 0..image_height{
             for i in 0..image_width{
                     let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
                     let v = (rand_double(0.0, 1.0) + (image_width - j) as f64)/((image_width - 1) as f64);
-                    let r = scene_data.cam.get_ray(u,v);
+                    let r = static_data.cam.get_ray(u,v);
                     let pixel_index = (j*image_width + i) as usize;
-                    pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, scene_data.background, &scene_data.world, image_data.max_depth);
+                    pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, static_data.background, &static_data.world, input_data.max_depth);
+                    let message = rx.try_recv();
+                    match message {
+                        Ok(input_data) => return input_data,
+                        Err(_) => {}
+                    }
                 }
         }
-        report_data(Arc::clone(&shared_data), pixel_colors);  
-    }   
+        report_data(Arc::clone(&output_data), pixel_colors);
+    }
+    input_data 
 }
 
 #[cfg(test)]

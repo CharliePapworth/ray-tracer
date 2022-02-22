@@ -7,15 +7,32 @@ use crate::*;
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
+pub struct Gui {
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
     pub thread_output: Arc<Mutex<OutputData>>,
+    pub transmitters: Vec<Sender<InputData>>,
+    pub input_data: InputData,
     pub size: [usize; 2],
+    pub labels: Labels
+}
+
+impl Gui{
+    pub fn new(thread_output: Arc<Mutex<OutputData>>,  transmitters: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
+        let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string()};
+        let size = [input_data.image_width as usize, input_data.image_height as usize];
+        Gui{thread_output, transmitters, input_data, size, labels}
+    }
+}
+
+#[derive(Default)]
+pub struct Labels{
+    width: String,
+    height: String
 }
 
 
-impl epi::App for TemplateApp {
+impl epi::App for Gui {
     fn name(&self) -> &str {
         "eframe template"
     }
@@ -49,7 +66,7 @@ impl epi::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self {thread_output, size} = self;
+        let Self {thread_output, transmitters, input_data, size, labels} = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -68,12 +85,25 @@ impl epi::App for TemplateApp {
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
-            
-            let mut label = "hello world".to_owned();
             ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut label);
+                ui.label("Width:");
+                let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.width));
+                if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                    match labels.width.parse::<usize>(){
+                        Ok(num) => {
+                            size[0] = num;
+                        }
+                        Err(_) => {
+                            labels.width = size[0].to_string();
+                        }
+                    }
+
+                }
+                ui.label("Height:");
+                let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.height));
+                if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                    
+                }
             });
 
             let mut value = 2f32;
