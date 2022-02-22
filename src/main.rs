@@ -189,8 +189,15 @@ pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H
                 }
         }
         let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
-        thread_to_gui_tx.send(output).unwrap();
-    }
+        let send_result = thread_to_gui_tx.send(output);
+        match send_result {
+                Err(_) => {
+                    input_data.run = false;
+                    return input_data;
+                }
+                Ok(_) => {}
+            }
+        }
     input_data 
 }
 
