@@ -9,18 +9,19 @@ use crate::*;
 pub struct Gui {
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
-    pub thread_output: Arc<Mutex<OutputData>>,
-    pub transmitters: Vec<Sender<InputData>>,
+    pub thread_output_rx: Receiver<ImageData>,
+    pub thread_input_tx: Vec<Sender<InputData>>,
     pub input_data: InputData,
-    pub size: [usize; 2],
+    pub image_data: ImageData,
     pub labels: Labels
 }
 
 impl Gui{
-    pub fn new(thread_output: Arc<Mutex<OutputData>>,  transmitters: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
+    pub fn new(thread_output_rx: Receiver<ImageData>,  thread_input_tx: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
         let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string()};
-        let size = [input_data.image_width as usize, input_data.image_height as usize];
-        Gui{thread_output, transmitters, input_data, size, labels}
+        let size = [input_data.image_width, input_data.image_height];
+        let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width], image_width: input_data.image_width, image_height: input_data.image_height, samples: 0};
+        Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels}
     }
 }
 
@@ -58,10 +59,11 @@ impl epi::App for Gui {
         epi::set_value(storage, epi::APP_KEY, self);
     }
 
+
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self {thread_output, transmitters, input_data, size, labels} = self;
+        let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels} = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -79,26 +81,26 @@ impl epi::App for Gui {
                 ui.label("Width:");
                 let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.width));
                 if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match labels.width.parse::<i32>(){
+                    match labels.width.parse::<usize>(){
                         Ok(num) => {
                             input_data.image_width = num;
-                            transmit(transmitters, *input_data);
+                            transmit(thread_input_tx, *input_data);
                         }
                         Err(_) => {
-                            labels.width = size[0].to_string();
+                            labels.width = input_data.image_width.to_string();
                         }
                     }
                 }
                 ui.label("Height:");
                 let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.height));
                 if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match labels.height.parse::<i32>(){
+                    match labels.height.parse::<usize>(){
                         Ok(num) => {
                             input_data.image_height = num;
-                            transmit(transmitters, *input_data);
+                            transmit(thread_input_tx, *input_data);
                         }
                         Err(_) => {
-                            labels.height = size[1].to_string();
+                            labels.height = input_data.image_height.to_string();
                         }
                     }
                 }
@@ -112,20 +114,27 @@ impl epi::App for Gui {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-
-            let input = thread_output.lock().unwrap();
-            if input_data.image_height * input_data.image_width == input.pixel_colors.len() as i32 {
-                *size = [input_data.image_width as usize, input_data.image_height as usize];
+            let message_result = thread_output_rx.try_recv();
+            match message_result {
+                Ok(message) => {
+                    if message.image_height != image_data.image_height || message.image_width != image_data.image_width {
+                        *image_data = message;
+                    }
+                    else {
+                        for i in 0..image_data.pixel_colors.len(){
+                            image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
+                        }
+                        image_data.samples += message.samples;
+                    }
+                }
+                Err(_) => {}
             }
-            let rgbas = colors_to_rgba(&input.pixel_colors, input.completed_samples);
-            let image = epi::Image::from_rgba_unmultiplied(*size, &rgbas);
+
+            let rgbas = colors_to_rgba(&image_data.pixel_colors, image_data.samples.max(1));
+            let image = epi::Image::from_rgba_unmultiplied([image_data.image_width, image_data.image_height], &rgbas);
             // The central panel the region left after adding TopPanel's and SidePanel's
             let texture_id = frame.alloc_texture(image);
-            ui.image(texture_id, [size[0] as f32, size[1] as f32]);
-            let scale = ctx.pixels_per_point();
-            //ui.set_min_width(scale * size[0] as f32);
-            //ui.set_min_height(scale * size[1] as f32);
-            //(Vec2::new(scale * size[0] as f32, scale * size[1] as f32));
+            ui.image(texture_id, [image_data.image_width as f32, image_data.image_height as f32]);
         });
 
         if false {
@@ -139,13 +148,13 @@ impl epi::App for Gui {
     }
 }
 
-pub fn transmit(transmitters: &Vec<Sender<InputData>>, input_data: InputData){
-    for transmitter in transmitters{
+pub fn transmit(thread_input_tx: &Vec<Sender<InputData>>, input_data: InputData){
+    for transmitter in thread_input_tx{
         transmitter.send(input_data);
     }
 }
 
-pub fn colors_to_rgba(colors: &Vec<Color>, samples: i64) -> Vec<u8>{
+pub fn colors_to_rgba(colors: &Vec<Color>, samples: usize) -> Vec<u8>{
     let mut rgbas = Vec::<u8>::with_capacity(colors.len() * 4);
     for color in colors{
      let rgb = color.scale_colors(samples);

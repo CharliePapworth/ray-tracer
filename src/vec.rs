@@ -196,7 +196,7 @@ impl Color{
         writeln!(writer, "{} {} {}", ir, ig, ib).unwrap();
     }
 
-    pub fn scale_colors(&self, samples: i64) -> [u8; 3]{
+    pub fn scale_colors(&self, samples: usize) -> [u8; 3]{
         let mut r = self.x();
         let mut g = self.y();
         let mut b = self.z();
