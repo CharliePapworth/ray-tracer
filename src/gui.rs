@@ -1,4 +1,4 @@
-use eframe::{egui::{self, TextureId, Sense, Vec2}, epi};
+use eframe::{egui::{self, Vec2}, epi};
 
 use crate::vec::*;
 use crate::*;
@@ -20,7 +20,6 @@ pub struct Gui {
 impl Gui{
     pub fn new(thread_output_rx: Receiver<ImageData>,  thread_input_tx: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
         let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string()};
-        let size = [input_data.image_width, input_data.image_height];
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width], image_width: input_data.image_width, image_height: input_data.image_height, samples: 0};
         let count = 0;
         Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels, count}
@@ -126,23 +125,20 @@ impl epi::App for Gui {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             let message_result = thread_output_rx.try_recv();
-            match message_result {
-                Ok(message) => {
-                    if message.image_height != image_data.image_height || message.image_width != image_data.image_width {
-                        *image_data = message;
+            if let Ok(message) = message_result {
+                if message.image_height != image_data.image_height || message.image_width != image_data.image_width {     
+                    *image_data = message;
+                }
+                else {
+                    for i in 0..image_data.pixel_colors.len(){
+                        image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
                     }
-                    else {
-                        for i in 0..image_data.pixel_colors.len(){
-                            image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
-                        }
-                        image_data.samples += message.samples;
-                        if image_data.samples == input_data.samples_per_pixel {
-                            input_data.done = true;
-                            transmit(thread_input_tx, *input_data);
-                        }
+                    image_data.samples += message.samples;
+                    if image_data.samples == input_data.samples_per_pixel {
+                        input_data.done = true;
+                        transmit(thread_input_tx, *input_data);
                     }
                 }
-                Err(_) => {}
             }
 
             let rgbas = colors_to_rgba(&image_data.pixel_colors, image_data.samples.max(1));
