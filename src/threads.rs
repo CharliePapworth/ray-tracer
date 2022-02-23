@@ -58,7 +58,6 @@ where H: Hit + 'static {
                 Ok(new_data) => input_data = new_data,
                 Err(_) => input_data.run = false
             }
-
         }
     }
  }

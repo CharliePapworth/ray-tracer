@@ -148,9 +148,11 @@ impl epi::App for Gui {
             ui.image(texture_id, [image_data.image_width as f32, image_data.image_height as f32]);
         });
 
-        ctx.request_repaint();
+        if !input_data.done {
+            ctx.request_repaint();
+        }
         *count += 1;
-        println!{"{}", image_data.samples};
+        println!{"{}", count};
 
     }
 }
