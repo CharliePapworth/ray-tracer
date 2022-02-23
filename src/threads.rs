@@ -7,7 +7,6 @@ use std::sync::Arc;
 use std::sync::Barrier;
 use std::sync::mpsc::*;
 use std::thread;
-use std::time::Duration;
 
 #[derive (Copy, Clone)]
 pub struct InputData {
@@ -31,18 +30,12 @@ pub fn initialise_threads<H>(input_data: InputData, scene_data: Arc<StaticData<H
 where H: Hit + 'static {
     let mut senders = vec![];
     let barrier = Arc::new(Barrier::new((num_threads) as usize));
-    for i in 0..num_threads {
+    for _ in 0..num_threads {
         let barrier_clone = Arc::clone(&barrier);
         let thread_to_gui_tx = thread_to_gui_tx.clone();
         let (gui_to_thread_tx, gui_to_thread_rx): (Sender<InputData>, Receiver<InputData>) = channel();
         let static_data = Arc::clone(&scene_data);
-        if i == num_threads{
-            thread::spawn(move || run_thread(input_data, static_data, thread_to_gui_tx,  gui_to_thread_rx, barrier_clone));
-
-        } else {
-            thread::spawn(move || run_thread(input_data, static_data, thread_to_gui_tx, gui_to_thread_rx,  barrier_clone));
-        }
-
+        thread::spawn(move || run_thread(input_data, static_data, thread_to_gui_tx,  gui_to_thread_rx, barrier_clone));
         senders.push(gui_to_thread_tx);
     }
     senders
@@ -54,15 +47,12 @@ where H: Hit + 'static {
     while input_data.run {
         if !input_data.done {
             let iteration_result = iterate_image(input_data, Arc::clone(&static_data), thread_to_gui_tx.clone() , &gui_to_thread_rx);
-            match iteration_result {
-                Ok(_) => {},
-                Err(new_data) => {
-                    input_data = new_data;
-                    barrier.wait();
-                }
+            if let Err(new_data) = iteration_result {
+                input_data = new_data;
+                barrier.wait();
             }
         }
-        else{
+        else {
             let message = gui_to_thread_rx.recv();
             match message {
                 Ok(new_data) => input_data = new_data,
@@ -104,12 +94,9 @@ pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H
 
         let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
         let send_result = thread_to_gui_tx.send(output);
-        match send_result {
-                Err(_) => {
-                    input_data.run = false;
-                    return Err(input_data);
-                }
-                Ok(_) => {}
-            }
+        if let Err(_) = send_result {
+            input_data.run = false;
+            return Err(input_data);
+        }
     Ok(())
 }
