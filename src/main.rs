@@ -50,14 +50,14 @@ pub struct StaticData<H> where H: Hit{
 fn main(){
 
     //Scene
-    let (world, background, look_from, look_at) = scenes::sphere_world();
+    let (world, background, look_from, look_at) = scenes::obj_test();
     let world = world.to_Bvh();
 
     //Image
     let aspect_ratio = 3.0/2.0;
     let image_width = 800 as usize;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 500;
+    let samples_per_pixel = 10 as usize;
     let max_depth=  50;
 
     //Camera
@@ -65,20 +65,17 @@ fn main(){
     let dist_to_focus = 10.0;
     let aperture = 0.0;
     let cam = Camera::new(look_from, look_at, v_up, 20.0, aspect_ratio, aperture, dist_to_focus);
-   
-    //Shared data
-    let num_threads = (num_cpus::get() - 4) as i32;
-    let samples = ((samples_per_pixel as f64) / (num_threads as f64)).ceil() as i32;
     
     //Package data
-    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true };
+    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true, done: false};
     let static_data = Arc::new(StaticData { world, background, cam });
 
     //Threading
-    let main_thread_samples = samples_per_pixel - samples * (num_threads - 1);
+    let num_threads = (num_cpus::get() - 4) as i32;
     let (thread_to_gui_tx, thread_to_gui_rx): (Sender<ImageData>, Receiver<ImageData>) = channel();
-    let gui_to_thread_tx = initialise_threads(input_data, Arc::clone(&static_data), samples, main_thread_samples, thread_to_gui_tx, num_threads);
+    let gui_to_thread_tx = initialise_threads(input_data, Arc::clone(&static_data), thread_to_gui_tx, num_threads);
 
+    //Gui
     let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, input_data);
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
@@ -93,7 +90,7 @@ pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color 
     }
 
     let result = world.trace(r, 0.001, INFINITY);
-    match result{
+    match result {
         TraceResult::Scattered((attenuation, scattered)) => attenuation.elementwise_mult(&ray_color(&scattered, background, world, depth-1)),
         TraceResult::Absorbed(emitted) => emitted,
         TraceResult::Missed => background      
@@ -107,7 +104,6 @@ pub fn initialise_file(path: &str, image_width: usize, image_height: usize) -> F
                                     .open(path)
                                     .unwrap();
     write!(file, "P3\n{} {} \n255\n", image_width, image_height).unwrap();
-    //println!("{}",image_width*image_height);
     file
 }
 

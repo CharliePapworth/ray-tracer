@@ -93,6 +93,7 @@ impl epi::App for Gui {
                     match labels.width.parse::<usize>(){
                         Ok(num) => {
                             input_data.image_width = num;
+                            input_data.done = false;
                             transmit(thread_input_tx, *input_data);
                         }
                         Err(_) => {
@@ -106,6 +107,7 @@ impl epi::App for Gui {
                     match labels.height.parse::<usize>(){
                         Ok(num) => {
                             input_data.image_height = num;
+                            input_data.done = false;
                             transmit(thread_input_tx, *input_data);
                         }
                         Err(_) => {
@@ -134,6 +136,10 @@ impl epi::App for Gui {
                             image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
                         }
                         image_data.samples += message.samples;
+                        if image_data.samples == input_data.samples_per_pixel {
+                            input_data.done = true;
+                            transmit(thread_input_tx, *input_data);
+                        }
                     }
                 }
                 Err(_) => {}
@@ -146,17 +152,9 @@ impl epi::App for Gui {
             ui.image(texture_id, [image_data.image_width as f32, image_data.image_height as f32]);
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally chose either panels OR windows.");
-            });
-        }
         ctx.request_repaint();
         *count += 1;
-        // println!{"{}", count};
+        println!{"{}", image_data.samples};
 
     }
 }
