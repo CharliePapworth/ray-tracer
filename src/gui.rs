@@ -112,8 +112,9 @@ impl epi::App for Gui {
                 else {
                     for i in 0..image_data.pixel_colors.len(){
                         image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
-                        image_data.samples += message.samples;
                     }
+                    image_data.samples += message.samples;
+
                 }
                 if image_data.samples >= input_data.samples_per_pixel {
                     input_data.done = true;
@@ -132,7 +133,7 @@ impl epi::App for Gui {
             ctx.request_repaint();
         }
         *count += 1;
-        println!{"{}", count};
+        println!{"{}", image_data.samples};
 
     }
 }
