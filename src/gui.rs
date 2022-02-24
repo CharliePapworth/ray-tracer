@@ -131,7 +131,7 @@ impl epi::App for Gui {
                 if message.image_height != image_data.image_height || message.image_width != image_data.image_width {     
                     *image_data = message;
                 }
-                else {
+                else if image_data.samples < input_data.samples_per_pixel {
                     for i in 0..image_data.pixel_colors.len(){
                         image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
                     }
