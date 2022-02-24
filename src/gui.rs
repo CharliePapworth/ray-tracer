@@ -14,7 +14,7 @@ pub struct Gui {
 
 impl Gui{
     pub fn new(thread_output_rx: Receiver<ImageData>,  thread_input_tx: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
-        let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string()};
+        let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string(), samples: input_data.samples_per_pixel.to_string()};
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width], image_width: input_data.image_width, image_height: input_data.image_height, samples: 0};
         let count = 0;
         Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels, count}
@@ -24,7 +24,8 @@ impl Gui{
 #[derive(Default)]
 pub struct Labels{
     width: String,
-    height: String
+    height: String,
+    samples: String
 }
 
 
@@ -96,11 +97,32 @@ impl epi::App for Gui {
                 }
             });
 
-            let mut value = 2f32;
-            ui.add(egui::Slider::new(&mut value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                value += 1.0;
-            }
+            ui.horizontal(|ui| {
+                ui.label("Samples:");
+                let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.samples));
+                if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                    match labels.samples.parse::<usize>(){
+                        Ok(num) => {
+                            if num < input_data.samples_per_pixel {
+                                image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
+                                image_data.samples = 0;
+                            }
+                            input_data.samples_per_pixel = num;
+                            input_data.done = false;
+                            transmit(thread_input_tx, *input_data);
+                        }
+                        Err(_) => {
+                            labels.samples = input_data.samples_per_pixel.to_string();
+                        }
+                    }
+                }
+            })
+
+            // let mut value = 2f32;
+            // ui.add(egui::Slider::new(&mut value, 0.0..=10.0).text("value"));
+            // if ui.button("Increment").clicked() {
+            //     image_data.samples += 1.0;
+            // }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
