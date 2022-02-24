@@ -1,12 +1,9 @@
 use crate::triangle::*;
-use crate::sphere::*;
-use crate::rect::*;
 use crate::traceable::*;
 use crate::ray::*;
 use crate::material::*;
 use crate::vec::*;
 use crate::bvh::*;
-use crate::enum_dispatch::*;
 
 #[derive (Copy, Clone)]
 pub struct BoundingBox{

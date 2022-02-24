@@ -1,4 +1,6 @@
+#![allow(dead_code,unused_imports)]
 #[macro_use] 
+
 
 extern crate impl_ops;
 extern crate fastrand;
@@ -50,14 +52,14 @@ pub struct StaticData<H> where H: Hit{
 fn main(){
 
     //Scene
-    let (world, background, look_from, look_at) = scenes::obj_test();
-    let world = world.to_Bvh();
+    let (world, background, look_from, look_at) = scenes::sphere_world();
+    let world = world.to_bvh();
 
     //Image
     let aspect_ratio = 3.0/2.0;
-    let image_width = 800 as usize;
+    let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 10 as usize;
+    let samples_per_pixel = 1;
     let max_depth=  50;
 
     //Camera
@@ -77,8 +79,8 @@ fn main(){
 
     //Gui
     let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, input_data);
-    let mut native_options = eframe::NativeOptions::default();
-    native_options.initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
+    let initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
+    let native_options = eframe::NativeOptions {initial_window_size, ..Default::default()};
     eframe::run_native(Box::new(app), native_options);
 }
 

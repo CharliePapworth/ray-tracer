@@ -68,7 +68,7 @@ pub fn light_test() -> (TraceableList, Color, Point3, Point3) {
     let sphere = Primitive::Sphere(Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Material::new_lambertian(Color::new(0.8, 0.8, 0.8)))); 
 
     let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
-    let rect = Box::new(Rect::new(RectAxes::XY, -1.0, 2.0, 1.0, 3.0, 4.0, diff_light));
+    let _rect = Box::new(Rect::new(RectAxes::XY, -1.0, 2.0, 1.0, 3.0, 4.0, diff_light));
     world.add(ground);
     world.add(sphere);
     //world.add(rect);
@@ -84,7 +84,7 @@ pub fn triangle_test() -> (TraceableList, Color, Point3, Point3) {
     let look_at = Point3::new(0.0, 0.0, 0.0);
 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
-    let ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
+    let _ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
  
     let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
     let v0 = Vec3::new(-2.0, 0.1, 0.0);
@@ -106,7 +106,7 @@ pub fn triangle_bb_test() -> (TraceableList, Color, Point3, Point3) {
     let look_at = Point3::new(0.0, 0.0, 0.0);
 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
-    let ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
+    let _ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
  
     let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
     let v0 = Vec3::new(-2.0, 0.1, 0.0);
@@ -123,7 +123,7 @@ pub fn triangle_bb_test() -> (TraceableList, Color, Point3, Point3) {
 }
 
 pub fn obj_test() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new(); 
+    let _world = TraceableList::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::new(-20.0, 5.0, 20.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
@@ -131,7 +131,7 @@ pub fn obj_test() -> (TraceableList, Color, Point3, Point3) {
     let mut mesh = TraceableList::new(); 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
     let ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
-    let (mut models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/car.obj");
+    let (models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/car.obj");
     let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
     let rect = Primitive::Rect(Rect::new(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light));
     mesh.add_obj(models, materials);

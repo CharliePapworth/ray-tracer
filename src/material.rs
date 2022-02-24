@@ -59,7 +59,7 @@ impl Material {
         Material::Lambertian(Lambertian::new(alb))
     }
 
-    pub fn new_metal(alb:Vec3, mut fuzz: f64) -> Material {
+    pub fn new_metal(alb:Vec3, fuzz: f64) -> Material {
         Material::Metal(Metal::new(alb, fuzz))
     }
 

@@ -157,18 +157,24 @@ impl epi::App for Gui {
     }
 }
 
-pub fn transmit(thread_input_tx: &Vec<Sender<InputData>>, input_data: InputData){
-    for transmitter in thread_input_tx{
-        transmitter.send(input_data);
+pub fn transmit(thread_input_tx: &mut Vec<Sender<InputData>>, input_data: InputData){
+    let mut threads_to_remove = vec!();
+    for (index, transmitter, ) in thread_input_tx.iter().enumerate() {
+        if transmitter.send(input_data).is_err() {
+            threads_to_remove.push(index);
+        }
+    }
+    for index in threads_to_remove {
+        thread_input_tx.remove(index);
     }
 }
 
-pub fn colors_to_rgba(colors: &Vec<Color>, samples: usize) -> Vec<u8>{
+pub fn colors_to_rgba(colors: &[Color], samples: usize) -> Vec<u8>{
     let mut rgbas = Vec::<u8>::with_capacity(colors.len() * 4);
     for color in colors{
      let rgb = color.scale_colors(samples);
-        for i in 0..3{
-            rgbas.push(rgb[i]);
+        for color in &rgb{
+            rgbas.push(*color);
         }
         rgbas.push(255);
     }

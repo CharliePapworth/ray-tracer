@@ -8,8 +8,6 @@ use crate::triangle::*;
 use crate::primitive::*;
 use crate::enum_dispatch::*;
 
-use std::clone;
-use std::ops::Index;
 use core::cmp::Ordering;
 use std::convert::TryFrom;
 
@@ -91,7 +89,7 @@ impl TraceableList{
     }
 
     pub fn empty(&self) -> bool {
-        self.list.len() == 0
+        self.list.is_empty()
     }
 
     pub fn sort_by<F>(&mut self, compare: F)
@@ -142,18 +140,18 @@ impl TraceableList{
           
         }
 
-        return Some(largest_index)
+        Some(largest_index)
     }
 
     pub fn split_off(&mut self, at: usize) -> TraceableList{
         TraceableList{list: self.list.split_off(at)}
     }
 
-    pub fn to_Bvh(self) -> BvhNode {
+    pub fn to_bvh(self) -> BvhNode {
         BvhNode::new(self)
     }
 
-    pub fn add_obj(&mut self, models: Vec<tobj::Model>, mut materials_opt: Option<Vec<tobj::Material>>){
+    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>){
         for  m in models.iter(){
            //if m.name == "wheel_fr_Circle.050_MAIN"{
                 let mesh = &m.mesh;

@@ -62,7 +62,7 @@ impl Aabb{
                 return false;
             }
         }
-        return true
+        true
     }
 
     pub fn surrounding_box(box_0: Aabb, box_1: Aabb) -> Aabb{
@@ -116,7 +116,7 @@ impl BvhNode{
             1 => {
                 let traceable = objects.remove(0);
                 let bb = traceable.bounding_box().expect("A primitive within the TraceableList cannot be bound");
-                return BvhRoot::new(traceable, bb)
+                BvhRoot::new(traceable, bb)
 
             } 
             
@@ -129,7 +129,7 @@ impl BvhNode{
                 let bb_left = left_objs.bounding_box().expect("A primitive within the TraceableList cannot be bound");
                 let bb_right = right_objs.bounding_box().expect("A primitive within the TraceableList cannot be bound");
                 let bb_surrounding = Aabb::surrounding_box(bb_left, bb_right);
-                return BvhBranch::new(left_objs, right_objs, bb_surrounding)
+                BvhBranch::new(left_objs, right_objs, bb_surrounding)
             }
         }
     }
@@ -330,7 +330,7 @@ mod tests {
             list.add(s.clone());
         }
         let list_clone = list.clone();
-        let bvh = list_clone.to_Bvh();
+        let bvh = list_clone.to_bvh();
         let hit = bvh.hit(&r, t_min, t_max);
         assert!(hit.is_none());
 
@@ -341,7 +341,7 @@ mod tests {
         let s = Primitive::Sphere(Sphere::new(center, radius, mat));
         list.add(s);
         let list_clone = list.clone();
-        let bvh = list_clone.to_Bvh();
+        let bvh = list_clone.to_bvh();
         let hit = bvh.hit(&r, t_min, t_max);
         assert!(hit.is_some());
         let (rec, _) = hit.unwrap();
@@ -354,7 +354,7 @@ mod tests {
         let s = Primitive::Sphere(Sphere::new(center, radius, mat));
         list.add(s);
         let list_clone = list.clone();
-        let bvh = list_clone.to_Bvh();
+        let bvh = list_clone.to_bvh();
         let hit = bvh.hit(&r, t_min, t_max);
         assert!(hit.is_some());
         let (rec, _) = hit.unwrap();
@@ -379,7 +379,7 @@ mod tests {
             let s = Primitive::Sphere(Sphere::new(center, radius, mat));
             list.add(s);
         }
-        let bvh = list.to_Bvh();
+        let bvh = list.to_bvh();
         let hit = bvh.hit_debug(&r, t_min, t_max);
         assert_eq!(hit.0, 0);
         assert!(hit.1.is_none());
@@ -394,7 +394,7 @@ mod tests {
             let s = Primitive::Sphere(Sphere::new(center, radius, mat));
             list.add(s);
         }
-        let bvh = list.to_Bvh();
+        let bvh = list.to_bvh();
         let hit = bvh.hit_debug(&r, t_min, t_max);
         assert_eq!(hit.0, 0);
         assert!(hit.1.is_none());
@@ -410,7 +410,7 @@ mod tests {
              let s = Primitive::Sphere(Sphere::new(center, radius, mat));
              list.add(s);
          }
-         let bvh = list.to_Bvh();
+         let bvh = list.to_bvh();
          let hit = bvh.hit_debug(&r, t_min, t_max);
          assert_eq!(hit.0, 0);
          assert!(hit.1.is_none());
@@ -425,7 +425,7 @@ mod tests {
              let s = Primitive::Sphere(Sphere::new(center, radius, mat));
              list.add(s);
          }
-         let bvh = list.to_Bvh();
+         let bvh = list.to_bvh();
          let hit = bvh.hit_debug(&r, t_min, t_max);
          assert_eq!(hit.0, 99);
          assert!(hit.1.is_some()); 
@@ -440,7 +440,7 @@ mod tests {
              let s = Primitive::Sphere(Sphere::new(center, radius, mat));
              list.add(s);
          }
-         let bvh = list.to_Bvh();
+         let bvh = list.to_bvh();
          let hit = bvh.hit_debug(&r, t_min, t_max);
          let rec = hit.1.unwrap();
          assert_eq!(hit.0, 9);
@@ -458,7 +458,7 @@ mod tests {
              let s = Primitive::Triangle(Triangle::new([v1, v2, v3], [norm; 3], mat ));
              list.add(s);
          }
-         let bvh = list.to_Bvh();
+         let bvh = list.to_bvh();
          let hit = bvh.hit_debug(&r, t_min, t_max);
          let rec = hit.1;
          assert_eq!(hit.0, 1);

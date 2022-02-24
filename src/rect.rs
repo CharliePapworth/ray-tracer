@@ -85,7 +85,6 @@ impl Hit for Rect {
 
 mod tests {
     use super::*;
-    use crate::material::*;
 
     #[test]
     fn test_new(){

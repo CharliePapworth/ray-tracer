@@ -86,10 +86,8 @@ impl Vec3{
                 .unwrap()
     }
 
-    pub fn permute(&mut self, i: usize, j: usize){
-        let temp = self.arr[i];
-        self.arr[i] = self.arr[j];
-        self.arr[j] = temp;
+    pub fn swap(&mut self, i: usize, j: usize){
+        self.arr.swap(i,j);
     }
 
     pub fn unit_vector(self) -> Vec3{
@@ -375,15 +373,15 @@ mod tests {
     }
 
     #[test]
-    fn test_permute(){
+    fn test_swap(){
         let mut vec = Vec3::new(0.1, 0.2, 0.3);
-        vec.permute(0, 2);
+        vec.swap(0, 2);
         assert_eq!(vec, Vec3::new(0.3, 0.2, 0.1));
 
-        vec.permute(1, 2);
+        vec.swap(1, 2);
         assert_eq!(vec, Vec3::new(0.3, 0.1, 0.2));
 
-        vec.permute(1, 1);
+        vec.swap(1, 1);
         assert_eq!(vec, Vec3::new(0.3, 0.1, 0.2));
     }
 
