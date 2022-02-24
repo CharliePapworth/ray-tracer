@@ -3,12 +3,7 @@ use eframe::{egui::{self, Vec2}, epi};
 use crate::vec::*;
 use crate::*;
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct Gui {
-    // this how you opt-out of serialization of a member
-    #[cfg_attr(feature = "persistence", serde(skip))]
     pub thread_output_rx: Receiver<ImageData>,
     pub thread_input_tx: Vec<Sender<InputData>>,
     pub input_data: InputData,
@@ -35,7 +30,7 @@ pub struct Labels{
 
 impl epi::App for Gui {
     fn name(&self) -> &str {
-        "eframe template"
+        "Ray Tracer"
     }
 
     /// Called once before the first frame.
@@ -45,21 +40,7 @@ impl epi::App for Gui {
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
-        // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
-        #[cfg(feature = "persistence")]
-        if let Some(storage) = _storage {
-            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
-        }
     }
-
-    /// Called by the frame work to save state before shutdown.
-    /// Note that you must enable the `persistence` feature for this to work.
-    #[cfg(feature = "persistence")]
-    fn save(&mut self, storage: &mut dyn epi::Storage) {
-        epi::set_value(storage, epi::APP_KEY, self);
-    }
-
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
@@ -67,7 +48,6 @@ impl epi::App for Gui {
         let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Quit").clicked() {
@@ -132,12 +112,12 @@ impl epi::App for Gui {
                 else {
                     for i in 0..image_data.pixel_colors.len(){
                         image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
+                        image_data.samples += message.samples;
                     }
-                    image_data.samples += message.samples;
-                    if image_data.samples == input_data.samples_per_pixel {
-                        input_data.done = true;
-                        transmit(thread_input_tx, *input_data);
-                    }
+                }
+                if image_data.samples >= input_data.samples_per_pixel {
+                    input_data.done = true;
+                    transmit(thread_input_tx, *input_data);
                 }
             }
 
