@@ -9,15 +9,34 @@ pub struct Gui {
     pub input_data: InputData,
     pub image_data: ImageData,
     pub labels: Labels,
-    pub count: i32
+    pub count: i32,
+    pub camera_speed: f64
 }
 
 impl Gui{
     pub fn new(thread_output_rx: Receiver<ImageData>,  thread_input_tx: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
-        let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string(), samples: input_data.samples_per_pixel.to_string()};
+        let camera_speed = 0.0;
+        let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string(), samples: input_data.samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width], image_width: input_data.image_width, image_height: input_data.image_height, samples: 0};
         let count = 0;
-        Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels, count}
+        Gui{thread_output_rx, thread_input_tx, input_data, image_data, labels, count, camera_speed}
+    }
+
+    pub fn transmit_input_data(&mut self){
+        let mut threads_to_remove = vec!();
+        for (index, transmitter, ) in self.thread_input_tx.iter().enumerate() {
+            if transmitter.send(self.input_data).is_err() {
+                threads_to_remove.push(index);
+            }
+        }
+        for index in threads_to_remove {
+            self.thread_input_tx.remove(index);
+        }
+    }
+
+    pub fn refresh_image(&mut self) {
+        self.image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); self.input_data.image_height * self.input_data.image_width];
+        self.image_data.samples = 0;
     }
 }
 
@@ -25,7 +44,8 @@ impl Gui{
 pub struct Labels{
     width: String,
     height: String,
-    samples: String
+    samples: String,
+    camera_speed: String
 }
 
 
@@ -46,45 +66,35 @@ impl epi::App for Gui {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-        let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
-        let inputs = ctx.input();
-        if inputs.key_down(egui::Key::W) {
-            input_data.camera_settings.look_from[0] = input_data.camera_settings.look_from[0] - 1.0;
-            input_data.camera_settings.look_at[0] = input_data.camera_settings.look_at[0] - 1.0;
+        //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
+        let user_input = ctx.input();
+        let mut up = 0.0;
+        let mut right = 0.0;
 
-            input_data.done = false;
-            transmit(thread_input_tx, *input_data);
-            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
-            image_data.samples = 0;
-            println!{"w"};
+        if user_input.key_down(egui::Key::W) {
+            up -= 1.0;
         }
 
-        if inputs.key_down(egui::Key::A) {
-            input_data.camera_settings.look_from[2] = input_data.camera_settings.look_from[2] - 1.0;
-            input_data.camera_settings.look_at[2] = input_data.camera_settings.look_at[2] - 1.0;
-            input_data.done = false;
-            transmit(thread_input_tx, *input_data);
-            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
-            image_data.samples = 0;
+        if user_input.key_down(egui::Key::A) {
+            right += 1.0;
         }
 
-        if inputs.key_down(egui::Key::S) {
-            input_data.camera_settings.look_from[0] = input_data.camera_settings.look_from[0] + 1.0;
-            input_data.camera_settings.look_at[0] = input_data.camera_settings.look_at[0] + 1.0;
-            input_data.done = false;
-            transmit(thread_input_tx, *input_data);
-            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
-            image_data.samples = 0;
+        if user_input.key_down(egui::Key::S) {
+            up += 1.0;
         }
 
-        if inputs.key_down(egui::Key::D) {
-            input_data.camera_settings.look_from[2] = input_data.camera_settings.look_from[2] + 1.0;
-            input_data.camera_settings.look_at[2] = input_data.camera_settings.look_at[2] + 1.0;
-            input_data.done = false;
-            transmit(thread_input_tx, *input_data);
-            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
-            image_data.samples = 0;
+        if user_input.key_down(egui::Key::D) {
+            right -= 1.0;
+        }
 
+        if up != 0.0 || right != 0.0 {
+            self.input_data.camera_settings.look_from[0] = self.input_data.camera_settings.look_from[0] + up * self.camera_speed;
+            self.input_data.camera_settings.look_at[0] = self.input_data.camera_settings.look_at[0] + up * self.camera_speed;
+            self.input_data.camera_settings.look_from[2] = self.input_data.camera_settings.look_from[2] + right * self.camera_speed;
+            self.input_data.camera_settings.look_at[2] = self.input_data.camera_settings.look_at[2] + right * self.camera_speed;
+            self.input_data.done = false;
+            self.transmit_input_data();
+            self.refresh_image();
         }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -96,9 +106,9 @@ impl epi::App for Gui {
                     
                     if ui.button("Save").clicked() {
                         let path = "results.ppm";
-                        let mut file = initialise_file(path, image_data.image_width, image_data.image_height);
-                        for pixel in image_data.pixel_colors.iter() {
-                            pixel.write_color(&mut file, image_data.samples);
+                        let mut file = initialise_file(path, self.image_data.image_width, self.image_data.image_height);
+                        for pixel in self.image_data.pixel_colors.iter() {
+                            pixel.write_color(&mut file, self.image_data.samples);
                          }
                     }
                 });
@@ -108,30 +118,30 @@ impl epi::App for Gui {
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Width:");
-                let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.width));
+                let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.width));
                 if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match labels.width.parse::<usize>(){
+                    match self.labels.width.parse::<usize>(){
                         Ok(num) => {
-                            input_data.image_width = num;
-                            input_data.done = false;
-                            transmit(thread_input_tx, *input_data);
+                            self.input_data.image_width = num;
+                            self.input_data.done = false;
+                            self.transmit_input_data();
                         }
                         Err(_) => {
-                            labels.width = input_data.image_width.to_string();
+                            self.labels.width = self.input_data.image_width.to_string();
                         }
                     }
                 }
                 ui.label("Height:");
-                let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.height));
+                let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.height));
                 if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match labels.height.parse::<usize>(){
+                    match self.labels.height.parse::<usize>(){
                         Ok(num) => {
-                            input_data.image_height = num;
-                            input_data.done = false;
-                            transmit(thread_input_tx, *input_data);
+                            self.input_data.image_height = num;
+                            self.input_data.done = false;
+                            self.transmit_input_data();
                         }
                         Err(_) => {
-                            labels.height = input_data.image_height.to_string();
+                            self.labels.height = self.input_data.image_height.to_string();
                         }
                     }
                 }
@@ -139,24 +149,46 @@ impl epi::App for Gui {
 
             ui.horizontal(|ui| {
                 ui.label("Samples:");
-                let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut labels.samples));
+                let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
                 if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match labels.samples.parse::<usize>(){
+                    match self.labels.samples.parse::<usize>(){
                         Ok(num) => {
-                            if num < input_data.samples_per_pixel {
-                                image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
-                                image_data.samples = 0;
+                            if num < self.input_data.samples_per_pixel {
+                                self.image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); self.input_data.image_height * self.input_data.image_width];
+                                self.image_data.samples = 0;
                             }
-                            input_data.samples_per_pixel = num;
-                            input_data.done = false;
-                            transmit(thread_input_tx, *input_data);
+                            self.input_data.samples_per_pixel = num;
+                            self.input_data.done = false;
+                            self.transmit_input_data();
                         }
                         Err(_) => {
-                            labels.samples = input_data.samples_per_pixel.to_string();
+                            self.labels.samples = self.input_data.samples_per_pixel.to_string();
+                        }
+                    }
+                }
+            });
+
+            ui.horizontal(|ui| {
+                ui.label("Camera Speed:");
+                let camera_speed_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.camera_speed));
+                if camera_speed_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                    match self.labels.camera_speed.parse::<f64>(){
+                        Ok(new_speed) => {
+                            if new_speed > 0.0 {
+                                self.camera_speed = new_speed;
+                            }
+                            else {
+                                self.labels.camera_speed = self.camera_speed.to_string();
+                            }
+                        }
+                        Err(_) => {
+                            self.labels.camera_speed= self.camera_speed.to_string();
                         }
                     }
                 }
             })
+
+            
 
             // let mut value = 2f32;
             // ui.add(egui::Slider::new(&mut value, 0.0..=10.0).text("value"));
@@ -166,51 +198,42 @@ impl epi::App for Gui {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let message_result = thread_output_rx.try_recv();
+            let message_result = self.thread_output_rx.try_recv();
             if let Ok(message) = message_result {
-                if message.image_height != image_data.image_height || message.image_width != image_data.image_width {     
-                    *image_data = message;
+                if message.image_height != self.image_data.image_height || message.image_width != self.image_data.image_width {     
+                    self.image_data = message;
                 }
-                else if image_data.samples < input_data.samples_per_pixel {
-                    for i in 0..image_data.pixel_colors.len(){
-                        image_data.pixel_colors[i] = image_data.pixel_colors[i] + message.pixel_colors[i];
+                else if self.image_data.samples < self.input_data.samples_per_pixel {
+                    for i in 0..self.image_data.pixel_colors.len(){
+                        self.image_data.pixel_colors[i] = self.image_data.pixel_colors[i] + message.pixel_colors[i];
                     }
-                    image_data.samples += message.samples;
-
+                    self.image_data.samples += message.samples;
                 }
-                if image_data.samples >= input_data.samples_per_pixel {
-                    input_data.done = true;
-                    transmit(thread_input_tx, *input_data);
+                if self.image_data.samples >= self.input_data.samples_per_pixel {
+                    self.input_data.done = true;
+                    self.transmit_input_data();
                 }
             }
 
-            let rgbas = colors_to_rgba(&image_data.pixel_colors, image_data.samples.max(1));
-            let image = epi::Image::from_rgba_unmultiplied([image_data.image_width, image_data.image_height], &rgbas);
+            let rgbas = colors_to_rgba(&self.image_data.pixel_colors, self.image_data.samples.max(1));
+            let image = epi::Image::from_rgba_unmultiplied([self.image_data.image_width, self.image_data.image_height], &rgbas);
             // The central panel the region left after adding TopPanel's and SidePanel's
             let texture_id = frame.alloc_texture(image);
-            ui.image(texture_id, [image_data.image_width as f32, image_data.image_height as f32]);
+            ui.image(texture_id, [self.image_data.image_width as f32, self.image_data.image_height as f32]);
         });
 
-        if !input_data.done {
+        if !self.input_data.done {
             ctx.request_repaint();
         }
-        *count += 1;
-        println!{"{}", image_data.samples};
+        self.count += 1;
+        println!{"{}", self.image_data.samples};
 
     }
 }
 
-pub fn transmit(thread_input_tx: &mut Vec<Sender<InputData>>, input_data: InputData){
-    let mut threads_to_remove = vec!();
-    for (index, transmitter, ) in thread_input_tx.iter().enumerate() {
-        if transmitter.send(input_data).is_err() {
-            threads_to_remove.push(index);
-        }
-    }
-    for index in threads_to_remove {
-        thread_input_tx.remove(index);
-    }
-}
+
+
+
 
 pub fn colors_to_rgba(colors: &[Color], samples: usize) -> Vec<u8>{
     let mut rgbas = Vec::<u8>::with_capacity(colors.len() * 4);
