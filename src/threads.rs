@@ -14,6 +14,7 @@ pub struct InputData {
     pub image_height: usize,
     pub samples_per_pixel: usize,
     pub max_depth: i32,
+    pub camera_settings: CameraSettings,
     pub run: bool,
     pub done: bool
 }
@@ -68,11 +69,12 @@ pub fn iterate_image<H>(mut input_data: InputData, static_data: Arc<StaticData<H
     let image_height = input_data.image_height;
     let image_width = input_data.image_width;
     let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); image_height * image_width];
+    let cam = Camera::new(input_data.camera_settings);
     for j in 0..image_height{
         for i in 0..image_width{
                 let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
                 let v = (rand_double(0.0, 1.0) + (image_width - j) as f64)/((image_width - 1) as f64);
-                let r = static_data.cam.get_ray(u,v);
+                let r = cam.get_ray(u,v);
                 let pixel_index = (j*image_width + i) as usize;
                 pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, static_data.background, &static_data.world, input_data.max_depth);
                 let message = gui_to_thread_rx.try_recv();

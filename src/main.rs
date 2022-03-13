@@ -64,12 +64,13 @@ fn main(){
 
     //Camera
     let v_up = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = 10.0;
+    let focus_dist = 10.0;
     let aperture = 0.0;
-    let cam = Camera::new(look_from, look_at, v_up, 20.0, aspect_ratio, aperture, dist_to_focus);
+    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist };
+    let cam = Camera::new(camera_settings);
     
     //Package data
-    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true, done: false};
+    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true, done: false, camera_settings};
     let static_data = Arc::new(StaticData { world, background, cam });
 
     //Threading

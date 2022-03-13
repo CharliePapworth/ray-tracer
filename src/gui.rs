@@ -47,6 +47,45 @@ impl epi::App for Gui {
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
         let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
+        let inputs = ctx.input();
+        if inputs.key_down(egui::Key::W) {
+            input_data.camera_settings.look_from[0] = input_data.camera_settings.look_from[0] - 1.0;
+            input_data.camera_settings.look_at[0] = input_data.camera_settings.look_at[0] - 1.0;
+
+            input_data.done = false;
+            transmit(thread_input_tx, *input_data);
+            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
+            image_data.samples = 0;
+            println!{"w"};
+        }
+
+        if inputs.key_down(egui::Key::A) {
+            input_data.camera_settings.look_from[2] = input_data.camera_settings.look_from[2] - 1.0;
+            input_data.camera_settings.look_at[2] = input_data.camera_settings.look_at[2] - 1.0;
+            input_data.done = false;
+            transmit(thread_input_tx, *input_data);
+            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
+            image_data.samples = 0;
+        }
+
+        if inputs.key_down(egui::Key::S) {
+            input_data.camera_settings.look_from[0] = input_data.camera_settings.look_from[0] + 1.0;
+            input_data.camera_settings.look_at[0] = input_data.camera_settings.look_at[0] + 1.0;
+            input_data.done = false;
+            transmit(thread_input_tx, *input_data);
+            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
+            image_data.samples = 0;
+        }
+
+        if inputs.key_down(egui::Key::D) {
+            input_data.camera_settings.look_from[2] = input_data.camera_settings.look_from[2] + 1.0;
+            input_data.camera_settings.look_at[2] = input_data.camera_settings.look_at[2] + 1.0;
+            input_data.done = false;
+            transmit(thread_input_tx, *input_data);
+            image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width];
+            image_data.samples = 0;
+
+        }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -54,6 +93,7 @@ impl epi::App for Gui {
                     if ui.button("Quit").clicked() {
                         frame.quit();
                     }
+                    
                     if ui.button("Save").clicked() {
                         let path = "results.ppm";
                         let mut file = initialise_file(path, image_data.image_width, image_data.image_height);
