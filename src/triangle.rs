@@ -1,3 +1,6 @@
+use crate::camera::Camera;
+use crate::rasterizer::Line3;
+use crate::rasterizer::WireFrame;
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
@@ -136,6 +139,33 @@ impl Hit for Triangle {
         let max_z = self.vertices[0][2].max(self.vertices[1][2]).max(self.vertices[2][2]) + 0.001;
 
         Some(Aabb::new(Vec3::new(min_x, min_y, min_z), Vec3::new(max_x, max_y, max_z)))
+    }
+}
+
+impl WireFrame for Triangle {
+    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+
+        let mut wireframe = vec![];
+
+        let line_1 = Line3::new(self.vertices[1], self.vertices[0]);
+        let line_2 = Line3::new(self.vertices[2],self.vertices[0]);
+        let line_3 = Line3::new(self.vertices[2],self.vertices[1]);
+
+        let lines = vec!(line_1, line_2, line_3);
+        for line in lines {            
+            if let Some(projection) = line.project(cam)
+            {   
+                wireframe.append(&mut projection.bresenham());
+            }
+        }
+
+        if wireframe.len() > 0
+        {
+            Some(wireframe)
+        }
+        else {
+            None
+        }
     }
 }
 

@@ -8,6 +8,7 @@ extern crate tobj;
 extern crate num_cpus;
 extern crate enum_dispatch;
 extern crate eframe;
+extern crate bresenham;
 
 mod vec;
 mod ray;
@@ -24,6 +25,7 @@ mod primitive;
 mod bounding_box;
 mod gui;
 mod threads;
+mod rasterizer;
 
 use eframe::egui::Vec2;
 
@@ -34,6 +36,7 @@ use crate::camera::*;
 use crate::util::*;
 use crate::gui::*;
 use crate::threads::*;
+use crate::rasterizer::*;
 
 use std::f64::INFINITY;
 use std::fs::File;

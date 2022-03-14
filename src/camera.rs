@@ -6,12 +6,12 @@ use crate::ray::*;
 
 #[derive (Copy, Clone, Default)]
 pub struct Camera {
-    origin: Point3,
-    horizontal: Vec3,
-    vertical: Vec3,
-    lower_left_corner: Vec3,
-    orientation: Orientation,
-    lens_radius: f64
+    pub origin: Point3,
+    pub horizontal: Vec3,
+    pub vertical: Vec3,
+    pub lower_left_corner: Vec3,
+    pub orientation: Orientation,
+    pub lens_radius: f64
 }
 
 #[derive (Copy, Clone, Default)]
@@ -27,9 +27,9 @@ pub struct CameraSettings {
 
 #[derive (Copy, Clone, Default)]
 pub struct Orientation{
-    u: Vec3,
-    v: Vec3,
-    w: Vec3
+    pub u: Vec3,
+    pub v: Vec3,
+    pub w: Vec3
 }
 
 impl Camera {

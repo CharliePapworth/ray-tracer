@@ -8,6 +8,73 @@ pub struct Vec3{
     arr: [f64; 3]
 }
 
+#[derive (PartialEq, Debug, Copy, Clone, Default)]
+pub struct Vec2{
+    arr: [f64; 2]
+}
+
+impl Vec2{
+    pub fn new(x: f64, y: f64) -> Vec2{
+        Vec2{arr: [x, y]}
+    }
+
+    pub fn x(&self) -> f64 {
+        self.arr[0]
+    }
+
+    pub fn y(&self) -> f64 {
+        self.arr[1]
+    }
+
+    pub fn unit_vector(self) -> Vec2{
+        self / (self.length())
+    }
+
+    pub fn length_squared(&self) -> f64{
+        self.x().powi(2) + self.y().powi(2)
+    }
+
+    pub fn length(&self) -> f64{
+        self.length_squared().sqrt()
+    }
+
+    pub fn round(&self) -> Vec2 {
+        Vec2::new(self[0].round(), self[1].round())
+    }
+
+}
+
+//Operator overloading using impl_ops
+impl_op_ex_commutative!(+ |lhs: f64, rhs: Vec2| -> Vec2 { Vec2::new(rhs.x() + lhs, rhs.y() + lhs)});
+impl_op_ex!(+ |lhs: Vec2, rhs: Vec2| -> Vec2 { Vec2::new(lhs.x() + rhs.x(), lhs.y() + rhs.y())});
+
+impl_op_ex!(- |lhs: f64, rhs: Vec2| -> Vec2 { Vec2::new(lhs - rhs.x(), lhs - rhs.y())});
+impl_op_ex!(- |lhs: Vec2, rhs: f64| -> Vec2 { Vec2::new(lhs.x() - rhs, lhs.y() - rhs)});
+impl_op_ex!(- |lhs: Vec2, rhs: Vec2| -> Vec2 { Vec2::new(lhs.x() - rhs.x(), lhs.y() - rhs.y())});
+
+impl_op_ex_commutative!(* |lhs: f64, rhs: Vec2| -> Vec2 { Vec2::new(rhs.x() * lhs, rhs.y() * lhs)});
+impl_op_ex!(/ |lhs: Vec2, rhs: f64| -> Vec2 { Vec2::new(lhs.x() / rhs, lhs.y() / rhs)});
+
+impl Index<usize> for Vec2{
+    type Output = f64;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.arr[index]
+    }
+}
+impl ops::Neg for Vec2{
+    type Output = Vec2;
+    fn neg(self) -> Vec2{
+        Vec2::new(-self.x(), -self.y())
+    }
+}
+
+impl ops::Neg for &Vec2{
+    type Output = Vec2;
+    fn neg(self) -> Vec2{
+        Vec2::new(-self.x(), -self.y())
+    }
+}
+
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 
