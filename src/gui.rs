@@ -15,7 +15,7 @@ pub struct Gui {
 
 impl Gui{
     pub fn new(thread_output_rx: Receiver<ImageData>,  thread_input_tx: Vec<Sender<InputData>>, input_data: InputData) -> Gui {
-        let camera_speed = 0.0;
+        let camera_speed = 1.0;
         let labels = Labels{width: input_data.image_width.to_string(), height: input_data.image_height.to_string(), samples: input_data.samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); input_data.image_height * input_data.image_width], image_width: input_data.image_width, image_height: input_data.image_height, samples: 0};
         let count = 0;
@@ -187,8 +187,6 @@ impl epi::App for Gui {
                     }
                 }
             })
-
-            
 
             // let mut value = 2f32;
             // ui.add(egui::Slider::new(&mut value, 0.0..=10.0).text("value"));
