@@ -1,8 +1,22 @@
-use crate::vec::*;
+use crate::rasterizer::*;
+use crate::vec::{Vec2, Point2, Vec3, Point3};
 use crate::ray::*;
 use crate::traceable::*;
 use crate::bvh::*;
 use crate::material::*;
+use crate::camera::*;
+
+#[derive (Copy, Clone)]
+pub struct Circle {
+    center: Point2,
+    radius: f64
+}
+
+impl Circle {
+    pub fn new(center: Point2, radius: f64) -> Circle {
+        Circle {center, radius}
+    }
+}
 
 #[derive (Copy, Clone)]
 pub struct Sphere {
@@ -18,6 +32,20 @@ impl Sphere{
 
     pub fn center(&self) -> Point3{
         self.center
+    }
+
+    pub fn project(&self, cam: &Camera) -> Option<Circle>{
+        let point = self.center + self.radius * Vec3::new(1.0, 0.0, 0.0);
+        let line = Line3::new(self.center, point);
+        if let Some(projected_line) = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
+            let projected_origin = projected_line[0];
+            let projected_radius = projected_line.length();
+            Some(Circle::new(projected_origin, projected_radius))
+        }
+        else {
+            None
+        }
+        
     }
 }
 
@@ -54,6 +82,7 @@ impl Hit for Sphere{
         Some(output_box)
     }
 }
+
 
 #[cfg(test)]
 mod tests {

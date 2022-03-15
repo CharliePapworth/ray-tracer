@@ -1,0 +1,12 @@
+c:\Users\Charlie\Ray_Tracer\ray-tracer\target\debug\deps\half-6ff476f389d8f370.rmeta: C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\lib.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat\convert.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16\convert.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\slice.rs
+
+c:\Users\Charlie\Ray_Tracer\ray-tracer\target\debug\deps\libhalf-6ff476f389d8f370.rlib: C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\lib.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat\convert.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16\convert.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\slice.rs
+
+c:\Users\Charlie\Ray_Tracer\ray-tracer\target\debug\deps\half-6ff476f389d8f370.d: C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\lib.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat\convert.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16\convert.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\slice.rs
+
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\lib.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\bfloat\convert.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\binary16\convert.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\half-1.8.2\src\slice.rs:

@@ -8,10 +8,15 @@ pub struct Vec3{
     arr: [f64; 3]
 }
 
+pub type Point3 = Vec3;
+pub type Color = Vec3;
+
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Vec2{
     arr: [f64; 2]
 }
+
+pub type Point2 = Vec2;
 
 impl Vec2{
     pub fn new(x: f64, y: f64) -> Vec2{
@@ -42,6 +47,31 @@ impl Vec2{
         Vec2::new(self[0].round(), self[1].round())
     }
 
+    pub fn compute_outcode(&self, min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> OutCode { 
+        let inside = 0; // 0000
+        let left = 1;   // 0001
+        let right = 2;  // 0010
+        let bottom = 4; // 0100
+        let top = 8;    // 1000
+
+        let mut code = inside; // initialised as being inside of [[clip window]]
+
+        if self.x() < min_x { // to the left of clip window
+            code |= left;
+        } 
+        else if self.x() > max_x {  // to the right of clip window
+            code |= right; 
+        }   
+            
+        if self.y() < min_y {      // below the clip window
+            code |= bottom;
+        }          
+           
+        else if self.y() > max_y { // above the clip window
+            code |= top;
+         }     
+        code
+    }
 }
 
 //Operator overloading using impl_ops
@@ -61,6 +91,13 @@ impl Index<usize> for Vec2{
         &self.arr[index]
     }
 }
+
+impl IndexMut<usize> for Vec2{
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.arr[index]
+    }
+}
+
 impl ops::Neg for Vec2{
     type Output = Vec2;
     fn neg(self) -> Vec2{
@@ -75,8 +112,7 @@ impl ops::Neg for &Vec2{
     }
 }
 
-pub type Point3 = Vec3;
-pub type Color = Vec3;
+
 
 impl Vec3{
     pub fn new(x: f64, y: f64, z:f64) -> Vec3{

@@ -11,6 +11,7 @@ use crate::enum_dispatch::*;
 
 
 #[enum_dispatch(Hit)]
+#[enum_dispatch(WireFrame)]
 #[derive (Copy, Clone)]
 pub enum Primitive {
     Triangle(Triangle),

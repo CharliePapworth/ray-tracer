@@ -1,5 +1,6 @@
 use crate::camera::Camera;
 use crate::rasterizer::Line3;
+use crate::rasterizer::Plane;
 use crate::rasterizer::WireFrame;
 use crate::vec::*;
 use crate::ray::*;
@@ -153,7 +154,7 @@ impl WireFrame for Triangle {
 
         let lines = vec!(line_1, line_2, line_3);
         for line in lines {            
-            if let Some(projection) = line.project(cam)
+            if let Some(projection) = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin)
             {   
                 wireframe.append(&mut projection.bresenham());
             }

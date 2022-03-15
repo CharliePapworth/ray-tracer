@@ -1,8 +1,20 @@
 use std::ops::Index;
 
 use crate::vec::{Vec2, Vec3, Point3};
-use crate::camera::*;
+use crate::camera::{Camera, CameraSettings, Orientation};
 
+
+pub type OutCode = i8;
+pub struct Plane {
+    orientation: Orientation,
+    origin: Point3
+}
+
+impl Plane {
+    pub fn new(orientation: Orientation, origin: Point3) -> Plane {
+        Plane { orientation, origin }
+    }
+}
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Line2 {
     points: [Vec2; 2]
@@ -20,6 +32,89 @@ impl Line2 {
     pub fn end(&self) -> Vec2 {
         self[1]
     }
+
+    pub fn length(&self) -> f64 {
+        (self[1] - self[0]).length()
+    }
+        
+    // Cohen–Sutherland clipping algorithm clips a line from
+    // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with 
+    // diagonal from (min_x, min_y) to (max_x, max_y).
+    pub fn clip(&self, min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> Option<Line2> {
+
+        let inside = 0; // 0000
+        let left = 1;   // 0001
+        let right = 2;  // 0010
+        let bottom = 4; // 0100
+        let top = 8;    // 1000
+
+        let mut point_0 = self[0];
+        let mut point_1 = self[1];
+        // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
+        let mut outcode_0 = point_0.compute_outcode(min_x, max_x, min_y, max_y);
+        let mut outcode_1 = point_1.compute_outcode(min_x, max_x, min_y, max_y);
+        let mut accept = false;
+
+        loop {
+            if !(outcode_0 | outcode_1) != 0 {
+                // bitwise OR is 0: both points inside window; trivially accept and exit loop
+                accept = true;
+                return Some(Line2::new(point_0, point_1));
+            } else if outcode_0 & outcode_1 != 0 {
+                // bitwise AND is not 0: both points share an outside zone (LEFT, RIGHT, TOP,
+                // or BOTTOM), so both must be outside window; exit loop (accept is false)
+                return None;
+            } else {
+                // failed both tests, so calculate the line segment to clip
+                // from an outside point to an intersection with clip edge
+                let mut x = 0f64;
+                let mut y = 0f64;
+
+                // At least one endpoint is outside the clip rectangle; pick it.
+                let outcode_out: OutCode;
+                if outcode_1 > outcode_0 {
+                    outcode_out = outcode_1;
+                }
+                else {
+                    outcode_out = outcode_0;
+                }
+
+                // Now find the intersection point;
+                // use formulas:
+                //   slope = (y1 - y0) / (x1 - x0)
+                //   x = x0 + (1 / slope) * (ym - y0), where ym is min_y or max_y
+                //   y = y0 + slope * (xm - x0), where xm is min_x or max_x
+                // No need to worry about divide-by-zero because, in each case, the
+                // outcode bit being tested guarantees the denominator is non-zero
+                if (outcode_out & top) != 0 {           // point is above the clip window
+                    x = point_0.x() + (point_1.x() - point_0.x()) * (max_y - point_0.y()) / (point_1.y() - point_0.y());
+                    y = max_y;
+                } else if (outcode_out & bottom) != 0 { // point is below the clip window
+                    x = point_0.x() + (point_1.x() - self[0].x()) * (min_y - point_0.y()) / (point_1.y() - point_0.y());
+                    y = min_y;
+                } else if (outcode_out & right) != 0 {  // point is to the right of clip window
+                    y = point_0.y() + (point_1.y() - point_0.y()) * (max_x - self[0].x()) / (point_1.x() - self[0].x());
+                    x = max_x;
+                } else if (outcode_out & left) != 0 {   // point is to the left of clip window
+                    y = point_0.y() + (point_1.y() - point_0.y()) * (min_x - self[0].x()) / (point_1.x() - self[0].x());
+                    x = min_x;
+                }
+
+                // Now we move outside point to intersection point to clip
+                // and get ready for next pass.
+                if outcode_out == outcode_0 {
+                    point_0[0] = x;
+                    point_0[1] = y;
+                    outcode_0 = point_0.compute_outcode(min_x, max_x, min_y, max_y);
+                } else {
+                    point_1[0] = x;
+                    point_1[1] = y;
+                    outcode_1 = point_1.compute_outcode(min_x, max_x, min_y, max_y);
+                }
+            }
+        }
+    }
+
 
     pub fn bresenham(&self) -> Vec<[usize; 2]> {
         let line_start = (self.start().x().round() as isize, self.start().y().round() as isize);
@@ -45,83 +140,20 @@ impl Line3{
         Line3 {points: [start, end]}
     }
 
-    pub fn project(&self,  cam: &Camera) -> Option<Line2> {
+    pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
         let mut points: [Vec2; 2] = Default::default();
-        let normal = cam.orientation.w;
+        let normal = plane.orientation.w;
 
         //Project on to the infinite plane first
         for i in 0..2 as usize{
-            let dir = self[i] - cam.origin;
-            let t = (cam.lower_left_corner - cam.origin).dot(normal)/ dir.dot(normal);
-            let projection_3d = cam.origin + dir * t;
-            let relative_point = projection_3d - cam.lower_left_corner;
-            points[i] = Vec2::new(relative_point.dot(cam.orientation.v), relative_point.dot(cam.orientation.u));
+            let dir = self[i] - camera_origin;
+            let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
+            let projection_3d = camera_origin + dir * t;
+            let relative_point = projection_3d - plane.origin;
+            points[i] = Vec2::new(relative_point.dot(plane.orientation.v), relative_point.dot(plane.orientation.u));
         }
 
-        //Clamp the line to the bounded camera plane
-        let start = true;
-        let mut bounded_points: [Vec2; 2] = Default::default();
-        for i in 0..2 {
-            let other_point = points[start as usize];
-            let delta: Vec2 = other_point - points[i];
-            let length = delta.length();
-            let gradient = delta.unit_vector();
-            let mut t = f64::INFINITY;
-            if points[i].x() < 0.0 {
-                let t_temp =  - points[i][0] / gradient[0];
-                if t_temp > 0.0 && t_temp < t && t_temp < length {
-                    t = t_temp;
-                }
-            }
-
-            if points[i].x() > cam.horizontal[0] {
-                let t_temp =  (cam.horizontal[0]- points[i][0]) / gradient[0];
-                if t_temp > 0.0 && t_temp < t && t_temp < length {
-                    t = t_temp;
-                }
-            }
-
-            if points[i].y() < 0.0 {
-                let t_temp =  - points[i][1] / gradient[1];
-                if t_temp > 0.0 && t_temp < length && t_temp < t {
-                    t = t_temp;
-                }
-            }
-
-            if points[i].y() > cam.vertical[1] {
-                let t_temp =  (cam.vertical[0]- points[i][1]) / gradient[1];
-                if t_temp > 0.0 && t_temp < length && t_temp < t {
-                    t = t_temp;
-                }
-            }
-
-            if t < f64::INFINITY {
-                bounded_points[i] = other_point + t * gradient;
-            }
-            else {
-                bounded_points[i] = points[i];
-            }
-        }
-
-        //Check the points now lie within the bounds of the rectangle
-        let mut point_0_out_of_bounds = false;
-        let mut point_1_out_of_bounds = false;
-
-        if (bounded_points[0][0] < 0.0  || bounded_points[0][0] > cam.horizontal[0]) && (bounded_points[0][1] < 0.0  || bounded_points[0][1] > cam.vertical[1]) {
-            point_0_out_of_bounds = true;
-        }
-
-        if (bounded_points[1][0] < 0.0  || bounded_points[1][0] > cam.horizontal[0]) && (bounded_points[1][1] < 0.0  || bounded_points[1][1] > cam.vertical[1]) {
-            point_1_out_of_bounds = true;
-        }
-
-        if point_0_out_of_bounds && point_1_out_of_bounds {
-            return None
-        } 
-        else {
-            Some(Line2{points: bounded_points})
-        }
-
+        Some(Line2::new(points[0], points[1]))
     }
 }
 
@@ -135,7 +167,7 @@ impl Index<usize> for Line3 {
 impl WireFrame for Line3 {
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
     {
-        if let Some(projected_line) = self.project(cam) {
+        if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
             Some(projected_line.bresenham())
         }
         else {
@@ -170,7 +202,7 @@ mod tests {
         let cam = Camera::new(camera_settings);
         
         let line = Line3::new(Point3::new(1.0, 1.0, 1.0), Point3::new(1.0, 5.0, 4.0));
-        let projected_line = line.project(&cam).unwrap();
+        let projected_line = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin).unwrap();
         assert!((projected_line[0] - Vec2::new(11.0, 11.0)).length() < 0.00001);
         assert!((projected_line[1] - Vec2::new(15.0, 14.0)).length() < 0.00001);
     }
