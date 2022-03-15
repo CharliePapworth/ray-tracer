@@ -1,5 +1,7 @@
 use std::ops::Index;
 
+use line_drawing::Bresenham;
+
 use crate::vec::{Vec2, Vec3, Point3};
 use crate::camera::{Camera, CameraSettings, Orientation};
 
@@ -37,12 +39,10 @@ impl Line2 {
         (self[1] - self[0]).length()
     }
         
-    // Cohen–Sutherland clipping algorithm clips a line from
-    // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with 
+    // Cohen–Sutherland clipping algorithm clips a line from against a rectangle with 
     // diagonal from (min_x, min_y) to (max_x, max_y).
     pub fn clip(&self, min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> Option<Line2> {
 
-        let inside = 0; // 0000
         let left = 1;   // 0001
         let right = 2;  // 0010
         let bottom = 4; // 0100
@@ -53,12 +53,10 @@ impl Line2 {
         // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
         let mut outcode_0 = point_0.compute_outcode(min_x, max_x, min_y, max_y);
         let mut outcode_1 = point_1.compute_outcode(min_x, max_x, min_y, max_y);
-        let mut accept = false;
 
         loop {
             if !(outcode_0 | outcode_1) != 0 {
                 // bitwise OR is 0: both points inside window; trivially accept and exit loop
-                accept = true;
                 return Some(Line2::new(point_0, point_1));
             } else if outcode_0 & outcode_1 != 0 {
                 // bitwise AND is not 0: both points share an outside zone (LEFT, RIGHT, TOP,
@@ -115,11 +113,10 @@ impl Line2 {
         }
     }
 
-
     pub fn bresenham(&self) -> Vec<[usize; 2]> {
         let line_start = (self.start().x().round() as isize, self.start().y().round() as isize);
         let line_end = (self.end().x().round() as isize, self.end().y().round() as isize);
-        bresenham::Bresenham::new(line_start, line_end).map(|(x,y)|[x as usize, y as usize]).collect()
+        Bresenham::new(line_start, line_end).map(|(x,y)|[x as usize, y as usize]).collect()
     }
 }
 

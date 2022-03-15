@@ -13,7 +13,7 @@ fastrand = "*"
 tobj = "3.2.0"
 num_cpus = "*"
 enum_dispatch = "*"
-bresenham = { git = "https://github.com/dlredden/bresenham-rs",  branch = "patch-1" }
+line_drawing = "1"
 
 
 

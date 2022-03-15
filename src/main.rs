@@ -7,7 +7,7 @@ extern crate tobj;
 extern crate num_cpus;
 extern crate enum_dispatch;
 extern crate eframe;
-extern crate bresenham;
+extern crate line_drawing;
 
 mod vec;
 mod ray;
