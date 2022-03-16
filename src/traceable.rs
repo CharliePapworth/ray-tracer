@@ -1,5 +1,7 @@
 extern crate fastrand;
 
+use crate::camera::Camera;
+use crate::rasterizer::WireFrame;
 use crate::vec::*;
 use crate::ray::*;
 use crate::bvh::*;
@@ -182,7 +184,6 @@ impl TraceableList{
                     let tri = Triangle::new(tri_vert, tri_norm, Material::Lambertian(Lambertian::new(model_color)));
                     self.add(Primitive::Triangle(tri));
                 }
-            //}
         }
     }
 }
@@ -220,6 +221,12 @@ impl Hit for TraceableList{
             }
             Some(output_box) 
         }
+    }
+}
+
+impl WireFrame for TraceableList {
+    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+        self.list.draw_wireframe(cam)
     }
 }
 
