@@ -123,18 +123,8 @@ impl Hit for Rect {
 impl WireFrame for Rect {
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let mut pixels: Vec<[usize; 2]> = vec!();
-        let lines = self.get_lines();
-        for line in lines {
-            if let Some(mut new_pixels) = line.draw_wireframe(cam) {
-                pixels.append(&mut new_pixels);
-            }
-        }
-
-        if pixels.len() == 0 {
-            None
-        } else {
-            Some(pixels)
-        }
+        let lines = self.get_lines().to_vec();
+        lines.draw_wireframe(cam)
     }
 }
 

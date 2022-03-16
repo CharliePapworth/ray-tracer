@@ -238,6 +238,23 @@ pub trait WireFrame{
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
 }
 
+impl<W> WireFrame for Vec<W> where W: WireFrame {
+    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+        let mut pixels: Vec<[usize; 2]> = Default::default();
+        for object in self {
+            if let Some(new_pixels) = object.draw_wireframe(cam) {
+                pixels.append(&mut new_pixels);
+            }
+        }
+
+        if pixels.len() == 0 {
+            None
+        } else {
+            Some(pixels)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
