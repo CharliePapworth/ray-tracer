@@ -146,27 +146,12 @@ impl Hit for Triangle {
 impl WireFrame for Triangle {
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
 
-        let mut wireframe = vec![];
-
         let line_1 = Line3::new(self.vertices[1], self.vertices[0]);
         let line_2 = Line3::new(self.vertices[2],self.vertices[0]);
         let line_3 = Line3::new(self.vertices[2],self.vertices[1]);
 
         let lines = vec!(line_1, line_2, line_3);
-        for line in lines {            
-            if let Some(projection) = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin)
-            {   
-                wireframe.append(&mut projection.bresenham());
-            }
-        }
-
-        if wireframe.len() > 0
-        {
-            Some(wireframe)
-        }
-        else {
-            None
-        }
+        lines.draw_wireframe(cam)
     }
 }
 

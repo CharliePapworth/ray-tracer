@@ -92,8 +92,8 @@ impl WireFrame for Sphere {
             let y = circle.center.y().round() as i32;
             let radius = circle.radius.round() as i32;
             let pixels = BresenhamCircle::new(x, y, radius).filter(|(x, y)| *x > 0 && *x < cam.horizontal[0] as i32 && *y > 0 && *y < cam.vertical[1] as i32)
-                                                                                             .map(|(x, y)| [x as usize, y as usize]).collect();
-                                                                                            
+                                                                                             .map(|(x, y)| [x as usize, y as usize])
+                                                                                             .collect();                            
             Some(pixels)
         } else {
             None

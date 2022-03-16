@@ -1,4 +1,3 @@
-use crate::bounding_box::*;
 use crate::primitive::Primitive;
 use crate::vec::*;
 use crate::sphere::*;
@@ -99,28 +98,6 @@ pub fn triangle_test() -> (TraceableList, Color, Point3, Point3) {
 
 }
 
-pub fn triangle_bb_test() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new();
-    let background = Color::new(0.9, 0.9, 0.9);
-    let look_from = Point3::new(0.0, 2.0, 26.0);
-    let look_at = Point3::new(0.0, 0.0, 0.0);
-
-    let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
-    let _ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
- 
-    let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
-    let v0 = Vec3::new(-2.0, 0.1, 0.0);
-    let v1 = Vec3::new(2.0, 0.1, 0.0);
-    let v2 = Vec3::new(0.0, 2.1, 0.0);
-    let norms = [Vec3::new(0.0, 0.0, 1.0); 3];
-    let tri = Triangle::new([v0, v1, v2], norms, mat);
-    let bb = Primitive::BoundingBox(BoundingBox::from_triangle(tri));
-   // world.add(ground);
-    world.add(bb);
-    
-    (world, background, look_from, look_at)
-
-}
 
 pub fn obj_test() -> (TraceableList, Color, Point3, Point3) {
     let _world = TraceableList::new(); 

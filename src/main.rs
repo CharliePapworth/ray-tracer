@@ -21,12 +21,12 @@ mod rect;
 mod triangle;
 mod scenes;
 mod primitive;
-mod bounding_box;
 mod gui;
 mod threads;
 mod rasterizer;
 
 use eframe::egui::Vec2;
+use primitive::Primitive;
 
 use crate::vec::*;
 use crate::ray::*;
@@ -45,8 +45,9 @@ use std::sync::Arc;
 use std::sync::mpsc::*;
 
 #[derive (Clone)]
-pub struct StaticData<H> where H: Hit{
+pub struct StaticData<H, W> where H: Hit, W: WireFrame{
     pub world: H,
+    pub primitives: W,
     pub background: Color,
     pub cam: Camera,    
 }
@@ -54,8 +55,8 @@ pub struct StaticData<H> where H: Hit{
 fn main(){
 
     //Scene
-    let (world, background, look_from, look_at) = scenes::sphere_world();
-    let world = world.to_bvh();
+    let (primitives, background, look_from, look_at) = scenes::triangle_test();
+    let world = primitives.clone().to_bvh();
 
     //Image
     let aspect_ratio = 3.0/2.0;
@@ -68,15 +69,15 @@ fn main(){
     let v_up = Vec3::new(0.0, 1.0, 0.0);
     let focus_dist = 10.0;
     let aperture = 0.0;
-    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist };
+    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
     let cam = Camera::new(camera_settings);
     
     //Package data
-    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, run: true, done: false, camera_settings};
-    let static_data = Arc::new(StaticData { world, background, cam });
+    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, mode: DrawMode::Rasterize, run: true, done: false, camera_settings};
+    let static_data = Arc::new(StaticData { world, primitives, background, cam });
 
     //Threading
-    let num_threads = (num_cpus::get() - 4) as i32;
+    let num_threads = 1;//(num_cpus::get() - 4) as i32;
     let (thread_to_gui_tx, thread_to_gui_rx): (Sender<ImageData>, Receiver<ImageData>) = channel();
     let gui_to_thread_tx = initialise_threads(input_data, Arc::clone(&static_data), thread_to_gui_tx, num_threads);
 

@@ -11,7 +11,8 @@ pub struct Camera {
     pub vertical: Vec3,
     pub lower_left_corner: Vec3,
     pub orientation: Orientation,
-    pub lens_radius: f64
+    pub lens_radius: f64,
+    pub resoloution: (usize, usize)
 }
 
 #[derive (Copy, Clone, Default)]
@@ -22,7 +23,9 @@ pub struct CameraSettings {
     pub v_fov: f64, 
     pub aspect_ratio:f64, 
     pub aperture: f64, 
-    pub focus_dist: f64
+    pub focus_dist: f64,
+    pub image_height: usize,
+    pub image_width: usize,
 }
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
@@ -50,8 +53,10 @@ impl Camera {
         let vertical = settings.focus_dist * viewport_height * v;
         let lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - settings.focus_dist * w;
 
+        let resoloution = (settings.image_width, settings.image_height);
+
         let lens_radius = settings.aperture/2.0;
-        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius}
+        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution}
     }
 
     pub fn get_ray(&self, s: f64, t:f64) -> Ray {

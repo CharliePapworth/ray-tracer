@@ -6,7 +6,6 @@ use crate::ray::*;
 use crate::material::*;
 use crate::vec::*;
 use crate::bvh::*;
-use crate::bounding_box::*;
 use crate::enum_dispatch::*;
 
 
@@ -17,7 +16,6 @@ pub enum Primitive {
     Triangle(Triangle),
     Sphere(Sphere),
     Rect(Rect),
-    BoundingBox(BoundingBox)
 }
 
 impl Primitive {

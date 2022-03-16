@@ -1,11 +1,12 @@
 use core::time;
 use std::ops::{Index, IndexMut};
 
+use crate::enum_dispatch::*;
 use line_drawing::Bresenham;
 
 use crate::vec::{Vec2, Vec3, Point3, Point2};
 use crate::camera::{Camera, CameraSettings, Orientation};
-
+use crate::Primitive;
 
 pub type OutCode = i8;
 
@@ -40,6 +41,10 @@ impl Line2 {
 
     pub fn length(&self) -> f64 {
         (self[1] - self[0]).length()
+    }
+
+    pub fn scale(&self, scale: f64) -> Line2 {
+        Line2::new(self.points[0] * scale, self.points[1] * scale)
     }
         
     // Cohen–Sutherland clipping algorithm clips a line from against a rectangle with 
@@ -151,6 +156,10 @@ impl Line3{
         (self[1] - self[0]).length()
     }
 
+    pub fn scale(&self, scale: f64) -> Line3 {
+        Line3::new(self.points[0] * scale, self.points[1] * scale)
+    }
+
     pub fn plane_intersection(&self, plane: Plane) -> Option<LinePlaneIntersection> {
         let dir = self[1] - self[0];
         let plane_normal = plane.orientation.w;
@@ -226,7 +235,8 @@ impl WireFrame for Line3 {
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
     {
         if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
-            Some(projected_line.bresenham())
+            let scale = cam.resoloution.1 as f64/ cam.vertical[1] as f64;
+            Some(projected_line.scale(scale).bresenham())
         }
         else {
             return None
@@ -234,7 +244,8 @@ impl WireFrame for Line3 {
     }
 }
 
-pub trait WireFrame{
+#[enum_dispatch] 
+pub trait WireFrame: Send + Sync{
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
 }
 
@@ -242,7 +253,7 @@ impl<W> WireFrame for Vec<W> where W: WireFrame {
     fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         let mut pixels: Vec<[usize; 2]> = Default::default();
         for object in self {
-            if let Some(new_pixels) = object.draw_wireframe(cam) {
+            if let Some(mut new_pixels) = object.draw_wireframe(cam) {
                 pixels.append(&mut new_pixels);
             }
         }
@@ -273,7 +284,9 @@ mod tests {
         let focus_dist = 1.0;
         let aperture = 0.0;
         let aspect_ratio = 1.0;
-        let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov, aspect_ratio, aperture, focus_dist };
+        let image_height = 100;
+        let image_width = 100;
+        let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov, aspect_ratio, aperture, focus_dist, image_height, image_width };
         let cam = Camera::new(camera_settings);
         
         let line = Line3::new(Point3::new(1.0, 1.0, 1.0), Point3::new(1.0, 5.0, 4.0));
