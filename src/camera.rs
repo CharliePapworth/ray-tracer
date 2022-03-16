@@ -25,7 +25,7 @@ pub struct CameraSettings {
     pub focus_dist: f64
 }
 
-#[derive (Copy, Clone, Default)]
+#[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Orientation{
     pub u: Vec3,
     pub v: Vec3,

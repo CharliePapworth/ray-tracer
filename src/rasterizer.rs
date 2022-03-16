@@ -1,12 +1,15 @@
-use std::ops::Index;
+use core::time;
+use std::ops::{Index, IndexMut};
 
 use line_drawing::Bresenham;
 
-use crate::vec::{Vec2, Vec3, Point3};
+use crate::vec::{Vec2, Vec3, Point3, Point2};
 use crate::camera::{Camera, CameraSettings, Orientation};
 
 
 pub type OutCode = i8;
+
+#[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Plane {
     orientation: Orientation,
     origin: Point3
@@ -127,9 +130,16 @@ impl Index<usize> for Line2 {
     }
 }
 
+#[derive (PartialEq, Debug, Copy, Clone)]
+
+pub enum LinePlaneIntersection {
+    Line(Line3),
+    Point(Point3)
+}
+
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Line3{
-    points: [Vec3; 2]
+    pub points: [Vec3; 2]
 }
 
 impl Line3{
@@ -137,11 +147,57 @@ impl Line3{
         Line3 {points: [start, end]}
     }
 
+    pub fn length(&self) -> f64 {
+        (self[1] - self[0]).length()
+    }
+
+    pub fn plane_intersection(&self, plane: Plane) -> Option<LinePlaneIntersection> {
+        let dir = self[1] - self[0];
+        let plane_normal = plane.orientation.w;
+
+        //Check if line is parallel to plane
+        if dir.dot(plane_normal) == 0.0 {
+            //If so, check if the line lies in the plane.
+            if (plane.origin - self[0]).dot(plane_normal) == 0.0 {
+                return Some(LinePlaneIntersection::Line(*self))
+            } else {
+                return None
+            }
+        } 
+
+        //Check if the intersection point lies within the bounds of the line
+        let time_of_intersection = (plane.origin - self[0]).dot(plane_normal) / (dir.dot(plane_normal));
+        if time_of_intersection > self.length() {
+            return None
+        }
+        let intersection_point = self[0] + time_of_intersection * dir;
+        Some(LinePlaneIntersection::Point(intersection_point))
+    }
+
     pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
         let mut points: [Vec2; 2] = Default::default();
         let normal = plane.orientation.w;
+        let mut visible_line = self.clone();
 
-        //Project on to the infinite plane first
+        //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
+        if let Some(intersection) = self.plane_intersection(plane){
+            match intersection {
+                LinePlaneIntersection::Point(intersection_point) => {
+                    //Find the point which is out of view
+                    for i in 0..2 {
+                        let line = Line3::new(self[i], camera_origin);
+                        if line.plane_intersection(plane).is_none() {
+                            visible_line[i] = intersection_point;
+                            break;
+                        }
+                    }
+
+                }
+                _ => {}
+            }
+        }
+        
+        //Project the remaining line on the plane
         for i in 0..2 as usize{
             let dir = self[i] - camera_origin;
             let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
@@ -158,6 +214,11 @@ impl Index<usize> for Line3 {
     type Output = Vec3;
     fn index(&self, index: usize) -> &Self::Output {
         &self.points[index]
+    }
+}
+impl IndexMut<usize> for Line3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.points[index]
     }
 }
 

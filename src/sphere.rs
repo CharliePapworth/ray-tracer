@@ -1,3 +1,5 @@
+use line_drawing::{BresenhamCircle, Midpoint, Bresenham};
+
 use crate::rasterizer::*;
 use crate::vec::{Vec2, Point2, Vec3, Point3};
 use crate::ray::*;
@@ -80,6 +82,22 @@ impl Hit for Sphere{
         let output_box = Aabb::new(self.center - Vec3::new(self.radius, self.radius, self.radius),
                                    self.center + Vec3::new(self.radius, self.radius, self.radius));
         Some(output_box)
+    }
+}
+
+impl WireFrame for Sphere {
+    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
+        if let Some(circle) = self.project(cam) {
+            let x = circle.center.x().round() as i32;
+            let y = circle.center.y().round() as i32;
+            let radius = circle.radius.round() as i32;
+            let pixels = BresenhamCircle::new(x, y, radius).filter(|(x, y)| *x > 0 && *x < cam.horizontal[0] as i32 && *y > 0 && *y < cam.vertical[1] as i32)
+                                                                                             .map(|(x, y)| [x as usize, y as usize]).collect();
+                                                                                            
+            Some(pixels)
+        } else {
+            None
+        }
     }
 }
 
