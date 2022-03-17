@@ -23,7 +23,7 @@ mod scenes;
 mod primitive;
 mod gui;
 mod threads;
-mod rasterizer;
+mod geometry;
 
 use eframe::egui::Vec2;
 use primitive::Primitive;
@@ -35,7 +35,7 @@ use crate::camera::*;
 use crate::util::*;
 use crate::gui::*;
 use crate::threads::*;
-use crate::rasterizer::*;
+use crate::geometry::*;
 
 use std::f64::INFINITY;
 use std::fs::File;

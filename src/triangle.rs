@@ -1,7 +1,7 @@
 use crate::camera::Camera;
-use crate::rasterizer::Line3;
-use crate::rasterizer::Plane;
-use crate::rasterizer::Outline;
+use crate::geometry::Line3;
+use crate::geometry::Plane;
+use crate::geometry::Outline;
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;

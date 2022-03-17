@@ -1,7 +1,7 @@
 extern crate fastrand;
 
 use crate::camera::Camera;
-use crate::rasterizer::Outline;
+use crate::geometry::Outline;
 use crate::vec::*;
 use crate::ray::*;
 use crate::bvh::*;

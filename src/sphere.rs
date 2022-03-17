@@ -1,6 +1,6 @@
 use line_drawing::{BresenhamCircle, Midpoint, Bresenham};
 
-use crate::rasterizer::*;
+use crate::geometry::*;
 use crate::vec::{Vec2, Point2, Vec3, Point3};
 use crate::ray::*;
 use crate::traceable::*;

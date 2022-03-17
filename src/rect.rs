@@ -1,5 +1,5 @@
 use crate::camera::Camera;
-use crate::rasterizer::{Line3, Outline};
+use crate::geometry::{Line3, Outline};
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
