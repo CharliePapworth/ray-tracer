@@ -12,8 +12,8 @@ pub type OutCode = i8;
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Plane {
-    orientation: Orientation,
-    origin: Point3
+    pub orientation: Orientation,
+    pub origin: Point3
 }
 
 impl Plane {
@@ -23,7 +23,7 @@ impl Plane {
 }
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Line2 {
-    points: [Vec2; 2]
+    pub points: [Vec2; 2]
 }
 
 impl Line2 {
@@ -186,25 +186,25 @@ impl Line3{
     pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
         let mut points: [Vec2; 2] = Default::default();
         let normal = plane.orientation.w;
-        let mut visible_line = self.clone();
+        //let mut visible_line = self.clone();
 
-        //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
-        if let Some(intersection) = self.plane_intersection(plane){
-            match intersection {
-                LinePlaneIntersection::Point(intersection_point) => {
-                    //Find the point which is out of view
-                    for i in 0..2 {
-                        let line = Line3::new(self[i], camera_origin);
-                        if line.plane_intersection(plane).is_none() {
-                            visible_line[i] = intersection_point;
-                            break;
-                        }
-                    }
+        // //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
+        // if let Some(intersection) = self.plane_intersection(plane){
+        //     match intersection {
+        //         LinePlaneIntersection::Point(intersection_point) => {
+        //             //Find the point which is out of view
+        //             for i in 0..2 {
+        //                 let line = Line3::new(self[i], camera_origin);
+        //                 if line.plane_intersection(plane).is_none() {
+        //                     visible_line[i] = intersection_point;
+        //                     break;
+        //                 }
+        //             }
 
-                }
-                _ => {}
-            }
-        }
+        //         }
+        //         _ => {}
+        //     }
+        // }
         
         //Project the remaining line on the plane
         for i in 0..2 as usize{
@@ -235,7 +235,7 @@ impl Outline for Line3 {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
     {
         if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
-            let scale = cam.resoloution.1 as f64/ cam.vertical[1] as f64;
+            let scale = cam.resoloution.1 as f64/ cam.vertical.length() as f64;
             if let Some(clipped_line) = projected_line.clip(0.0, cam.horizontal.length(), 0.0, cam.vertical.length()) {
                 return Some(clipped_line.scale(scale).bresenham());
             }

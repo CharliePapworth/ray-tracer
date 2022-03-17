@@ -41,7 +41,7 @@ impl Sphere{
     }
 
     pub fn project(&self, cam: &Camera) -> Option<Circle>{
-        let point = self.center + self.radius * Vec3::new(1.0, 0.0, 0.0);
+        let point = self.center + self.radius * cam.orientation.u;
         let line = Line3::new(self.center, point);
         if let Some(projected_line) = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
             let projected_origin = projected_line[0];
@@ -92,7 +92,7 @@ impl Hit for Sphere{
 impl Outline for Sphere {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         if let Some(mut circle) = self.project(cam) {
-            let scale = cam.resoloution.1 as f64/ cam.vertical[1] as f64;
+            let scale = cam.resoloution.1 as f64/ cam.vertical.length();
             circle = circle.scale(scale);
             let x = circle.center.x().round() as i32;
             let y = circle.center.y().round() as i32;
