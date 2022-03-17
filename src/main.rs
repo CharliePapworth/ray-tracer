@@ -73,7 +73,7 @@ fn main(){
     let cam = Camera::new(camera_settings);
     
     //Package data
-    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, mode: DrawMode::Raytrace, run: true, done: false, camera_settings};
+    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, mode: DrawMode::Rasterize, run: true, done: false, camera_settings};
     let static_data = Arc::new(StaticData { world, primitives, background, cam });
 
     //Threading

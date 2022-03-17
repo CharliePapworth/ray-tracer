@@ -44,8 +44,8 @@ impl Camera {
         let viewport_width = settings.aspect_ratio * viewport_height;
 
         let w = (settings.look_from - settings.look_at).unit_vector();
-        let u = Vec3::cross(settings.v_up, w);
-        let v = Vec3::cross(w, u);
+        let u = Vec3::cross(settings.v_up, w).unit_vector();
+        let v = Vec3::cross(w, u).unit_vector();
         let orientation = Orientation::new(u,v,w);
 
         let origin = settings.look_from;

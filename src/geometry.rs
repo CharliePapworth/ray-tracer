@@ -20,6 +20,10 @@ impl Plane {
     pub fn new(orientation: Orientation, origin: Point3) -> Plane {
         Plane { orientation, origin }
     }
+
+    pub fn get_coefficients(&self) -> (f64, f64, f64, f64) {
+        (self.orientation.w[0], self.orientation.w[1], self.orientation.w[2], - self.orientation.w.dot(self.origin))
+    }
 }
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Line2 {
@@ -184,9 +188,10 @@ impl Line3{
     }
 
     pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
+        
         let mut points: [Vec2; 2] = Default::default();
         let normal = plane.orientation.w;
-        //let mut visible_line = self.clone();
+        let mut visible_line = self.clone();
 
         // //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
         // if let Some(intersection) = self.plane_intersection(plane){
@@ -205,10 +210,11 @@ impl Line3{
         //         _ => {}
         //     }
         // }
+
         
         //Project the remaining line on the plane
         for i in 0..2 as usize{
-            let dir = self[i] - camera_origin;
+            let dir = visible_line[i] - camera_origin;
             let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
             let projection_3d = camera_origin + dir * t;
             let relative_point = projection_3d - plane.origin;
@@ -240,7 +246,6 @@ impl Outline for Line3 {
                 return Some(clipped_line.scale(scale).bresenham());
             }
         }
-       
         None
     }
 }

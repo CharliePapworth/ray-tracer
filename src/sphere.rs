@@ -1,6 +1,6 @@
 use line_drawing::{BresenhamCircle, Midpoint, Bresenham};
 
-use crate::geometry::*;
+use crate::{geometry::*, camera};
 use crate::vec::{Vec2, Point2, Vec3, Point3};
 use crate::ray::*;
 use crate::traceable::*;
@@ -91,6 +91,17 @@ impl Hit for Sphere{
 
 impl Outline for Sphere {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
+        //Check if the sphere is at least partially in front of the camera window
+        let camera_plane = Plane::new(cam.orientation, cam.origin);
+        let in_front = self.center.is_in_front(camera_plane);
+        let distance_to_plane = self.center.distance_to_plane(camera_plane);
+        if self.radius == 1000.0 {
+            let a = 1;
+        }
+        if !self.center.is_in_front(camera_plane) && self.radius < self.center.distance_to_plane(camera_plane) {
+            return None;
+        }
+
         if let Some(mut circle) = self.project(cam) {
             let scale = cam.resoloution.1 as f64/ cam.vertical.length();
             circle = circle.scale(scale);
