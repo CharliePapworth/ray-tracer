@@ -76,7 +76,7 @@ impl epi::App for Gui {
         }
 
         if user_input.key_down(egui::Key::A) {
-            right += 1.0;
+            right -= 1.0;
         }
 
         if user_input.key_down(egui::Key::S) {
@@ -84,14 +84,20 @@ impl epi::App for Gui {
         }
 
         if user_input.key_down(egui::Key::D) {
-            right -= 1.0;
+            right += 1.0;
         }
 
         if up != 0.0 || right != 0.0 {
-            self.input_data.camera_settings.look_from[0] = self.input_data.camera_settings.look_from[0] + up * self.camera_speed;
-            self.input_data.camera_settings.look_at[0] = self.input_data.camera_settings.look_at[0] + up * self.camera_speed;
-            self.input_data.camera_settings.look_from[2] = self.input_data.camera_settings.look_from[2] + right * self.camera_speed;
-            self.input_data.camera_settings.look_at[2] = self.input_data.camera_settings.look_at[2] + right * self.camera_speed;
+            let settings = self.input_data.camera_settings;
+            let w = (settings.look_from - settings.look_at).unit_vector();
+            let u = Vec3::cross(settings.v_up, w);
+            self.input_data.camera_settings.look_from = self.input_data.camera_settings.look_from + up * w * self.camera_speed;
+            self.input_data.camera_settings.look_at = self.input_data.camera_settings.look_at + up * w * self.camera_speed;
+            self.input_data.camera_settings.look_from = self.input_data.camera_settings.look_from + right * u * self.camera_speed;
+            self.input_data.camera_settings.look_at = self.input_data.camera_settings.look_at + right * u * self.camera_speed;
+
+
+
             self.input_data.done = false;
             self.transmit_input_data();
             self.refresh_image();
