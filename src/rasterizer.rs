@@ -212,7 +212,7 @@ impl Line3{
             let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
             let projection_3d = camera_origin + dir * t;
             let relative_point = projection_3d - plane.origin;
-            points[i] = Vec2::new(relative_point.dot(plane.orientation.v), relative_point.dot(plane.orientation.u));
+            points[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
         }
 
         Some(Line2::new(points[0], points[1]))
@@ -236,11 +236,12 @@ impl WireFrame for Line3 {
     {
         if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
             let scale = cam.resoloution.1 as f64/ cam.vertical[1] as f64;
-            Some(projected_line.scale(scale).bresenham())
+            if let Some(clipped_line) = projected_line.clip(0.0, cam.horizontal.length(), 0.0, cam.vertical.length()) {
+                return Some(clipped_line.scale(scale).bresenham());
+            }
         }
-        else {
-            return None
-        }
+       
+        None
     }
 }
 
@@ -293,5 +294,16 @@ mod tests {
         let projected_line = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin).unwrap();
         assert!((projected_line[0] - Vec2::new(11.0, 11.0)).length() < 0.00001);
         assert!((projected_line[1] - Vec2::new(15.0, 14.0)).length() < 0.00001);
+    }
+
+    #[test]
+    fn test_bresenham() {
+        let line = Line2::new(Point2::new(0.0, 0.0), Point2::new(10.0, 0.0));
+        let pixels = line.bresenham();
+        
+        assert_eq!(pixels.len(), 11);
+        for i in 0..11 as usize {
+            assert_eq!(pixels[i], [i, 0]);
+        }
     }
 }

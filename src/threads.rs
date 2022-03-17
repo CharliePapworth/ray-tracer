@@ -92,7 +92,7 @@ where H: Hit + 'static, W: WireFrame + 'static {
     let cam = Camera::new(input_data.camera_settings);
     if let Some(pixels) = static_data.primitives.draw_wireframe(&cam) {
         for pixel in pixels {
-            let pixel_index = (pixel[1] * image_width + (image_height - 1 - pixel[0])) as usize;
+            let pixel_index = ((image_height - 1 - pixel[1]) * image_width + pixel[0]) as usize;
             pixel_colors[pixel_index] = Color::new(1.0, 1.0, 1.0);
         }
     }
