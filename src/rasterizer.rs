@@ -231,8 +231,8 @@ impl IndexMut<usize> for Line3 {
     }
 }
 
-impl WireFrame for Line3 {
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
+impl Outline for Line3 {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
     {
         if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
             let scale = cam.resoloution.1 as f64/ cam.vertical[1] as f64;
@@ -246,15 +246,15 @@ impl WireFrame for Line3 {
 }
 
 #[enum_dispatch] 
-pub trait WireFrame: Send + Sync{
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
+pub trait Outline: Send + Sync{
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
 }
 
-impl<W> WireFrame for Vec<W> where W: WireFrame {
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+impl<W> Outline for Vec<W> where W: Outline {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         let mut pixels: Vec<[usize; 2]> = Default::default();
         for object in self {
-            if let Some(mut new_pixels) = object.draw_wireframe(cam) {
+            if let Some(mut new_pixels) = object.outline(cam) {
                 pixels.append(&mut new_pixels);
             }
         }

@@ -18,6 +18,10 @@ impl Circle {
     pub fn new(center: Point2, radius: f64) -> Circle {
         Circle {center, radius}
     }
+
+    pub fn scale(&self, scale: f64) -> Circle {
+        Circle::new(self.center * scale, self.radius * scale)
+    }
 }
 
 #[derive (Copy, Clone)]
@@ -85,13 +89,15 @@ impl Hit for Sphere{
     }
 }
 
-impl WireFrame for Sphere {
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
-        if let Some(circle) = self.project(cam) {
+impl Outline for Sphere {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
+        if let Some(mut circle) = self.project(cam) {
+            let scale = cam.resoloution.1 as f64/ cam.vertical[1] as f64;
+            circle = circle.scale(scale);
             let x = circle.center.x().round() as i32;
             let y = circle.center.y().round() as i32;
             let radius = circle.radius.round() as i32;
-            let pixels = BresenhamCircle::new(x, y, radius).filter(|(x, y)| *x > 0 && *x < cam.horizontal[0] as i32 && *y > 0 && *y < cam.vertical[1] as i32)
+            let pixels = BresenhamCircle::new(x, y, radius).filter(|(x, y)| *x > 0 && *x < (cam.horizontal[0] * scale) as i32 && *y > 0 && *y < (cam.vertical[1] * scale) as i32)
                                                                                              .map(|(x, y)| [x as usize, y as usize])
                                                                                              .collect();                            
             Some(pixels)

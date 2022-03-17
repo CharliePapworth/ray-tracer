@@ -10,7 +10,7 @@ use crate::enum_dispatch::*;
 
 
 #[enum_dispatch(Hit)]
-#[enum_dispatch(WireFrame)]
+#[enum_dispatch(Outline)]
 #[derive (Copy, Clone)]
 pub enum Primitive {
     Triangle(Triangle),

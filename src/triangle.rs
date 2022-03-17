@@ -1,7 +1,7 @@
 use crate::camera::Camera;
 use crate::rasterizer::Line3;
 use crate::rasterizer::Plane;
-use crate::rasterizer::WireFrame;
+use crate::rasterizer::Outline;
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
@@ -143,15 +143,15 @@ impl Hit for Triangle {
     }
 }
 
-impl WireFrame for Triangle {
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+impl Outline for Triangle {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
 
         let line_1 = Line3::new(self.vertices[1], self.vertices[0]);
         let line_2 = Line3::new(self.vertices[2],self.vertices[0]);
         let line_3 = Line3::new(self.vertices[2],self.vertices[1]);
 
         let lines = vec!(line_1, line_2, line_3);
-        lines.draw_wireframe(cam)
+        lines.outline(cam)
     }
 }
 

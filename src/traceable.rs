@@ -1,7 +1,7 @@
 extern crate fastrand;
 
 use crate::camera::Camera;
-use crate::rasterizer::WireFrame;
+use crate::rasterizer::Outline;
 use crate::vec::*;
 use crate::ray::*;
 use crate::bvh::*;
@@ -224,9 +224,9 @@ impl Hit for TraceableList{
     }
 }
 
-impl WireFrame for TraceableList {
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
-        self.list.draw_wireframe(cam)
+impl Outline for TraceableList {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+        self.list.outline(cam)
     }
 }
 

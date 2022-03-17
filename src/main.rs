@@ -45,7 +45,7 @@ use std::sync::Arc;
 use std::sync::mpsc::*;
 
 #[derive (Clone)]
-pub struct StaticData<H, W> where H: Hit, W: WireFrame{
+pub struct StaticData<H, W> where H: Hit, W: Outline{
     pub world: H,
     pub primitives: W,
     pub background: Color,

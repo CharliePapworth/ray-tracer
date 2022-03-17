@@ -1,5 +1,5 @@
 use crate::camera::Camera;
-use crate::rasterizer::{Line3, WireFrame};
+use crate::rasterizer::{Line3, Outline};
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
@@ -120,11 +120,11 @@ impl Hit for Rect {
     }
 }
 
-impl WireFrame for Rect {
-    fn draw_wireframe(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
+impl Outline for Rect {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let mut pixels: Vec<[usize; 2]> = vec!();
         let lines = self.get_lines().to_vec();
-        lines.draw_wireframe(cam)
+        lines.outline(cam)
     }
 }
 
