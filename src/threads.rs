@@ -92,7 +92,7 @@ where H: Hit + 'static, W: WireFrame + 'static {
     let cam = Camera::new(input_data.camera_settings);
     if let Some(pixels) = static_data.primitives.draw_wireframe(&cam) {
         for pixel in pixels {
-            let pixel_index = (pixel[1] * image_width + pixel[0]) as usize;
+            let pixel_index = (pixel[1] * image_width + (image_height - 1 - pixel[0])) as usize;
             pixel_colors[pixel_index] = Color::new(1.0, 1.0, 1.0);
         }
     }
@@ -130,7 +130,7 @@ pub fn raytrace<H, W>(mut input_data: InputData, static_data: Arc<StaticData<H, 
     for j in 0..image_height{
         for i in 0..image_width{
                 let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
-                let v = (rand_double(0.0, 1.0) + (image_width - j) as f64)/((image_width - 1) as f64);
+                let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
                 let r = cam.get_ray(u,v);
                 let pixel_index = (j*image_width + i) as usize;
                 pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, static_data.background, &static_data.world, input_data.max_depth);
