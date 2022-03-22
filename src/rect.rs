@@ -46,22 +46,27 @@ impl Rect {
         let mut lines: [Line3; 4] = Default::default();
         let mut corners: [Point3; 4] = Default::default();
         let indices = self.axes_indices();
+        let normal_axis = self.unused_axis_index();
 
         //(min, min)
         corners[0][indices.0] = self.corner(0);
         corners[0][indices.1] = self.corner(2);
+        corners[0][normal_axis] = self.k;
 
         //(max, min)
         corners[2][indices.0] = self.corner(1);
         corners[2][indices.1] = self.corner(2);
+        corners[2][normal_axis] = self.k;
 
         //(min, max)
         corners[1][indices.0] = self.corner(0);
         corners[1][indices.1] = self.corner(3);
+        corners[1][normal_axis] = self.k;
 
         //(max, max)
         corners[3][indices.0] = self.corner(1);
         corners[3][indices.1] = self.corner(3);
+        corners[3][normal_axis] = self.k;
 
         lines[0].points[0] = corners[0];
         lines[0].points[1] = corners[1];
