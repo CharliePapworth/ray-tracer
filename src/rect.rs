@@ -48,20 +48,20 @@ impl Rect {
         let indices = self.axes_indices();
 
         //(min, min)
-        corners[indices.0][0] = self.corner(0);
-        corners[indices.1][0] = self.corner(2);
+        corners[0][indices.0] = self.corner(0);
+        corners[0][indices.1] = self.corner(2);
 
         //(max, min)
-        corners[indices.0][2] = self.corner(1);
-        corners[indices.1][2] = self.corner(2);
+        corners[2][indices.0] = self.corner(1);
+        corners[2][indices.1] = self.corner(2);
 
         //(min, max)
-        corners[indices.0][1] = self.corner(0);
-        corners[indices.1][1] = self.corner(3);
+        corners[1][indices.0] = self.corner(0);
+        corners[1][indices.1] = self.corner(3);
 
         //(max, max)
-        corners[indices.0][3] = self.corner(1);
-        corners[indices.1][3] = self.corner(3);
+        corners[3][indices.0] = self.corner(1);
+        corners[3][indices.1] = self.corner(3);
 
         lines[0].points[0] = corners[0];
         lines[0].points[1] = corners[1];
@@ -69,11 +69,11 @@ impl Rect {
         lines[1].points[0] = corners[0];
         lines[1].points[1] = corners[2];
 
-        lines[1].points[0] = corners[3];
-        lines[1].points[1] = corners[1];
+        lines[2].points[0] = corners[3];
+        lines[2].points[1] = corners[1];
 
-        lines[1].points[0] = corners[3];
-        lines[1].points[1] = corners[2];
+        lines[3].points[0] = corners[3];
+        lines[3].points[1] = corners[2];
 
         lines
     }
@@ -122,7 +122,6 @@ impl Hit for Rect {
 
 impl Outline for Rect {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
-        let mut pixels: Vec<[usize; 2]> = vec!();
         let lines = self.get_lines().to_vec();
         lines.outline(cam)
     }

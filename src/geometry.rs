@@ -67,7 +67,7 @@ impl Line2 {
         let mut outcode_1 = point_1.compute_outcode(min_x, max_x, min_y, max_y);
 
         loop {
-            if !(outcode_0 | outcode_1) != 0 {
+            if outcode_0 == 0 && outcode_1 == 0 {
                 // bitwise OR is 0: both points inside window; trivially accept and exit loop
                 return Some(Line2::new(point_0, point_1));
             } else if outcode_0 & outcode_1 != 0 {
@@ -310,5 +310,14 @@ mod tests {
         for i in 0..11 as usize {
             assert_eq!(pixels[i], [i, 0]);
         }
+    }
+
+    #[test]
+    fn test_clip() {
+        let start = Point2::new(-1.0, -1.0);
+        let end = Point2::new(5.0, 5.0);
+        let line = Line2::new(start, end);
+        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        assert_eq!(clipped_line.points[0], Point2::new(0.0, 0.0))
     }
 }
