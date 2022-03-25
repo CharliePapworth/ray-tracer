@@ -1,5 +1,5 @@
 use core::time;
-use std::ops::{Index, IndexMut};
+use std::ops::{Index, IndexMut, RangeBounds};
 
 use crate::enum_dispatch::*;
 use line_drawing::Bresenham;
@@ -70,7 +70,7 @@ impl Line2 {
             if outcode_0 == 0 && outcode_1 == 0 {
                 // bitwise OR is 0: both points inside window; trivially accept and exit loop
                 return Some(Line2::new(point_0, point_1));
-            } else if outcode_0 & outcode_1 != 0 {
+            } else if (outcode_0 & outcode_1) != 0 {
                 // bitwise AND is not 0: both points share an outside zone (LEFT, RIGHT, TOP,
                 // or BOTTOM), so both must be outside window; exit loop (accept is false)
                 return None;
@@ -180,7 +180,7 @@ impl Line3{
 
         //Check if the intersection point lies within the bounds of the line
         let time_of_intersection = (plane.origin - self[0]).dot(plane_normal) / (dir.dot(plane_normal));
-        if time_of_intersection > self.length() {
+        if time_of_intersection < 0.0 || time_of_intersection > self.length()  {
             return None
         }
         let intersection_point = self[0] + time_of_intersection * dir;
@@ -193,29 +193,37 @@ impl Line3{
         let normal = plane.orientation.w;
         let mut visible_line = self.clone();
 
-        // //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
-        // if let Some(intersection) = self.plane_intersection(plane){
-        //     match intersection {
-        //         LinePlaneIntersection::Point(intersection_point) => {
-        //             //Find the point which is out of view
-        //             for i in 0..2 {
-        //                 let line = Line3::new(self[i], camera_origin);
-        //                 if line.plane_intersection(plane).is_none() {
-        //                     visible_line[i] = intersection_point;
-        //                     break;
-        //                 }
-        //             }
+        //Check if the line lies behind the camera origin
+        let dividing_plane = Plane::new(plane.orientation, camera_origin);
+        if !visible_line[0].is_in_front(dividing_plane) && !visible_line[1].is_in_front(dividing_plane) {
+            return None
+        }
 
-        //         }
-        //         _ => {}
-        //     }
-        // }
+        //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
+        if let Some(intersection) = self.plane_intersection(dividing_plane){
+            match intersection {
+                LinePlaneIntersection::Point(intersection_point) => {
+                    //Find the point which is out of view
+                    for i in 0..2 {
+                        if !self[i].is_in_front(dividing_plane) {
+                            visible_line[i] = intersection_point;
+                            break;
+                        }
+                    }
+
+                }
+                _ => {}
+            }
+        }
 
         
-        //Project the remaining line on the plane
+        //Project the remaining line onto the plane
         for i in 0..2 as usize{
             let dir = visible_line[i] - camera_origin;
             let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
+            if t < 0f64 {
+                let a = 1;
+            }
             let projection_3d = camera_origin + dir * t;
             let relative_point = projection_3d - plane.origin;
             points[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
@@ -242,7 +250,7 @@ impl Outline for Line3 {
     {
         if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
             let scale = cam.resoloution.1 as f64/ cam.vertical.length() as f64;
-            if let Some(clipped_line) = projected_line.clip(0.0, cam.horizontal.length(), 0.0, cam.vertical.length()) {
+            if let Some(clipped_line) = projected_line.clip(0.0, cam.horizontal.length() - 1.0 / scale, 0.0, cam.vertical.length() - 1.0 / scale) {
                 return Some(clipped_line.scale(scale).bresenham());
             }
         }
@@ -314,10 +322,42 @@ mod tests {
 
     #[test]
     fn test_clip() {
+
+        //Case 1: Bottom left corner
         let start = Point2::new(-1.0, -1.0);
         let end = Point2::new(5.0, 5.0);
         let line = Line2::new(start, end);
         let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
-        assert_eq!(clipped_line.points[0], Point2::new(0.0, 0.0))
+        assert_eq!(clipped_line.points[0], Point2::new(0.0, 0.0));
+
+        
+        //Case 2: Left-hand side
+        let start = Point2::new(-1.0, 5.0);
+        let end = Point2::new(5.0, 5.0);
+        let line = Line2::new(start, end);
+        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        assert_eq!(clipped_line.points[0], Point2::new(0.0, 5.0));
+
+                
+        //Case 3: Top
+        let start = Point2::new(5.0, 15.0);
+        let end = Point2::new(5.0, 5.0);
+        let line = Line2::new(start, end);
+        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        assert_eq!(clipped_line.points[0], Point2::new(5.0, 10.0));
+
+        //Case 4: right-hand side
+        let start = Point2::new(15.0, 5.0);
+        let end = Point2::new(5.0, 5.0);
+        let line = Line2::new(start, end);
+        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        assert_eq!(clipped_line.points[0], Point2::new(10.0, 5.0));
+
+        //Case 5: Bottom
+        let start = Point2::new(5.0, -5.0);
+        let end = Point2::new(5.0, 5.0);
+        let line = Line2::new(start, end);
+        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        assert_eq!(clipped_line.points[0], Point2::new(5.0, 0.0));
     }
 }

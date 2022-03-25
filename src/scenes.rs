@@ -70,7 +70,6 @@ pub fn light_test() -> (TraceableList, Color, Point3, Point3) {
     let _rect = Box::new(Rect::new(RectAxes::XY, -1.0, 2.0, 1.0, 3.0, 4.0, diff_light));
     world.add(ground);
     world.add(sphere);
-    //world.add(rect);
     
     (world, background, look_from, look_at)
 
@@ -96,6 +95,22 @@ pub fn triangle_test() -> (TraceableList, Color, Point3, Point3) {
     
     (world, background, look_from, look_at)
 
+}
+
+pub fn rasterizer_test() -> (TraceableList, Color, Point3, Point3) {
+    let mut world = TraceableList::new();
+    let background = Color::new(0.9, 0.9, 0.9);
+    let look_from = Point3::new(0.0, 0.0, 26.0);
+    let look_at = Point3::new(0.0, 0.0, 0.0);
+    let v0 = Vec3::new(-2.0, 0.1, -1.0);
+    let v1 = Vec3::new(2.0, 0.1, 3.0);
+    let v2 = Vec3::new(0.0, 2.1, 0.0);
+    let norms = [Vec3::new(0.0, 0.0, 1.0); 3];
+    let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
+    let tri = Primitive::Triangle(Triangle::new([v0, v1, v2], norms, mat));
+    world.add(tri);
+    
+    (world, background, look_from, look_at)
 }
 
 

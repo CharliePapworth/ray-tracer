@@ -55,7 +55,7 @@ pub struct StaticData<H, W> where H: Hit, W: Outline{
 fn main(){
 
     //Scene
-    let (primitives, background, look_from, look_at) = scenes::sphere_world();
+    let (primitives, background, look_from, look_at) = scenes::obj_test();
     let world = primitives.clone().to_bvh();
 
     //Image

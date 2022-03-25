@@ -95,9 +95,7 @@ impl Outline for Sphere {
         let camera_plane = Plane::new(cam.orientation, cam.origin);
         let in_front = self.center.is_in_front(camera_plane);
         let distance_to_plane = self.center.distance_to_plane(camera_plane);
-        if self.radius == 1000.0 {
-            let a = 1;
-        }
+        
         if !self.center.is_in_front(camera_plane) && self.radius < self.center.distance_to_plane(camera_plane) {
             return None;
         }

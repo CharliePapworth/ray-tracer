@@ -92,7 +92,7 @@ where H: Hit + 'static, W: Outline + 'static {
     let cam = Camera::new(input_data.camera_settings);
     if let Some(pixels) = static_data.primitives.outline(&cam) {
         for pixel in pixels {
-            let pixel_index = ((image_height - pixel[1]) * image_width + pixel[0]) as usize;
+            let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];
             pixel_colors[pixel_index] = Color::new(1.0, 1.0, 1.0);
         }
     }

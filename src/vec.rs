@@ -236,39 +236,6 @@ impl Vec3{
         }
         self + offset
     }
-
-    pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Point2> {
-        let normal = plane.orientation.w;
-        //let mut visible_line = self.clone();
-
-        // //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
-        // if let Some(intersection) = self.plane_intersection(plane){
-        //     match intersection {
-        //         LinePlaneIntersection::Point(intersection_point) => {
-        //             //Find the point which is out of view
-        //             for i in 0..2 {
-        //                 let line = Line3::new(self[i], camera_origin);
-        //                 if line.plane_intersection(plane).is_none() {
-        //                     visible_line[i] = intersection_point;
-        //                     break;
-        //                 }
-        //             }
-
-        //         }
-        //         _ => {}
-        //     }
-        // }
-        
-        //Project the point on to the plane
-        let dir = self - camera_origin;
-        let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
-        let projection_3d = camera_origin + dir * t;
-        let relative_point = projection_3d - plane.origin;
-        let projected_point = Point2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
-        
-
-        Some(projected_point)
-    }
 }
 
 //Operator overloading using impl_ops
