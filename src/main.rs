@@ -76,7 +76,7 @@ fn main(){
     //Package data
     let image_settings = ImageSettings{ image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
-    let settings = Settings { raytrace_settings, image_settings, camera_settings, draw_mode: DrawMode::Rasterize };
+    let settings = Settings { raytrace_settings, image_settings, camera_settings, draw_mode: DrawMode::Raytrace, id: 1 };
     let static_data = Arc::new(StaticData { world, primitives, background, cam });
 
     //Threading

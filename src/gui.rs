@@ -12,7 +12,8 @@ pub struct Gui {
     pub labels: Labels,
     pub count: i32,
     pub camera_speed: f64,
-    pub expecting_data: bool
+    pub expecting_data: bool,
+    pub recieved_id: i32
 }
 
 impl Gui{
@@ -26,14 +27,16 @@ impl Gui{
         let samples_per_pixel = settings.raytrace_settings.samples_per_pixel;
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
-        let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); image_height * image_width], image_width: image_width, image_height: image_height, samples: 0};
+        let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); image_height * image_width], image_width: image_width, image_height: image_height, samples: 0, id: 0 };
         let count = 0;
         let expecting_data = true;
+        let recieved_id = 0;
 
-        Gui{ thread_output_rx, thread_input_tx, settings_lock, settings, image_data, labels, count, camera_speed, expecting_data }
+        Gui{ thread_output_rx, thread_input_tx, settings_lock, settings, image_data, labels, count, camera_speed, expecting_data, recieved_id }
     }
 
     pub fn transmit_settings(&mut self){
+        self.settings.id += 1;
         let mut settings = self.settings_lock.write().unwrap();
         *settings = self.settings;
        
@@ -222,7 +225,8 @@ impl epi::App for Gui {
         egui::CentralPanel::default().show(ctx, |ui| {
             let message_result = self.thread_output_rx.try_recv();
             if let Ok(message) = message_result {
-                if message.image_height != self.image_data.image_height || message.image_width != self.image_data.image_width {     
+                if message.id > self.recieved_id {  
+                    self.recieved_id = message.id;
                     self.image_data = message;
                 }
                 else if self.image_data.samples < self.settings.raytrace_settings.samples_per_pixel {
@@ -232,9 +236,7 @@ impl epi::App for Gui {
                     self.image_data.samples += message.samples;
                 }
                 if self.image_data.samples >= self.settings.raytrace_settings.samples_per_pixel {
-                    self.transmit_settings();
                     self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now});
-
                 }
             }
 

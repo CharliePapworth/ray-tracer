@@ -28,6 +28,7 @@ pub struct Settings {
     pub image_settings: ImageSettings,
     pub camera_settings: CameraSettings,
     pub draw_mode: DrawMode,
+    pub id: i32
 }
 
 
@@ -68,7 +69,8 @@ pub struct ImageData{
     pub pixel_colors: Vec<Color>,
     pub image_width: usize,
     pub image_height: usize,
-    pub samples: usize
+    pub samples: usize,
+    pub id: i32
 }
 
 pub fn initialise_threads<H, W>(settings_lock: Arc<RwLock<Settings>>, scene_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, num_threads: i32) -> Vec<Sender<Message>>
@@ -129,6 +131,7 @@ where H: Hit + 'static, W: Outline + 'static {
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
     let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); image_height * image_width];
+    let id = settings.id;
 
     let cam = Camera::new(settings.camera_settings);
     if let Some(pixels) = static_data.primitives.outline(&cam) {
@@ -138,7 +141,7 @@ where H: Hit + 'static, W: Outline + 'static {
         }
     }
 
-    let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
+    let output = ImageData{pixel_colors, image_width, image_height, samples: 1, id};
     thread_to_gui_tx.send(output);
  }
 
@@ -148,6 +151,8 @@ where H: Hit + 'static, W: Outline +'static {
 
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
+    let id = settings.id;
+
     let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); image_height * image_width];
     let cam = Camera::new(settings.camera_settings);
     for j in 0..image_height{
@@ -166,6 +171,6 @@ where H: Hit + 'static, W: Outline +'static {
         }
     }
 
-    let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
+    let output = ImageData{pixel_colors, image_width, image_height, samples: 1, id};
     thread_to_gui_tx.send(output);
 }
