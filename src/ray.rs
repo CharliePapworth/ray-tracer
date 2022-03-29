@@ -1,8 +1,14 @@
-use crate::vec::*;
+use crate::{vec::*, geometry::{Plane, LinePlaneIntersection}};
 #[derive (Copy, Clone, Default, PartialEq, Debug)]
 pub struct Ray{
     pub orig: Point3,
     pub dir: Vec3,
+}
+
+pub enum RayPlaneIntersection {
+    Ray(Ray),
+    Point(Point3),
+    None
 }
 
 impl Ray{
@@ -29,6 +35,25 @@ impl Ray{
             offset = -offset;
         }
         Ray::new(self.orig + offset, self.dir)
+    }
+
+    pub fn plane_intersection(&self, plane: Plane) -> RayPlaneIntersection {
+        let dir = self.dir;
+        let plane_normal = plane.orientation.w;
+
+        //Check if line is parallel to plane
+        if dir.dot(plane_normal) == 0.0 {
+            //If so, check if the line lies in the plane.
+            if (plane.origin - self.orig).dot(plane_normal) == 0.0 {
+                return RayPlaneIntersection::Ray(*self)
+            } else {
+                return RayPlaneIntersection::None
+            }
+        } 
+
+        let time_of_intersection = (plane.origin - self.orig).dot(plane_normal) / (dir.dot(plane_normal));
+        let intersection_point = self.orig + time_of_intersection * dir;
+        RayPlaneIntersection::Point(intersection_point)
     }
     
 

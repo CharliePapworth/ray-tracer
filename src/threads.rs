@@ -5,19 +5,57 @@ use crate::util::*;
 
 use std::sync::Arc;
 use std::sync::Barrier;
+use std::sync::RwLock;
 use std::sync::mpsc::*;
 use std::thread;
 
 #[derive (Copy, Clone)]
-pub struct InputData {
+pub struct ImageSettings {
     pub image_width: usize,
     pub image_height: usize,
-    pub samples_per_pixel: usize,
+}
+
+
+#[derive (Copy, Clone)]
+pub struct RayTraceSettings {
     pub max_depth: i32,
+    pub samples_per_pixel: usize
+}
+
+#[derive (Copy, Clone)]
+pub struct Settings {
+    pub raytrace_settings: RayTraceSettings,
+    pub image_settings: ImageSettings,
     pub camera_settings: CameraSettings,
-    pub mode: DrawMode,
-    pub run: bool,
-    pub done: bool
+    pub draw_mode: DrawMode,
+}
+
+
+
+#[derive (Copy, Clone)]
+pub enum Progress {
+    Complete,
+    Interrupted(Instructions)
+}
+
+#[derive (Copy, Clone)]
+pub enum Priority {
+    Now,
+    Next,
+    Eventually
+}
+
+#[derive (Copy, Clone)]
+pub enum Instructions {
+    ChangeSettings,
+    Pause,
+    Terminate
+}
+
+#[derive (Copy, Clone)]
+pub struct Message {
+    pub instructions: Instructions,
+    pub priority: Priority,
 }
 
 #[derive (Copy, Clone)]
@@ -33,63 +71,66 @@ pub struct ImageData{
     pub samples: usize
 }
 
-pub fn initialise_threads<H, W>(input_data: InputData, scene_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, num_threads: i32) -> Vec<Sender<InputData>>
+pub fn initialise_threads<H, W>(settings_lock: Arc<RwLock<Settings>>, scene_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, num_threads: i32) -> Vec<Sender<Message>>
 where H: Hit + 'static, W: Outline + 'static {
     let mut senders = vec![];
     let barrier = Arc::new(Barrier::new((num_threads) as usize));
     for _ in 0..num_threads {
         let barrier_clone = Arc::clone(&barrier);
         let thread_to_gui_tx = thread_to_gui_tx.clone();
-        let (gui_to_thread_tx, gui_to_thread_rx): (Sender<InputData>, Receiver<InputData>) = channel();
+        let (gui_to_thread_tx, gui_to_thread_rx): (Sender<Message>, Receiver<Message>) = channel();
         let static_data = Arc::clone(&scene_data);
-        thread::spawn(move || run_thread(input_data, static_data, thread_to_gui_tx,  gui_to_thread_rx, barrier_clone));
+        let settings_lock = Arc::clone(&settings_lock);
+        thread::spawn(move || run_thread(settings_lock, static_data, thread_to_gui_tx,  gui_to_thread_rx, barrier_clone));
         senders.push(gui_to_thread_tx);
     }
     senders
 }
 
- pub fn run_thread<H, W>(mut input_data: InputData, static_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: Receiver<InputData>, barrier: Arc<Barrier>)
+ pub fn run_thread<H, W>(settings_lock: Arc<RwLock<Settings>>, static_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: Receiver<Message>, barrier: Arc<Barrier>)
  where H: Hit +'static, W: Outline + 'static{
 
-    while input_data.run {
-        if !input_data.done {
-            match input_data.mode {
-                DrawMode::Raytrace => {
-                    let iteration_result = raytrace(input_data, Arc::clone(&static_data), thread_to_gui_tx.clone() , &gui_to_thread_rx);
-                    if let Err(new_data) = iteration_result {
-                        input_data = new_data;
-                        barrier.wait();
-                    }
-                }
+    let mut terminated = false;
+    let mut paused = false; 
 
+    while !terminated {
+        if !paused {
+            let settings = *settings_lock.read().unwrap();
+            match settings.draw_mode {
+                DrawMode::Raytrace => {
+                    raytrace(settings, Arc::clone(&static_data), thread_to_gui_tx.clone() , &gui_to_thread_rx);
+                }
                 DrawMode::Rasterize => {
-                    let iteration_result = rasterize(input_data, Arc::clone(&static_data), thread_to_gui_tx.clone() , &gui_to_thread_rx);
-                    if let Err(new_data) = iteration_result {
-                        input_data = new_data;
-                        barrier.wait();
-                    }
+                    rasterize(settings, Arc::clone(&static_data), thread_to_gui_tx.clone() , &gui_to_thread_rx);
+                    paused = true;
                 }
             }
-           
         }
+        
         else {
             let message = gui_to_thread_rx.recv();
             match message {
-                Ok(new_data) => input_data = new_data,
-                Err(_) => input_data.run = false
+                Ok(message) => {
+                    match message.instructions {
+                        Instructions::Terminate => terminated = true,
+                        Instructions::Pause => {},
+                        _ => paused = false
+                    }
+                }
+                Err(_) => terminated = true
             }
         }
     }
  }
 
- pub fn rasterize<H, W>(mut input_data: InputData, static_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<InputData>)
- -> Result<(), InputData> where H: Hit + 'static, W: Outline + 'static{
+ pub fn rasterize<H, W>(settings: Settings, static_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<Message>)
+ where H: Hit + 'static, W: Outline + 'static{
     
-    let image_height = input_data.image_height;
-    let image_width = input_data.image_width;
+    let image_height = settings.image_settings.image_height;
+    let image_width = settings.image_settings.image_width;
     let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); image_height * image_width];
 
-    let cam = Camera::new(input_data.camera_settings);
+    let cam = Camera::new(settings.camera_settings);
     if let Some(pixels) = static_data.primitives.outline(&cam) {
         for pixel in pixels {
             let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];
@@ -97,63 +138,34 @@ where H: Hit + 'static, W: Outline + 'static {
         }
     }
 
-    let message = gui_to_thread_rx.try_recv();
-    match message {
-        Ok(input_data) => return Err(input_data),
-        Err(err) => {
-            match err {
-                TryRecvError::Empty => {}
-                TryRecvError::Disconnected => {
-                    input_data.run = false;
-                    return Err(input_data);
+    let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
+    thread_to_gui_tx.send(output);
+ }
+
+
+pub fn raytrace<H, W>(settings: Settings, static_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<Message>)
+where H: Hit + 'static, W: Outline +'static {
+
+    let image_height = settings.image_settings.image_height;
+    let image_width = settings.image_settings.image_width;
+    let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); image_height * image_width];
+    let cam = Camera::new(settings.camera_settings);
+    for j in 0..image_height{
+        for i in 0..image_width{
+            let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
+            let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
+            let r = cam.get_ray(u,v);
+            let pixel_index = (j*image_width + i) as usize;
+            pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, static_data.background, &static_data.world, settings.raytrace_settings.max_depth);
+            if let Ok(message) = gui_to_thread_rx.try_recv() {
+                match message.instructions {
+                    Instructions::Terminate => return,
+                    _ => {}
                 }
             }
         }
     }
 
     let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
-    if thread_to_gui_tx.send(output).is_err() {
-        input_data.run = false;
-        return Err(input_data);
-    }
-    Ok(())  
-                
- }
-
-pub fn raytrace<H, W>(mut input_data: InputData, static_data: Arc<StaticData<H, W>>, thread_to_gui_tx: Sender<ImageData>, gui_to_thread_rx: &Receiver<InputData>)
- -> Result<(), InputData> where H: Hit + 'static, W: Outline +'static {
-
-    let image_height = input_data.image_height;
-    let image_width = input_data.image_width;
-    let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); image_height * image_width];
-    let cam = Camera::new(input_data.camera_settings);
-    for j in 0..image_height{
-        for i in 0..image_width{
-                let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
-                let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
-                let r = cam.get_ray(u,v);
-                let pixel_index = (j*image_width + i) as usize;
-                pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, static_data.background, &static_data.world, input_data.max_depth);
-                let message = gui_to_thread_rx.try_recv();
-                match message {
-                    Ok(input_data) => return Err(input_data),
-                    Err(err) => {
-                        match err {
-                            TryRecvError::Empty => {}
-                            TryRecvError::Disconnected => {
-                                input_data.run = false;
-                                return Err(input_data);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        let output = ImageData{pixel_colors, image_width, image_height, samples: 1};
-        if thread_to_gui_tx.send(output).is_err() {
-            input_data.run = false;
-            return Err(input_data);
-        }
-    Ok(())
+    thread_to_gui_tx.send(output);
 }

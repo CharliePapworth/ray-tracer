@@ -42,6 +42,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::Arc;
+use std::sync::RwLock;
 use std::sync::mpsc::*;
 
 #[derive (Clone)]
@@ -73,16 +74,19 @@ fn main(){
     let cam = Camera::new(camera_settings);
     
     //Package data
-    let input_data = InputData { image_width, image_height, samples_per_pixel, max_depth, mode: DrawMode::Rasterize, run: true, done: false, camera_settings};
+    let image_settings = ImageSettings{ image_width, image_height };
+    let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
+    let settings = Settings { raytrace_settings, image_settings, camera_settings, draw_mode: DrawMode::Rasterize };
     let static_data = Arc::new(StaticData { world, primitives, background, cam });
 
     //Threading
-    let num_threads = 1;//(num_cpus::get() - 4) as i32;
+    let num_threads = 1 as i32;//(num_cpus::get() - 4) as i32;
+    let settings_lock = Arc::new(RwLock::new(settings));
     let (thread_to_gui_tx, thread_to_gui_rx): (Sender<ImageData>, Receiver<ImageData>) = channel();
-    let gui_to_thread_tx = initialise_threads(input_data, Arc::clone(&static_data), thread_to_gui_tx, num_threads);
+    let gui_to_thread_tx = initialise_threads(Arc::clone(&settings_lock), Arc::clone(&static_data), thread_to_gui_tx, num_threads);
 
     //Gui
-    let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, input_data);
+    let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, Arc::clone(&settings_lock));
     let initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
     let native_options = eframe::NativeOptions {initial_window_size, ..Default::default()};
     eframe::run_native(Box::new(app), native_options);

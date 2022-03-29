@@ -2,6 +2,7 @@ use core::time;
 use std::ops::{Index, IndexMut, RangeBounds};
 
 use crate::enum_dispatch::*;
+use crate::ray::{Ray, RayPlaneIntersection};
 use line_drawing::Bresenham;
 
 use crate::vec::{Vec2, Vec3, Point3, Point2};
@@ -143,7 +144,8 @@ impl Index<usize> for Line2 {
 
 pub enum LinePlaneIntersection {
     Line(Line3),
-    Point(Point3)
+    Point(Point3),
+    None
 }
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
@@ -164,7 +166,7 @@ impl Line3{
         Line3::new(self.points[0] * scale, self.points[1] * scale)
     }
 
-    pub fn plane_intersection(&self, plane: Plane) -> Option<LinePlaneIntersection> {
+    pub fn plane_intersection(&self, plane: Plane) -> LinePlaneIntersection {
         let dir = self[1] - self[0];
         let plane_normal = plane.orientation.w;
 
@@ -172,64 +174,59 @@ impl Line3{
         if dir.dot(plane_normal) == 0.0 {
             //If so, check if the line lies in the plane.
             if (plane.origin - self[0]).dot(plane_normal) == 0.0 {
-                return Some(LinePlaneIntersection::Line(*self))
+                return LinePlaneIntersection::Line(*self)
             } else {
-                return None
+                return LinePlaneIntersection::None
             }
         } 
 
         //Check if the intersection point lies within the bounds of the line
         let time_of_intersection = (plane.origin - self[0]).dot(plane_normal) / (dir.dot(plane_normal));
         if time_of_intersection < 0.0 || time_of_intersection > self.length()  {
-            return None
+            return LinePlaneIntersection::None
         }
         let intersection_point = self[0] + time_of_intersection * dir;
-        Some(LinePlaneIntersection::Point(intersection_point))
+        LinePlaneIntersection::Point(intersection_point)
     }
 
     pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
         
         let mut points: [Vec2; 2] = Default::default();
-        let normal = plane.orientation.w;
         let mut visible_line = self.clone();
 
-        //Check if the line lies behind the camera origin
+        //Check if the line lies behind the camera
         let dividing_plane = Plane::new(plane.orientation, camera_origin);
         if !visible_line[0].is_in_front(dividing_plane) && !visible_line[1].is_in_front(dividing_plane) {
             return None
         }
 
-        //Check if the line intersects the plane. If so, reduce it to the portion which is visible.
-        if let Some(intersection) = self.plane_intersection(dividing_plane){
-            match intersection {
-                LinePlaneIntersection::Point(intersection_point) => {
-                    //Find the point which is out of view
+        //If the line partially lies behind the camera, reduce it to to the portion which is visible.
+        let intersection = self.plane_intersection(dividing_plane);
+        match intersection {
+            LinePlaneIntersection::Point(intersection_point) => {
+                //Find the point which is out of view
                     for i in 0..2 {
-                        if !self[i].is_in_front(dividing_plane) {
-                            visible_line[i] = intersection_point;
-                            break;
-                        }
+                    if !self[i].is_in_front(dividing_plane) {
+                        visible_line[i] = intersection_point;
+                        break;
                     }
-
                 }
-                _ => {}
             }
+            _ => {}
         }
-
         
-        //Project the remaining line onto the plane
+        //Project the remaining line onto the viewing plane
         for i in 0..2 as usize{
-            let dir = visible_line[i] - camera_origin;
-            let t = (plane.origin - camera_origin).dot(normal)/ dir.dot(normal);
-            if t < 0f64 {
+            let ray = Ray::new(camera_origin, self.points[i] - camera_origin);
+            if let RayPlaneIntersection::Point(projection_3d) = ray.plane_intersection(plane) {
+                let relative_point = projection_3d - plane.origin;
+                points[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
+            } else {
                 let a = 1;
             }
-            let projection_3d = camera_origin + dir * t;
-            let relative_point = projection_3d - plane.origin;
-            points[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
-        }
+        }        
 
-        Some(Line2::new(points[0], points[1]))
+    Some(Line2::new(points[0], points[1]))
     }
 }
 
