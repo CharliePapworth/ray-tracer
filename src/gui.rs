@@ -14,13 +14,19 @@ pub struct Gui {
     pub camera_speed: f64,
     pub expecting_data: bool,
     pub recieved_id: i32,
-    pub windows: Windows
+    pub windows: Windows,
+    pub renderers: Renderers
 }
 
 pub struct Windows {
     pub image_settings: bool,
     pub render_settings: bool,
     pub camera_settings: bool
+}
+
+pub struct Renderers{
+    pub raytracer: bool,
+    pub rasterizer: bool
 }
 
 impl Gui{
@@ -35,12 +41,13 @@ impl Gui{
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
         let windows = Windows { image_settings: false, render_settings: false, camera_settings: false };
+        let renderers = Renderers {raytracer: false, rasterizer: false};
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); image_height * image_width], image_width: image_width, image_height: image_height, samples: 0, id: 0 };
         let count = 0;
         let expecting_data = true;
         let recieved_id = 0;
 
-        Gui{ thread_output_rx, thread_input_tx, settings_lock, settings, image_data, labels, count, camera_speed, expecting_data, recieved_id, windows}
+        Gui{ thread_output_rx, thread_input_tx, settings_lock, settings, image_data, labels, count, camera_speed, expecting_data, recieved_id, windows, renderers}
     }
 
     pub fn transmit_settings(&mut self){
@@ -154,101 +161,79 @@ impl epi::App for Gui {
                 });
 
                 ui.menu_button("View", |ui| {
-                    if ui.button("Image Settings").clicked() {
-                        frame.quit();
-                    }
-                    if ui.button("Camera Settings").clicked() {
-                        frame.quit();
-                    }
-
-                    if ui.button("Render Settings").clicked() {
-                        self.windows.render_settings = !self.windows.render_settings;
-                    }
+                    ui.checkbox( &mut self.windows.image_settings, "  Image Settings");
+                    ui.checkbox( &mut self.windows.render_settings, "  Render Settings");
+                    ui.checkbox( &mut self.windows.camera_settings, "  Camera Settings");
                 });
 
-                if self.windows.render_settings {
+                if self.windows.render_settings || self.windows.image_settings || self.windows.camera_settings {
                     egui::Window::new("Window").show(ctx, |ui| {
-                        ui.label("Windows can be moved by dragging them.");
-                        ui.label("They are automatically sized based on contents.");
-                        ui.label("You can turn on resizing and scrolling if you like.");
-                        ui.label("You would normally chose either panels OR windows.");
+                        //Image Settings
+                        if self.windows.image_settings {
+                            ui.horizontal(|ui| {
+                                ui.label("Width:");
+                                let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.width));
+                                if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                                    match self.labels.width.parse::<usize>(){
+                                        Ok(num) => {
+                                            self.settings.image_settings.image_width = num;
+                                            self.transmit_settings();
+                                            self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Now});
+                                        }
+                                        Err(_) => {
+                                            self.labels.width = self.settings.image_settings.image_width.to_string();
+                                        }
+                                    }
+                                }
+                                ui.label("Height:");
+                                let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.height));
+                                if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                                    match self.labels.height.parse::<usize>(){
+                                        Ok(num) => {
+                                            self.settings.image_settings.image_height = num;
+                                            self.transmit_settings();
+                                            self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Next});
+                                        }
+                                        Err(_) => {
+                                            self.labels.height = self.settings.image_settings.image_height.to_string();
+                                        }
+                                    }
+                                }
+                            });
+                
+                        }
+
+                        if self.windows.render_settings {
+                            ui.separator();
+                            ui.horizontal(|ui| {
+                                ui.checkbox( &mut self.renderers.raytracer, "Raytracer");
+                                ui.checkbox( &mut self.renderers.rasterizer, "Raytracer");
+                            });
+                        }
+
+                        if self.windows.camera_settings {
+                            ui.separator();
+                            ui.label("Samples:");
+                            let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
+                            if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                                match self.labels.samples.parse::<usize>(){
+                                    Ok(num) => {
+                                        if num < self.settings.raytrace_settings.samples_per_pixel {
+                                            self.image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); self.settings.image_settings.image_height * self.settings.image_settings.image_width];
+                                            self.image_data.samples = 0;
+                                            self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Now});
+                                            }
+                                        self.settings.raytrace_settings.samples_per_pixel = num;
+                                    }
+                                    Err(_) => {
+                                    self.labels.samples = self.settings.raytrace_settings.samples_per_pixel.to_string();
+                                    }
+                                }
+                            }
+                        }
                     });
                 }
             });
-        });
-
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Width:");
-                let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.width));
-                if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match self.labels.width.parse::<usize>(){
-                        Ok(num) => {
-                            self.settings.image_settings.image_width = num;
-                            self.transmit_settings();
-                            self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Now});
-                        }
-                        Err(_) => {
-                            self.labels.width = self.settings.image_settings.image_width.to_string();
-                        }
-                    }
-                }
-                ui.label("Height:");
-                let height_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.height));
-                if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match self.labels.height.parse::<usize>(){
-                        Ok(num) => {
-                            self.settings.image_settings.image_height = num;
-                            self.transmit_settings();
-                            self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Next});
-                        }
-                        Err(_) => {
-                            self.labels.height = self.settings.image_settings.image_height.to_string();
-                        }
-                    }
-                }
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("Samples:");
-                let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
-                if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match self.labels.samples.parse::<usize>(){
-                        Ok(num) => {
-                            if num < self.settings.raytrace_settings.samples_per_pixel {
-                                self.image_data.pixel_colors =  vec![Color::new(0.0,0.0,0.0); self.settings.image_settings.image_height * self.settings.image_settings.image_width];
-                                self.image_data.samples = 0;
-                                self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Now});
-
-                            }
-                            self.settings.raytrace_settings.samples_per_pixel = num;
-                        }
-                        Err(_) => {
-                            self.labels.samples = self.settings.raytrace_settings.samples_per_pixel.to_string();
-                        }
-                    }
-                }
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("Camera Speed:");
-                let camera_speed_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.camera_speed));
-                if camera_speed_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                    match self.labels.camera_speed.parse::<f64>(){
-                        Ok(new_speed) => {
-                            if new_speed > 0.0 {
-                                self.camera_speed = new_speed;
-                            }
-                            else {
-                                self.labels.camera_speed = self.camera_speed.to_string();
-                            }
-                        }
-                        Err(_) => {
-                            self.labels.camera_speed= self.camera_speed.to_string();
-                        }
-                    }
-                }
-            })
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
