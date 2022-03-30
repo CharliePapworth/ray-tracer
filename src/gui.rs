@@ -13,7 +13,14 @@ pub struct Gui {
     pub count: i32,
     pub camera_speed: f64,
     pub expecting_data: bool,
-    pub recieved_id: i32
+    pub recieved_id: i32,
+    pub windows: Windows
+}
+
+pub struct Windows {
+    pub image_settings: bool,
+    pub render_settings: bool,
+    pub camera_settings: bool
 }
 
 impl Gui{
@@ -27,12 +34,13 @@ impl Gui{
         let samples_per_pixel = settings.raytrace_settings.samples_per_pixel;
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
+        let windows = Windows { image_settings: false, render_settings: false, camera_settings: false };
         let image_data = ImageData{pixel_colors: vec![Color::new(0.0,0.0,0.0); image_height * image_width], image_width: image_width, image_height: image_height, samples: 0, id: 0 };
         let count = 0;
         let expecting_data = true;
         let recieved_id = 0;
 
-        Gui{ thread_output_rx, thread_input_tx, settings_lock, settings, image_data, labels, count, camera_speed, expecting_data, recieved_id }
+        Gui{ thread_output_rx, thread_input_tx, settings_lock, settings, image_data, labels, count, camera_speed, expecting_data, recieved_id, windows}
     }
 
     pub fn transmit_settings(&mut self){
@@ -144,6 +152,28 @@ impl epi::App for Gui {
                          }
                     }
                 });
+
+                ui.menu_button("View", |ui| {
+                    if ui.button("Image Settings").clicked() {
+                        frame.quit();
+                    }
+                    if ui.button("Camera Settings").clicked() {
+                        frame.quit();
+                    }
+
+                    if ui.button("Render Settings").clicked() {
+                        self.windows.render_settings = !self.windows.render_settings;
+                    }
+                });
+
+                if self.windows.render_settings {
+                    egui::Window::new("Window").show(ctx, |ui| {
+                        ui.label("Windows can be moved by dragging them.");
+                        ui.label("They are automatically sized based on contents.");
+                        ui.label("You can turn on resizing and scrolling if you like.");
+                        ui.label("You would normally chose either panels OR windows.");
+                    });
+                }
             });
         });
 
