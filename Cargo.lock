@@ -6,11 +6,11 @@ version = 3
 name = "Ray_Trace"
 version = "0.1.0"
 dependencies = [
- "bresenham",
  "eframe",
  "enum_dispatch",
  "fastrand",
  "impl_ops",
+ "line_drawing",
  "num_cpus",
  "tobj",
 ]
@@ -101,11 +101,6 @@ name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
-
-[[package]]
-name = "bresenham"
-version = "0.1.1"
-source = "git+https://github.com/dlredden/bresenham-rs?branch=patch-1#97990de694696dc22d3de9943806f2758585b299"
 
 [[package]]
 name = "bumpalo"
@@ -681,6 +676,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "line_drawing"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d1478a313008a3e6c8149995e90a99ee9094034b5c5c3da1eeb81183cb61d1d"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -859,6 +863,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c28774a7fd2fbb4f0babd8237ce554b73af68021b5f695a3cebd6c59bac0980f"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "num-traits"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
+dependencies = [
+ "autocfg",
 ]
 
 [[package]]

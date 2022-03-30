@@ -95,7 +95,6 @@ impl Gui{
 
             self.transmit_settings();
             self.transmit_message(Message {instructions: Instructions::ChangeSettings, priority: Priority::Next});
-            self.refresh_image();
         }
     }
 }
