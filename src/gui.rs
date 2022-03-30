@@ -236,7 +236,7 @@ impl epi::App for Gui {
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().frame(egui::Frame{ margin: egui::Vec2::new(0f32, 0f32),..Default::default() }).show(ctx, |ui| {
             let message_result = self.thread_output_rx.try_recv();
             if let Ok(message) = message_result {
                 if message.id > self.recieved_id {  
@@ -253,10 +253,8 @@ impl epi::App for Gui {
                     self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now});
                 }
             }
-
             let rgbas = colors_to_rgba(&self.image_data.pixel_colors, self.image_data.samples.max(1));
             let image = epi::Image::from_rgba_unmultiplied([self.image_data.image_width, self.image_data.image_height], &rgbas);
-            // The central panel the region left after adding TopPanel's and SidePanel's
             let texture_id = frame.alloc_texture(image);
             ui.image(texture_id, [self.image_data.image_width as f32, self.image_data.image_height as f32]);
         });
