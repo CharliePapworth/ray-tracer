@@ -163,7 +163,7 @@ impl ThreadCoordinator {
         *settings = new_settings;
         std::mem::drop(settings);
         self.raytracing_samples = 0;
-        self.transmit_message(Message {instructions: Instructions::NewTask, priority: priority});
+        self.wake_threads();
         // match priority {
         //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
         //     _ => {}
@@ -176,7 +176,7 @@ impl ThreadCoordinator {
         settings.id += 1;
         std::mem::drop(settings);
         self.raytracing_samples = 0;
-        self.transmit_message(Message {instructions: Instructions::NewTask, priority: priority});
+        self.wake_threads();
         // match priority {
         //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
         //     _ => {}
@@ -189,11 +189,16 @@ impl ThreadCoordinator {
         settings.id += 1;
         std::mem::drop(settings);
         self.raytracing_samples = 0;
-        self.transmit_message(Message {instructions: Instructions::NewTask, priority: priority});
+        self.wake_threads();
         // match priority {
         //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
         //     _ => {}
         // }
+    }
+
+    pub fn is_done(&self) -> bool {
+        let settings = self.global_settings.read().unwrap();
+        self.raytracing_samples == settings.raytrace_settings.samples_per_pixel && self.rasterizing_samples == 1
     }
     
     pub fn wake_threads(&mut self) {
@@ -249,7 +254,9 @@ impl ThreadCoordinator {
                                 if self.raytracing_samples < settings.raytrace_settings.samples_per_pixel {
                                     self.image = self.image.clone() + image_data.image;
                                     self.raytracing_samples += 1;
-                                } else {
+                                } 
+
+                                if self.raytracing_samples >= settings.raytrace_settings.samples_per_pixel {
                                     self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now});
                                 }
                             }
@@ -281,7 +288,7 @@ impl ThreadCoordinator {
             let local_settings = local_settings.read().unwrap().clone();
             match local_settings.draw_mode {
                 DrawMode::Raytrace => {
-                    raytrace(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx);
+                    raytrace(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx, &mut paused);
                 }
                 DrawMode::Rasterize => {
                     rasterize(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx);
@@ -327,7 +334,7 @@ impl ThreadCoordinator {
  }
 
 
-pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: &Receiver<Message>) {
+pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: &Receiver<Message>, paused: &mut bool) {
 
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
@@ -346,6 +353,10 @@ pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_
             if let Ok(message) = gui_to_thread_rx.try_recv() {
                 match message.instructions {
                     Instructions::Terminate => return,
+                    Instructions::Pause => {
+                        *paused = true;
+                        return;
+                    }
                     _ => {}
                 }
             }

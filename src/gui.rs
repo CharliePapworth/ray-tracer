@@ -112,9 +112,7 @@ impl epi::App for Gui {
     fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
         //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
         
-        self.capture_user_input(ctx);
-        self.thread_coordinator.update_image();
-        
+        self.capture_user_input(ctx);        
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -200,9 +198,7 @@ impl epi::App for Gui {
             });
         });
 
-        if self.renderers.rasterizer {
-            
-        }
+
 
         egui::CentralPanel::default().frame(egui::Frame{ margin: egui::Vec2::new(0f32, 0f32),..Default::default() }).show(ctx, |ui| {
             let rgbas = self.thread_coordinator.image.output_rgba();
@@ -211,9 +207,10 @@ impl epi::App for Gui {
             ui.image(texture_id, [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
         });
 
-        if self.expecting_data {
+        if !self.thread_coordinator.is_done() {
             ctx.request_repaint();
-        }
+            self.thread_coordinator.update_image();
+        } 
         self.count += 1;
     }
 }
