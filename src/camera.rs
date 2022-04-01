@@ -77,7 +77,7 @@ impl Image {
         let mut rgbas = Vec::<u8>::with_capacity(self.pixels.len() * 4);
         for (pixel, samples) in self.pixels.iter().zip(self.samples_added.iter()){
             let rgb = pixel.get_color().scale_colors(*samples);
-            if *samples > 1 {
+            if *samples > 0 {
                 let a = 1;
             }
             for color in &rgb{

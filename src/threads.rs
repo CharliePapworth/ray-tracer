@@ -243,7 +243,7 @@ impl ThreadCoordinator {
                             }
                         }
                     }
-                    else {
+                    else if image_data.id == self.image_id {
                         match image_data.draw_mode {
                             DrawMode::Raytrace => {
                                 if self.raytracing_samples < settings.raytrace_settings.samples_per_pixel {
