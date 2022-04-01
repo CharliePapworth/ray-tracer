@@ -41,6 +41,7 @@ pub struct ThreadSettings{
 
 pub enum StatusUpdate {
     Paused(ThreadSettings),
+    Awake(ThreadSettings),
     Running(ImageData)
 }
 
@@ -163,6 +164,7 @@ impl ThreadCoordinator {
         *settings = new_settings;
         std::mem::drop(settings);
         self.raytracing_samples = 0;
+        self.rasterizing_samples = 0;
         self.wake_threads();
         // match priority {
         //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
@@ -176,6 +178,7 @@ impl ThreadCoordinator {
         settings.id += 1;
         std::mem::drop(settings);
         self.raytracing_samples = 0;
+        self.rasterizing_samples = 0;
         self.wake_threads();
         // match priority {
         //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
@@ -189,6 +192,7 @@ impl ThreadCoordinator {
         settings.id += 1;
         std::mem::drop(settings);
         self.raytracing_samples = 0;
+        self.rasterizing_samples = 0;
         self.wake_threads();
         // match priority {
         //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
@@ -204,7 +208,6 @@ impl ThreadCoordinator {
     pub fn wake_threads(&mut self) {
         let settings = self.global_settings.read().unwrap();
         let mut threads_to_remove = vec!();
-        let mut threads_woken = vec!();
         let message = Message { instructions: Instructions::NewTask, priority: Priority::Now };
         for thread in &self.paused_threads {
             if self.raytracing_samples < settings.raytrace_settings.samples_per_pixel && thread.draw_mode == DrawMode::Raytrace
@@ -213,18 +216,13 @@ impl ThreadCoordinator {
                 if transmitter.send(message).is_err() {
                     threads_to_remove.push(thread.id);
                 }
-                threads_woken.push(thread.id);
             }
         }
         for index in threads_to_remove {
             self.gui_to_thread_txs.remove(index);
         }
-
-        let raytracing_samples = self.raytracing_samples;
-        let rasterizing_samples = self.rasterizing_samples;
-        self.paused_threads.retain(|thread| raytracing_samples < settings.raytrace_settings.samples_per_pixel && thread.draw_mode == DrawMode::Raytrace);
-        self.paused_threads.retain(|thread| rasterizing_samples < 1 && thread.draw_mode == DrawMode::Rasterize);
     }
+
 
     pub fn update_image(&mut self) {
         self.wake_threads();
@@ -268,6 +266,8 @@ impl ThreadCoordinator {
                     }
                 }  else if let StatusUpdate::Paused(thread) = message {
                     self.paused_threads.push(thread);
+                } else if let StatusUpdate::Awake(awake_thread) = message {
+                    self.paused_threads.retain(|thread| thread.id != awake_thread.id);
                 }
             } else {
                 return
@@ -305,7 +305,10 @@ impl ThreadCoordinator {
                     match message.instructions {
                         Instructions::Terminate => terminated = true,
                         Instructions::Pause => {},
-                        _ => paused = false
+                        Instructions::NewTask => {
+                            paused = false;
+                            thread_to_gui_tx.send(StatusUpdate::Awake(local_settings.read().unwrap().clone()));
+                        }
                     }
                 }
                 Err(_) => terminated = true
