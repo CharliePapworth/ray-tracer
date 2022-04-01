@@ -194,7 +194,7 @@ pub trait Scatter: Clone{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{sphere::*, primitive::Primitive};
+    use crate::{sphere::*, primitive::{Primitive, GeometricPrimitive}};
 
     #[test]
     fn test_lambertian_deterministic_scatter(){
@@ -202,7 +202,7 @@ mod tests {
         //Initialisation
         let albedo = Color::new(0.7, 0.6, 0.5);
         let mat = Material::new_lambertian(albedo);
-        let s = Primitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
+        let s = GeometricPrimitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
         let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
         let hit = s.hit(&r, 0.0, 100.0);
         let (rec, _) = hit.unwrap();
@@ -238,7 +238,7 @@ mod tests {
         //Initialisation
         let albedo = Color::new(0.7, 0.6, 0.5);
         let mat = Material::new_metal(albedo, 20.0);
-        let s = Primitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
+        let s = GeometricPrimitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
         let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
         let hit = s.hit(&r, 0.0, 100.0);
         let (rec, _) = hit.unwrap();
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn test_diffuse_light_scatter(){
         let mat = Material::new_diffuse_light(Color::new(0.7, 0.6, 0.5));
-        let s = Primitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
+        let s = GeometricPrimitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
         let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
         let hit = s.hit(&r, 0.0, 100.0);
         let (rec, _) = hit.unwrap();

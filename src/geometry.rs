@@ -7,7 +7,7 @@ use line_drawing::Bresenham;
 
 use crate::vec::{Vec2, Vec3, Point3, Point2};
 use crate::camera::{Camera, CameraSettings, Orientation};
-use crate::Primitive;
+use crate::primitive::{GeometricPrimitive, Primitive};
 
 pub type OutCode = i8;
 

@@ -2,7 +2,7 @@ use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
 use crate::material::*;
-use crate::primitive::*;
+use crate::primitive::GeometricPrimitive;
 use std::cmp::Ordering;
 
 #[derive (Debug, Copy, Clone, Default, PartialEq)]
@@ -26,7 +26,7 @@ pub struct BvhBranch{
 
 #[derive(Clone)]
 pub struct BvhRoot{
-    traceable: Primitive,
+    traceable: GeometricPrimitive,
     bb: Aabb
 }
 
@@ -86,7 +86,7 @@ impl Aabb{
 }
 
 impl BvhBranch {
-    pub fn new(left: TraceableList, right: TraceableList, bb: Aabb) -> BvhNode{
+    pub fn new(left: GeometricPrimitives, right: GeometricPrimitives, bb: Aabb) -> BvhNode{
         BvhNode::Branch(BvhBranch{children: (Box::new(BvhNode::new(left)), Box::new(BvhNode::new(right))), bb})
     }
 
@@ -104,18 +104,18 @@ impl BvhBranch {
 }
 
 impl BvhRoot{
-    pub fn new(traceable: Primitive, bb: Aabb) -> BvhNode{
+    pub fn new(traceable: GeometricPrimitive, bb: Aabb) -> BvhNode{
         BvhNode::Root(BvhRoot{traceable, bb})
     }
 }
 
 impl BvhNode{
-    pub fn new(mut objects: TraceableList) -> BvhNode{
+    pub fn new(mut objects: GeometricPrimitives) -> BvhNode{
         let object_span = objects.len();
         match object_span {
             1 => {
                 let traceable = objects.remove(0);
-                let bb = traceable.bounding_box().expect("A primitive within the TraceableList cannot be bound");
+                let bb = traceable.bounding_box().expect("A GeometricPrimitive within the TraceableList cannot be bound");
                 BvhRoot::new(traceable, bb)
 
             } 
@@ -126,8 +126,8 @@ impl BvhNode{
                 let mid = object_span/2;
                 let right_objs = objects.split_off(mid);
                 let left_objs = objects;
-                let bb_left = left_objs.bounding_box().expect("A primitive within the TraceableList cannot be bound");
-                let bb_right = right_objs.bounding_box().expect("A primitive within the TraceableList cannot be bound");
+                let bb_left = left_objs.bounding_box().expect("A GeometricPrimitive within the TraceableList cannot be bound");
+                let bb_right = right_objs.bounding_box().expect("A GeometricPrimitive within the TraceableList cannot be bound");
                 let bb_surrounding = Aabb::surrounding_box(bb_left, bb_right);
                 BvhBranch::new(left_objs, right_objs, bb_surrounding)
             }
@@ -229,11 +229,20 @@ impl Hit for BvhNode{
     }
 }
 
+// impl Hit for Box<BvhNode> {
+//     fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
+//        (*self).hit(r, t_min, t_max)
+//     }
+//     fn bounding_box(&self) -> Option<Aabb>{
+//         (*self).bounding_box()
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use crate::sphere::*;
     use crate::material::*;
-    
+    use crate::primitive::GeometricPrimitive;
     use crate::triangle::*;
         
     use super::*;
@@ -301,12 +310,12 @@ mod tests {
         let center = Vec3::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s1 = Primitive::Sphere(Sphere::new(center, radius, mat));
+        let s1 = GeometricPrimitive::new_sphere(center, radius, mat);
 
         let center = Vec3::new(-20.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s2 = Primitive::Sphere(Sphere::new(center, radius, mat));
+        let s2 = GeometricPrimitive::new_sphere(center, radius, mat);
 
         let sb = Aabb::box_compare(&s1, &s2, 0);
         assert_eq!(sb, Ordering::Greater);
@@ -315,7 +324,7 @@ mod tests {
     #[test]
     fn test_bvhnode_hit(){
 
-        let mut list = TraceableList::new();
+        let mut list = GeometricPrimitives::new();
         let r = Ray::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
         let t_min = 0.0;
         let t_max = 100.0;
@@ -325,7 +334,7 @@ mod tests {
         let center = Vec3::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+        let s = GeometricPrimitive::new_sphere(center, radius, mat);
         for _ in 1..100{
             list.add(s.clone());
         }
@@ -338,7 +347,7 @@ mod tests {
         let center = Vec3::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+        let s = GeometricPrimitive::new_sphere(center, radius, mat);
         list.add(s);
         let list_clone = list.clone();
         let bvh = list_clone.to_bvh();
@@ -351,7 +360,7 @@ mod tests {
         let center = Vec3::new(-2.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+        let s = GeometricPrimitive::new_sphere(center, radius, mat);
         list.add(s);
         let list_clone = list.clone();
         let bvh = list_clone.to_bvh();
@@ -371,12 +380,12 @@ mod tests {
 
         //Case 1: Ray misses bounding box entirely
         let r = Ray::new(Vec3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
-        let mut list = TraceableList::new();
+        let mut list = GeometricPrimitives::new();
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         for i in 1..100{
             let center = Vec3::new(i as f64, 0.0, 0.0);
-            let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+            let s = GeometricPrimitive::new_sphere(center, radius, mat);
             list.add(s);
         }
         let bvh = list.to_bvh();
@@ -386,12 +395,12 @@ mod tests {
 
         //Case 2: Ray hits one bounding box, but misses the sphere
         let r = Ray::new(Vec3::new(1.0, -10.0, 6.0), Vec3::new( 0.0, 1.0, 0.0));
-        let mut list = TraceableList::new();
+        let mut list = GeometricPrimitives::new();
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         for i in 1..100{
             let center = Vec3::new(i as f64, 0.0, 0.0);
-            let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+            let s = GeometricPrimitive::new_sphere(center, radius, mat);
             list.add(s);
         }
         let bvh = list.to_bvh();
@@ -402,12 +411,12 @@ mod tests {
 
          //Case 3: Ray hits all bounding boxes but misses the spheres
          let r = Ray::new(Vec3::new(-10.0, 6.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
-         let mut list = TraceableList::new();
+         let mut list = GeometricPrimitives::new();
          let radius = 5.0;
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
              let center = Vec3::new(i as f64, 0.0, 0.0);
-             let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+             let s = GeometricPrimitive::new_sphere(center, radius, mat);
              list.add(s);
          }
          let bvh = list.to_bvh();
@@ -417,12 +426,12 @@ mod tests {
 
          //Case 4: Ray hits all spheres
          let r = Ray::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
-         let mut list = TraceableList::new();
+         let mut list = GeometricPrimitives::new();
          let radius = 5.0;
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
              let center = Vec3::new(i as f64, 0.0, 0.0);
-             let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+             let s = GeometricPrimitive::new_sphere(center, radius, mat);
              list.add(s);
          }
          let bvh = list.to_bvh();
@@ -432,12 +441,12 @@ mod tests {
          
          //Case 5: Ray hits 10 spheres and 10 bounding boxes
          let r = Ray::new(Vec3::new(20.0, -10.0, 4.0), Vec3::new( 0.0, 1.0, 0.0));
-         let mut list = TraceableList::new();
+         let mut list = GeometricPrimitives::new();
          let radius = 5.0;
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
              let center = Vec3::new(i as f64, 0.0, 0.0);
-             let s = Primitive::Sphere(Sphere::new(center, radius, mat));
+             let s = GeometricPrimitive::new_sphere(center, radius, mat);
              list.add(s);
          }
          let bvh = list.to_bvh();
@@ -448,14 +457,14 @@ mod tests {
 
          //Case 6: Ray hits 1 triangles
          let r = Ray::new(Vec3::new(1.5, -10.0, 4.0), Vec3::new( 0.0, 1.0, 0.0));
-         let mut list = TraceableList::new();
+         let mut list = GeometricPrimitives::new();
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
              let v1 = Vec3::new(i as f64, 0.0, 0.0);
              let v2 = Vec3::new((i + 1) as f64, 0.0, 0.0);
              let v3 = Vec3::new(i as f64 + 0.5, 0.0, 10.0);
              let norm = Vec3::new(0.0, 1.0, 0.0);
-             let s = Primitive::Triangle(Triangle::new([v1, v2, v3], [norm; 3], mat ));
+             let s = GeometricPrimitive::new_triangle([v1, v2, v3], [norm; 3], mat);
              list.add(s);
          }
          let bvh = list.to_bvh();

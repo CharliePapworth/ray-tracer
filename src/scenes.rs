@@ -1,4 +1,4 @@
-use crate::primitive::Primitive;
+use crate::primitive::GeometricPrimitive;
 use crate::vec::*;
 use crate::sphere::*;
 use crate::traceable::*;
@@ -7,14 +7,14 @@ use crate::rect::*;
 use crate::util::*;
 use crate::triangle::*;
 
-pub fn sphere_world() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new();
+pub fn sphere_world() -> (GeometricPrimitives, Color, Point3, Point3) {
+    let mut world = GeometricPrimitives::new();
     let background = Color::new(0.7, 0.8, 1.0);
     let look_from = Point3::new(13.0, 2.0, 3.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
 
     let mat_ground = Material::new_lambertian(Color::new(0.5, 0.5, 0.5));
-    let ground = Primitive::new_sphere(Point3::new(0.0,-1000.0,0.0), 1000.0, mat_ground);
+    let ground = GeometricPrimitive::new_sphere(Point3::new(0.0,-1000.0,0.0), 1000.0, mat_ground);
     world.add(ground);
 
     for a in -11..12{
@@ -25,17 +25,17 @@ pub fn sphere_world() -> (TraceableList, Color, Point3, Point3) {
             if choose_mat < 0.6{
                 let albedo = Color::rand(0.0, 1.0).elementwise_mult(&Color::rand(0.0, 1.0));
                 let sphere_material = Material::new_lambertian(albedo);
-                let sphere = Primitive::new_sphere(center, 0.2, sphere_material);
+                let sphere = GeometricPrimitive::new_sphere(center, 0.2, sphere_material);
                 world.add(sphere);
             } else if choose_mat < 0.9{
                 let albedo = Color::rand(0.5, 1.0);
                 let fuzz = rand_double(0.0, 0.5);
                 let sphere_material = Material::new_metal(albedo, fuzz);
-                let sphere = Primitive::new_sphere(center, 0.2, sphere_material);
+                let sphere = GeometricPrimitive::new_sphere(center, 0.2, sphere_material);
                 world.add(sphere);
             } else {
                 let sphere_material = Material::new_dielectric(1.5);
-                let sphere = Primitive::new_sphere(center, 0.2, sphere_material);
+                let sphere = GeometricPrimitive::new_sphere(center, 0.2, sphere_material);
                 world.add(sphere);
             }
         }
@@ -44,9 +44,9 @@ pub fn sphere_world() -> (TraceableList, Color, Point3, Point3) {
     let mat_left = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
     let mat_right = Material::new_metal(Color::new(0.7, 0.6, 0.5), 0.0);
 
-    let sphere_center = Primitive::new_sphere(Point3::new(0.0,1.0,0.0), 1.0, mat_center);
-    let sphere_left = Primitive::new_sphere(Point3::new(-4.0,1.0,0.0), 1.0, mat_left);
-    let sphere_right = Primitive::new_sphere(Point3::new(4.0,1.0,0.0), 1.0, mat_right);
+    let sphere_center = GeometricPrimitive::new_sphere(Point3::new(0.0,1.0,0.0), 1.0, mat_center);
+    let sphere_left = GeometricPrimitive::new_sphere(Point3::new(-4.0,1.0,0.0), 1.0, mat_left);
+    let sphere_right = GeometricPrimitive::new_sphere(Point3::new(4.0,1.0,0.0), 1.0, mat_right);
     
     world.add(sphere_center);
     world.add(sphere_left);
@@ -56,15 +56,15 @@ pub fn sphere_world() -> (TraceableList, Color, Point3, Point3) {
     (world, background, look_from, look_at)
 }
 
-pub fn light_test() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new();
+pub fn light_test() -> (GeometricPrimitives, Color, Point3, Point3) {
+    let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::new(26.0, 3.0, 6.0);
     let look_at = Point3::new(0.0, 2.0, 0.0);
 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
-    let ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
-    let sphere = Primitive::Sphere(Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Material::new_lambertian(Color::new(0.8, 0.8, 0.8)))); 
+    let ground = GeometricPrimitive::new_sphere(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat);
+    let sphere = GeometricPrimitive::new_sphere(Point3::new(0.0, 2.0, 0.0), 2.0, Material::new_lambertian(Color::new(0.8, 0.8, 0.8))); 
 
     let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
     let _rect = Box::new(Rect::new(RectAxes::XY, -1.0, 2.0, 1.0, 3.0, 4.0, diff_light));
@@ -75,21 +75,21 @@ pub fn light_test() -> (TraceableList, Color, Point3, Point3) {
 
 }
 
-pub fn triangle_test() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new();
+pub fn triangle_test() -> (GeometricPrimitives, Color, Point3, Point3) {
+    let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::new(0.0, 2.0, 26.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
-    let _ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
+    let _ground = GeometricPrimitive::new_sphere(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat);
  
     let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
     let v0 = Vec3::new(-2.0, 0.1, 0.0);
     let v1 = Vec3::new(2.0, 0.1, 0.0);
     let v2 = Vec3::new(0.0, 2.1, 0.0);
     let norms = [Vec3::new(0.0, 0.0, 1.0); 3];
-    let tri = Primitive::Triangle(Triangle::new([v0, v1, v2], norms, mat));
+    let tri = GeometricPrimitive::new_triangle([v0, v1, v2], norms, mat);
     //world.add(ground);
     world.add(tri);
     
@@ -97,8 +97,8 @@ pub fn triangle_test() -> (TraceableList, Color, Point3, Point3) {
 
 }
 
-pub fn rasterizer_test() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new();
+pub fn rasterizer_test() -> (GeometricPrimitives, Color, Point3, Point3) {
+    let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::new(0.0, 0.0, 26.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
@@ -107,25 +107,25 @@ pub fn rasterizer_test() -> (TraceableList, Color, Point3, Point3) {
     let v2 = Vec3::new(0.0, 2.1, 0.0);
     let norms = [Vec3::new(0.0, 0.0, 1.0); 3];
     let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
-    let tri = Primitive::Triangle(Triangle::new([v0, v1, v2], norms, mat));
+    let tri = GeometricPrimitive::new_triangle([v0, v1, v2], norms, mat);
     world.add(tri);
     
     (world, background, look_from, look_at)
 }
 
 
-pub fn obj_test() -> (TraceableList, Color, Point3, Point3) {
-    let _world = TraceableList::new(); 
+pub fn obj_test() -> (GeometricPrimitives, Color, Point3, Point3) {
+    let _world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::new(-20.0, 5.0, 20.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
 
-    let mut mesh = TraceableList::new(); 
+    let mut mesh = GeometricPrimitives::new(); 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
-    let ground = Primitive::Sphere(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat));
+    let ground = GeometricPrimitive::new_sphere(Point3::new(0.0, -1000.0, 0.0), 1000.0, mat);
     let (models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/car.obj");
     let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
-    let rect = Primitive::Rect(Rect::new(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light));
+    let rect = GeometricPrimitive::new_rect(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light);
     mesh.add_obj(models, materials);
     mesh.add(ground);
     mesh.add(rect);
@@ -133,8 +133,8 @@ pub fn obj_test() -> (TraceableList, Color, Point3, Point3) {
     (mesh, background, look_from, look_at)
 }
 
-pub fn mesh_test() -> (TraceableList, Color, Point3, Point3) {
-    let mut world = TraceableList::new(); 
+pub fn mesh_test() -> (GeometricPrimitives, Color, Point3, Point3) {
+    let mut world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::new(26.0, 10.0, 10.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);

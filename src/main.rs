@@ -26,6 +26,7 @@ mod threads;
 mod geometry;
 
 use eframe::egui::Vec2;
+use primitive::GeometricPrimitive;
 use primitive::Primitive;
 
 use crate::vec::*;
@@ -44,26 +45,28 @@ use std::io::Write;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::sync::mpsc::*;
+use std::thread::Thread;
 
 #[derive (Clone)]
-pub struct StaticData<H, W> where H: Hit, W: Outline{
-    pub world: H,
-    pub primitives: W,
-    pub background: Color,
-    pub cam: Camera,    
+pub struct SceneData{
+    pub primitives: Primitives,
+    pub geometric_primitives: GeometricPrimitives,
+    pub background: Color,   
 }
 
 fn main(){
 
     //Scene
-    let (primitives, background, look_from, look_at) = scenes::obj_test();
-    let world = primitives.clone().to_bvh();
+    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
+    let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
+    let mut primitives = Primitives::new();
+    primitives.add(bvh);
 
     //Image
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 1;
+    let samples_per_pixel = 10;
     let max_depth=  50;
 
     //Camera
@@ -76,18 +79,17 @@ fn main(){
     //Package data
     let image_settings = ImageSettings{ image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
-    let settings = Settings { raytrace_settings, image_settings, camera_settings, draw_mode: DrawMode::Raytrace, id: 1 };
-    let static_data = Arc::new(StaticData { world, primitives, background, cam });
+    let scene = SceneData { primitives, geometric_primitives, background };
+    let settings = Settings { raytrace_settings, image_settings, camera_settings, scene, draw_mode: DrawMode::Rasterize, id: 1 };
+
 
     //Threading
-    let num_threads = 1 as i32;//(num_cpus::get() - 4) as i32;
-    let settings_lock = Arc::new(RwLock::new(settings));
-    let (thread_to_gui_tx, thread_to_gui_rx): (Sender<ImageData>, Receiver<ImageData>) = channel();
-    let gui_to_thread_tx = initialise_threads(Arc::clone(&settings_lock), Arc::clone(&static_data), thread_to_gui_tx, num_threads);
+    let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
+    thread_coordinator.spin_up(1, 1);
 
     //Gui
-    let app = Gui::new(thread_to_gui_rx, gui_to_thread_tx, Arc::clone(&settings_lock));
-    let initial_window_size = Some(Vec2::new(image_width as f32 + 216f32, image_height as f32 + 36f32));
+    let app = Gui::new(settings.clone(), thread_coordinator);
+    let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
     let native_options = eframe::NativeOptions {initial_window_size, ..Default::default()};
     eframe::run_native(Box::new(app), native_options);
 }
