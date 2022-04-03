@@ -74,7 +74,6 @@ fn main(){
     let focus_dist = 10.0;
     let aperture = 0.0;
     let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
-    let cam = Camera::new(camera_settings);
     
     //Package data
     let image_settings = ImageSettings{ image_width, image_height };
@@ -82,10 +81,9 @@ fn main(){
     let scene = SceneData { primitives, geometric_primitives, background };
     let settings = Settings { raytrace_settings, image_settings, camera_settings, scene, draw_mode: DrawMode::Rasterize, id: 1 };
 
-
     //Threading
     let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
-    thread_coordinator.spin_up(1, 1);
+    thread_coordinator.spin_up(num_cpus::get() - 6, 1);
 
     //Gui
     let app = Gui::new(settings.clone(), thread_coordinator);

@@ -116,7 +116,7 @@ impl ThreadCoordinator {
         let paused_threads = vec![];
         let rasterizing_samples = 0;
 
-        ThreadCoordinator { thread_to_gui_tx, threads_to_gui_rx, gui_to_thread_txs, global_settings, local_settings, paused_threads, raytracing_threads, rasterizing_threads, raytracing_samples, rasterizing_samples, image_id, image}
+        ThreadCoordinator { thread_to_gui_tx, threads_to_gui_rx, gui_to_thread_txs, global_settings, local_settings, paused_threads, raytracing_threads, rasterizing_threads, raytracing_samples, rasterizing_samples, image_id, image }
     }
 
     pub fn spin_up(&mut self, num_raytracing_threads: usize, num_rasterizing_threads: usize) {
@@ -134,7 +134,6 @@ impl ThreadCoordinator {
             self.local_settings.push(Arc::new(RwLock::new(thread_settings)));
         }
 
-
         for i in 0..num_threads {
             let (gui_to_thread_tx, gui_to_thread_rx): (Sender<Message>, Receiver<Message>) = channel();
             let barrier_clone = Arc::clone(&barrier);
@@ -146,11 +145,14 @@ impl ThreadCoordinator {
         }
     }
 
-    pub fn transmit_message(&mut self, message: Message){
+    pub fn transmit_message(&mut self, message: Message, recipient: DrawMode) {
         let mut threads_to_remove = vec!();
         for (index, transmitter, ) in self.gui_to_thread_txs.iter().enumerate() {
-            if transmitter.send(message).is_err() {
-                threads_to_remove.push(index);
+            let thread =  self.local_settings[index].read().unwrap();
+            if thread.draw_mode == recipient {
+                if transmitter.send(message).is_err() {
+                    threads_to_remove.push(index);
+                }
             }
         }
         for index in threads_to_remove {
@@ -158,18 +160,18 @@ impl ThreadCoordinator {
         }
     }
 
+    pub fn refresh_image(&mut self) {
+        self.raytracing_samples = 0;
+        self.rasterizing_samples = 0;
+        self.wake_threads();
+    }
+
     pub fn update_settings(&mut self, mut new_settings: Settings, priority: Priority) {
         new_settings.id += 1;
         let mut settings = self.global_settings.write().unwrap();
         *settings = new_settings;
         std::mem::drop(settings);
-        self.raytracing_samples = 0;
-        self.rasterizing_samples = 0;
-        self.wake_threads();
-        // match priority {
-        //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
-        //     _ => {}
-        // }
+        self.refresh_image();
     }
 
     pub fn update_scene(&mut self, new_scene: SceneData, priority: Priority)  {
@@ -177,13 +179,7 @@ impl ThreadCoordinator {
         settings.scene = new_scene;
         settings.id += 1;
         std::mem::drop(settings);
-        self.raytracing_samples = 0;
-        self.rasterizing_samples = 0;
-        self.wake_threads();
-        // match priority {
-        //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
-        //     _ => {}
-        // }
+        self.refresh_image();
     }
 
     pub fn update_camera(&mut self, new_camera: CameraSettings, priority: Priority)  {
@@ -191,13 +187,7 @@ impl ThreadCoordinator {
         settings.camera_settings = new_camera;
         settings.id += 1;
         std::mem::drop(settings);
-        self.raytracing_samples = 0;
-        self.rasterizing_samples = 0;
-        self.wake_threads();
-        // match priority {
-        //     Priority::Now => self.transmit_message(Message {instructions: Instructions::NewTask, priority: Priority::Now}),
-        //     _ => {}
-        // }
+        self.refresh_image();
     }
 
     pub fn is_done(&self) -> bool {
@@ -255,12 +245,16 @@ impl ThreadCoordinator {
                                 } 
 
                                 if self.raytracing_samples >= settings.raytrace_settings.samples_per_pixel {
-                                    self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now});
+                                    self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now}, DrawMode::Raytrace);
                                 }
                             }
 
                             DrawMode::Rasterize => {
                                 self.image = self.image.clone() + image_data.image;
+
+                                if self.rasterizing_samples >= 1 {
+                                    self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now}, DrawMode::Rasterize);
+                                }
                             }
                         }
                     }
@@ -292,7 +286,6 @@ impl ThreadCoordinator {
                 }
                 DrawMode::Rasterize => {
                     rasterize(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx);
-                    paused = true;
                 }
             }
         }
@@ -304,7 +297,9 @@ impl ThreadCoordinator {
                 Ok(message) => {
                     match message.instructions {
                         Instructions::Terminate => terminated = true,
-                        Instructions::Pause => {},
+                        Instructions::Pause => {
+                            thread_to_gui_tx.send(StatusUpdate::Awake(local_settings.read().unwrap().clone()));
+                        },
                         Instructions::NewTask => {
                             paused = false;
                             thread_to_gui_tx.send(StatusUpdate::Awake(local_settings.read().unwrap().clone()));
