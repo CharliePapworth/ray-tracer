@@ -9,7 +9,6 @@ pub struct Gui {
     pub thread_coordinator: ThreadCoordinator,
     pub settings: Settings,
     pub labels: Labels,
-    pub count: i32,
     pub camera_speed: f64,
     pub expecting_data: bool,
     pub windows: Windows,
@@ -17,9 +16,7 @@ pub struct Gui {
 }
 
 pub struct Windows {
-    pub image_settings: bool,
-    pub render_settings: bool,
-    pub camera_settings: bool
+    pub settings: bool
 }
 
 pub struct Renderers{
@@ -36,12 +33,11 @@ impl Gui{
         let samples_per_pixel = settings.raytrace_settings.samples_per_pixel;
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
-        let windows = Windows { image_settings: false, render_settings: false, camera_settings: false };
+        let windows = Windows { settings: false };
         let renderers = Renderers {raytracer: false, rasterizer: false};
-        let count = 0;
         let expecting_data = true;
 
-        Gui { thread_coordinator, settings, labels, count, camera_speed, expecting_data, windows, renderers}
+        Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers}
     }
 
 
@@ -120,23 +116,20 @@ impl epi::App for Gui {
                     }
                 });
 
-                ui.menu_button("View", |ui| {
-                    ui.checkbox( &mut self.windows.image_settings, "  Image Settings");
-                    ui.checkbox( &mut self.windows.render_settings, "  Render Settings");
-                    ui.checkbox( &mut self.windows.camera_settings, "  Camera Settings");
-                });
+                if ui.button("Settings").clicked() {
+                   self.windows.settings = !self.windows.settings;
+                };
 
                 ui.with_layout(egui::Layout::right_to_left(), |ui| {
                     if ui.button("🗙").clicked() {
                         frame.quit();
                     }
                 });
-                if self.windows.render_settings || self.windows.image_settings || self.windows.camera_settings {
-                    
-                    egui::Window::new("Window").show(ctx, |ui| {
-                        
+                if self.windows.settings {
+                    let mut settings_clone = self.windows.settings;
+                    egui::Window::new("Settings").open(&mut settings_clone).collapsible(false).fixed_size(egui::Vec2::new(100.0, 100.0)).show(ctx, |ui| {
                         //Image Settings
-                        if self.windows.image_settings {
+                        if self.windows.settings {
                             ui.horizontal(|ui| {
                                 ui.label("Width:");
                                 let width_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.width));
@@ -166,9 +159,6 @@ impl epi::App for Gui {
                                 }
                             });
                 
-                        }
-
-                        if self.windows.render_settings {
                             ui.separator();
                             ui.horizontal(|ui| {
                                 ui.checkbox( &mut self.renderers.raytracer, "Raytracer");
@@ -191,13 +181,11 @@ impl epi::App for Gui {
                                     }
                                 }
                             });
-                        }
-
-                        if self.windows.camera_settings {
-                            ui.separator();
-                            
+                        
                         }
                     });
+
+                    self.windows.settings = settings_clone;
                 }
             });
         });
