@@ -133,7 +133,9 @@ impl epi::App for Gui {
                 });
 
                 if self.windows.render_settings || self.windows.image_settings || self.windows.camera_settings {
+                    
                     egui::Window::new("Window").show(ctx, |ui| {
+                        
                         //Image Settings
                         if self.windows.image_settings {
                             ui.horizontal(|ui| {
@@ -173,25 +175,28 @@ impl epi::App for Gui {
                                 ui.checkbox( &mut self.renderers.raytracer, "Raytracer");
                                 ui.checkbox( &mut self.renderers.rasterizer, "Rasterizer");
                             });
+                            ui.horizontal(|ui| {
+                                ui.label("Samples:");
+                                let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
+                                if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                                    match self.labels.samples.parse::<usize>(){
+                                        Ok(num) => {
+                                            self.settings.raytrace_settings.samples_per_pixel = num;
+                                            if num < self.settings.raytrace_settings.samples_per_pixel {
+                                                self.thread_coordinator.update_settings(self.settings.clone(), Priority::Now)
+                                            }
+                                        }
+                                        Err(_) => {
+                                        self.labels.samples = self.settings.raytrace_settings.samples_per_pixel.to_string();
+                                        }
+                                    }
+                                }
+                            });
                         }
 
                         if self.windows.camera_settings {
                             ui.separator();
-                            ui.label("Samples:");
-                            let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
-                            if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                                match self.labels.samples.parse::<usize>(){
-                                    Ok(num) => {
-                                        if num < self.settings.raytrace_settings.samples_per_pixel {
-                                            self.thread_coordinator.update_settings(self.settings.clone(), Priority::Now)
-                                            }
-                                        self.settings.raytrace_settings.samples_per_pixel = num;
-                                    }
-                                    Err(_) => {
-                                    self.labels.samples = self.settings.raytrace_settings.samples_per_pixel.to_string();
-                                    }
-                                }
-                            }
+                            
                         }
                     });
                 }
