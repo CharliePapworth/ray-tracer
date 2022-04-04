@@ -192,7 +192,7 @@ impl ThreadCoordinator {
 
     pub fn is_done(&self) -> bool {
         let settings = self.global_settings.read().unwrap();
-        self.raytracing_samples == settings.raytrace_settings.samples_per_pixel && self.rasterizing_samples == 1
+        self.raytracing_samples == settings.raytrace_settings.samples_per_pixel && self.rasterizing_samples == 1 && self.image_id == settings.id
     }
     
     pub fn wake_threads(&mut self) {
@@ -213,9 +213,17 @@ impl ThreadCoordinator {
         }
     }
 
+    pub fn sleep_threads(&mut self, recipient: DrawMode) {
+        for thread in &self.paused_threads {
+            if thread.draw_mode == recipient {
+                return
+            }
+        }
+        self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now}, recipient);
+    }
+
 
     pub fn update_image(&mut self) {
-        self.wake_threads();
         loop {
             let message_result = self.threads_to_gui_rx.try_recv();
             if let Ok(message) = message_result {
@@ -245,16 +253,15 @@ impl ThreadCoordinator {
                                 } 
 
                                 if self.raytracing_samples >= settings.raytrace_settings.samples_per_pixel {
-                                    self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now}, DrawMode::Raytrace);
+                                    self.sleep_threads(DrawMode::Raytrace);
                                 }
                             }
 
                             DrawMode::Rasterize => {
-                                self.image = self.image.clone() + image_data.image;
-
-                                if self.rasterizing_samples >= 1 {
-                                    self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now}, DrawMode::Rasterize);
+                                if self.rasterizing_samples < 1 {
+                                    self.image = self.image.clone() + image_data.image;
                                 }
+
                             }
                         }
                     }
@@ -285,7 +292,8 @@ impl ThreadCoordinator {
                     raytrace(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx, &mut paused);
                 }
                 DrawMode::Rasterize => {
-                    rasterize(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx);
+                    rasterize(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx, &mut paused);
+                    paused = true;
                 }
             }
         }
@@ -297,12 +305,10 @@ impl ThreadCoordinator {
                 Ok(message) => {
                     match message.instructions {
                         Instructions::Terminate => terminated = true,
-                        Instructions::Pause => {
-                            thread_to_gui_tx.send(StatusUpdate::Awake(local_settings.read().unwrap().clone()));
-                        },
+                        Instructions::Pause => {}
                         Instructions::NewTask => {
-                            paused = false;
                             thread_to_gui_tx.send(StatusUpdate::Awake(local_settings.read().unwrap().clone()));
+                            paused = false;
                         }
                     }
                 }
@@ -312,7 +318,7 @@ impl ThreadCoordinator {
     }
  }
 
- pub fn rasterize(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: &Receiver<Message>) {
+ pub fn rasterize(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: &Receiver<Message>, paused: &mut bool) {
     
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
