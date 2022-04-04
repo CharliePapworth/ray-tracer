@@ -140,6 +140,12 @@ impl Index<usize> for Line2 {
     }
 }
 
+impl IndexMut<usize> for Line2 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.points[index]
+    }
+}
+
 #[derive (PartialEq, Debug, Copy, Clone)]
 
 pub enum LinePlaneIntersection {
@@ -164,6 +170,18 @@ impl Line3{
 
     pub fn scale(&self, scale: f64) -> Line3 {
         Line3::new(self.points[0] * scale, self.points[1] * scale)
+    }
+
+    pub fn unbounded_projection(&self, plane: Plane, camera_origin: Point3) -> Line2 {
+        let mut projected_line = Line2::default();
+        for i in 0..2 as usize{
+            let ray = Ray::new(camera_origin, self.points[i] - camera_origin);
+            if let RayPlaneIntersection::Point(projection_3d) = ray.plane_intersection(plane) {
+                let relative_point = projection_3d - plane.origin;
+                projected_line[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
+            } 
+        }       
+        projected_line
     }
 
     pub fn plane_intersection(&self, plane: Plane) -> LinePlaneIntersection {
@@ -221,9 +239,7 @@ impl Line3{
             if let RayPlaneIntersection::Point(projection_3d) = ray.plane_intersection(plane) {
                 let relative_point = projection_3d - plane.origin;
                 points[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
-            } else {
-                let a = 1;
-            }
+            } 
         }        
 
     Some(Line2::new(points[0], points[1]))
