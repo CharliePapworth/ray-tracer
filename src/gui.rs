@@ -127,7 +127,7 @@ impl epi::App for Gui {
                 });
                 if self.windows.settings {
                     let mut settings_clone = self.windows.settings;
-                    egui::Window::new("Settings").open(&mut settings_clone).collapsible(false).fixed_size(egui::Vec2::new(100.0, 100.0)).show(ctx, |ui| {
+                    egui::Window::new("🔧 Settings").open(&mut settings_clone).collapsible(false).fixed_size(egui::Vec2::new(100.0, 100.0)).show(ctx, |ui| {
                         //Image Settings
                         if self.windows.settings {
                             ui.horizontal(|ui| {
@@ -166,7 +166,7 @@ impl epi::App for Gui {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Samples:");
-                                let samples_response =  ui.add_sized(Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
+                                let samples_response =  ui.add_sized(Vec2::new(40f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
                                 if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                                     match self.labels.samples.parse::<usize>(){
                                         Ok(num) => {
