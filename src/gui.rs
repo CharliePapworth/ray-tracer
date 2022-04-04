@@ -1,4 +1,4 @@
-use eframe::{egui::{self, Vec2}, epi};
+use eframe::{egui::{self, Vec2, Visuals, Sense, panel::TopBottomSide, style::Margin}, epi, epaint::ColorImage};
 
 use crate::vec::*;
 use crate::*;
@@ -33,7 +33,6 @@ impl Gui{
 
         let image_width = settings.image_settings.image_width;
         let image_height = settings.image_settings.image_height;
-        let max_depth = settings.raytrace_settings.max_depth;
         let samples_per_pixel = settings.raytrace_settings.samples_per_pixel;
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
@@ -47,7 +46,7 @@ impl Gui{
 
 
 
-    pub fn capture_user_input(&mut self, ctx: &egui::CtxRef) {
+    pub fn capture_user_input(&mut self, ctx: &egui::Context) {
         let user_input = ctx.input();
         let mut up = 0.0;
         let mut right = 0.0;
@@ -101,7 +100,7 @@ impl epi::App for Gui {
     /// Called once before the first frame.
     fn setup(
         &mut self,
-        _ctx: &egui::CtxRef,
+        _ctx: &egui::Context,
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
@@ -109,11 +108,10 @@ impl epi::App for Gui {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
-        
         self.capture_user_input(ctx);        
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Quit").clicked() {
@@ -132,6 +130,11 @@ impl epi::App for Gui {
                     ui.checkbox( &mut self.windows.camera_settings, "  Camera Settings");
                 });
 
+                ui.with_layout(egui::Layout::right_to_left(), |ui| {
+                    if ui.button("🗙").clicked() {
+                        frame.quit();
+                    }
+                });
                 if self.windows.render_settings || self.windows.image_settings || self.windows.camera_settings {
                     
                     egui::Window::new("Window").show(ctx, |ui| {
@@ -202,21 +205,24 @@ impl epi::App for Gui {
                 }
             });
         });
+            
+        if response.response.interact(Sense::click_and_drag()).dragged() {
+            frame.drag_window();
+        };
 
 
 
-        egui::CentralPanel::default().frame(egui::Frame{ margin: egui::Vec2::new(0f32, 0f32),..Default::default() }).show(ctx, |ui| {
+        egui::CentralPanel::default().frame(egui::Frame{ margin: Margin::same(0.0),..Default::default() }).show(ctx, |ui| {
             let rgbas = self.thread_coordinator.image.output_rgba();
-            let image = epi::Image::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
-            let texture_id = frame.alloc_texture(image);
-            ui.image(texture_id, [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
+            let image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
+            let texture_handle = egui::Context::load_texture(&ctx, "output_image", image);
+            ui.image(texture_handle.id(), [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
         });
 
         if !self.thread_coordinator.is_done() {
             ctx.request_repaint();
             self.thread_coordinator.update_image();
         } 
-        self.count += 1;
     }
 }
 
