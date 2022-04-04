@@ -206,9 +206,9 @@ impl epi::App for Gui {
             });
         });
             
-        if response.response.interact(Sense::click_and_drag()).dragged() {
-            frame.drag_window();
-        };
+        // if response.response.interact(Sense::drag()).dragged() {
+        //     frame.drag_window();
+        // };
 
 
 
