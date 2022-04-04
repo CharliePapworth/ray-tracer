@@ -113,12 +113,8 @@ impl epi::App for Gui {
         self.capture_user_input(ctx);        
         let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        frame.quit();
-                    }
-                    
-                    if ui.button("Save").clicked() {
+                ui.menu_button("File", |ui| {                    
+                    if ui.button("Save Image").clicked() {
                         let path = "results.ppm";
                         self.thread_coordinator.image.save(path);
                     }

@@ -66,7 +66,7 @@ fn main(){
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 10;
+    let samples_per_pixel = 1000;
     let max_depth=  50;
 
     //Camera
@@ -83,12 +83,12 @@ fn main(){
 
     //Threading
     let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
-    thread_coordinator.spin_up(num_cpus::get() - 6, 1);
+    thread_coordinator.spin_up(4, 1);
 
     //Gui
     let app = Gui::new(settings.clone(), thread_coordinator);
     let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
-    let native_options = eframe::NativeOptions {initial_window_size, ..Default::default()};
+    let native_options = eframe::NativeOptions {initial_window_size, decorated: false,..Default::default()};
     eframe::run_native(Box::new(app), native_options);
 }
 
