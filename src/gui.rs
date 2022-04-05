@@ -1,4 +1,6 @@
-use eframe::{egui::{self, Vec2, Visuals, Sense, panel::TopBottomSide, style::Margin}, epi, epaint::ColorImage};
+use std::default;
+
+use eframe::{egui::{self, Vec2, Visuals, Sense, panel::TopBottomSide, style::Margin}, epi, epaint::{ColorImage, Color32}};
 
 use crate::vec::*;
 use crate::*;
@@ -106,8 +108,9 @@ impl epi::App for Gui {
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
-        self.capture_user_input(ctx);        
-        let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").show(ctx, |ui| {
+        self.capture_user_input(ctx);  
+        let top_frame = egui::Frame{margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
+        let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").frame(top_frame).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {                    
                     if ui.button("Save Image").clicked() {
