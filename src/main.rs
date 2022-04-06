@@ -10,6 +10,7 @@ extern crate num_cpus;
 extern crate enum_dispatch;
 extern crate eframe;
 extern crate line_drawing;
+extern crate delegate;
 
 mod vec;
 mod ray;
@@ -26,6 +27,7 @@ mod primitive;
 mod gui;
 mod threads;
 mod geometry;
+mod image;
 
 use eframe::egui::Vec2;
 use primitive::GeometricPrimitive;
@@ -81,7 +83,7 @@ fn main(){
     let image_settings = ImageSettings{ image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
     let scene = SceneData { primitives, geometric_primitives, background };
-    let settings = Settings { raytrace_settings, image_settings, camera_settings, scene, draw_mode: DrawMode::Rasterize, id: 1 };
+    let settings = Settings { raytrace_settings, image_settings, camera_settings, scene, draw_mode: DrawMode::Outline, id: 1 };
 
     //Threading
     let mut thread_coordinator = ThreadCoordinator::new(settings.clone());

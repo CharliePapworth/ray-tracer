@@ -1,8 +1,8 @@
 use std::default;
 
-use eframe::{egui::{self, Vec2, Visuals, Sense, panel::TopBottomSide, style::Margin}, epi, epaint::{ColorImage, Color32}};
+use eframe::{egui::{self, Vec2, Visuals, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epi, epaint::{ColorImage, Color32}};
 
-use crate::vec::*;
+use crate::{vec::*, image::PrimaryImage};
 use crate::*;
 
 
@@ -40,6 +40,13 @@ impl Gui{
         let expecting_data = true;
 
         Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers}
+    }
+
+    pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
+        let rgbas = self.thread_coordinator.image.output_rgba(PrimaryImage::Raytrace, true);
+        let image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
+        let texture_handle = egui::Context::load_texture(&ctx, "output_image", image);
+        ui.image(texture_handle.id(), [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
     }
 
 
@@ -115,7 +122,7 @@ impl epi::App for Gui {
                 ui.menu_button("File", |ui| {                    
                     if ui.button("Save Image").clicked() {
                         let path = "results.ppm";
-                        self.thread_coordinator.image.save(path);
+                        self.thread_coordinator.image.save(path, DrawMode::Raytrace, true);
                     }
                 });
 
@@ -198,13 +205,8 @@ impl epi::App for Gui {
         // };
 
 
-
-        egui::CentralPanel::default().frame(egui::Frame{ margin: Margin::same(0.0),..Default::default() }).show(ctx, |ui| {
-            let rgbas = self.thread_coordinator.image.output_rgba();
-            let image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
-            let texture_handle = egui::Context::load_texture(&ctx, "output_image", image);
-            ui.image(texture_handle.id(), [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
-        });
+        let central_panel = egui::CentralPanel::default().frame(egui::Frame{ margin: Margin::same(0.0),..Default::default() });
+        central_panel.show(ctx, |ui| {self.show_image(ctx, ui)});
 
         if !self.thread_coordinator.is_done() {
             ctx.request_repaint();
