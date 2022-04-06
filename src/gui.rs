@@ -14,7 +14,9 @@ pub struct Gui {
     pub camera_speed: f64,
     pub expecting_data: bool,
     pub windows: Windows,
-    pub renderers: Renderers
+    pub renderers: Renderers,
+    pub image_output: PrimaryImage,
+    pub outline: bool
 }
 
 pub struct Windows {
@@ -38,12 +40,14 @@ impl Gui{
         let windows = Windows { settings: false };
         let renderers = Renderers {raytracer: false, rasterizer: false};
         let expecting_data = true;
+        let image_output = PrimaryImage::Raytrace;
+        let outline = true;
 
-        Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers}
+        Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline}
     }
 
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
-        let rgbas = self.thread_coordinator.image.output_rgba(PrimaryImage::Raytrace, true);
+        let rgbas = self.thread_coordinator.image.output_rgba(self.image_output, self.outline);
         let image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
         let texture_handle = egui::Context::load_texture(&ctx, "output_image", image);
         ui.image(texture_handle.id(), [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
@@ -174,6 +178,7 @@ impl epi::App for Gui {
                                 ui.checkbox( &mut self.renderers.raytracer, "Raytracer");
                                 ui.checkbox( &mut self.renderers.rasterizer, "Rasterizer");
                             });
+                            ui.checkbox(&mut self.outline, "Outline");
                             ui.horizontal(|ui| {
                                 ui.label("Samples:");
                                 let samples_response =  ui.add_sized(Vec2::new(40f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));

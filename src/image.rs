@@ -8,31 +8,40 @@ use delegate::delegate;
 
 use crate::{vec::Color, threads::DrawMode};
 
-// #[derive (Clone, Copy, PartialEq)]
-// pub enum Pixel {
-//     Color(Color),
-//     Transparent,
-//     Outline
-// }
+#[derive (Clone, PartialEq)]
+pub struct ImageLayer {
+    pub pixels: Vec<Option<Color>>,
+    pub image_width: usize,
+    pub image_height: usize
+}
 
-// impl Pixel {
+impl ImageLayer {
+    pub fn new(image_width: usize, image_height: usize, background: Color) -> ImageLayer {
+        let pixels = vec![None; image_width * image_height];
+        ImageLayer { pixels, image_width, image_height }
+    }
 
-//     pub fn write_color<T: std::io::Write>(self, writer: &mut T, samples: usize) {
-//         match self {
-//             Pixel::Color(color) => color.write_color(writer, samples),
-//             Pixel::Transparent => Color::default().write_color(writer, samples),
-//             Pixel::Outline => Color::new(1.0, 1.0, 1.0).write_color(writer, samples)
-//         }
-//     }
+    pub fn clear(&mut self) {
+        self.pixels = vec![None; self.image_width * self.image_height];
+    }
 
-//     pub fn get_color(&self) -> Color {
-//         match self {
-//             Pixel::Color(color) => *color,
-//             Pixel::Transparent => Color::new(0.0, 0.0, 0.0),
-//             Pixel::Outline => Color::new(1.0, 1.0, 1.0)
-//         }
-//     }
-// }
+    pub fn output_rgba(&self, background: Color) -> Vec<u8> {
+        let mut rgbas = Vec::<u8>::with_capacity(self.pixels.len() * 4);
+        for pixel in self.pixels.iter() {
+            let mut color = background;
+            if let Some(pixel_color) = pixel{
+                color = *pixel_color;
+            }
+            let rgb = color.scale_colors(1);
+            for color in &rgb {
+                rgbas.push(*color);
+            }
+            rgbas.push(255);
+        }
+        rgbas
+    }
+}
+
 
 #[derive (Clone, PartialEq)]
 pub struct RaytracedImage {
@@ -41,6 +50,8 @@ pub struct RaytracedImage {
     pub image_width: usize,
     pub image_height: usize
 }
+
+
 
 impl RaytracedImage {
     pub fn new(image_width: usize, image_height: usize) -> RaytracedImage {
@@ -229,6 +240,7 @@ pub struct CompositeImage {
     pub image_height: usize
 }
 
+#[derive (Copy, Clone, PartialEq)]
 pub enum PrimaryImage {
     Raster,
     Raytrace
@@ -380,90 +392,3 @@ pub enum Image {
     Raster(Raster),
     RaytracedImage(RaytracedImage)
 }
-
-
-
-// #[derive (Clone, Default)]
-// pub struct Image {
-//     pub pixels: Vec<Pixel>,
-//     pub samples_added: Vec<usize>,
-//     pub image_height: usize,
-//     pub image_width: usize
-// }
-
-// impl Image {
-//     pub fn new(image_width: usize, image_height: usize) -> Image {
-//         let samples_added = vec![0; image_width * image_height];
-//         Image{ pixels: vec![Pixel::Transparent; image_width * image_height], samples_added, image_height, image_width }
-//     }
-
-//     pub fn save(&self, path: &str) {
-//         let mut file = OpenOptions::new().create(true)
-//                                                .write(true)
-//                                                .open(path)
-//                                                .unwrap();
-
-//         write!(file, "P3\n{} {} \n255\n", self.image_width, self.image_height).unwrap();
-//         for (pixel, samples) in self.pixels.iter().zip(self.samples_added.iter()) {
-//             pixel.write_color(&mut file, *samples);
-//          }
-//     }
-
-//     pub fn output_rgba(&self) -> Vec<u8> {
-//         let mut rgbas = Vec::<u8>::with_capacity(self.pixels.len() * 4);
-//         for (pixel, samples) in self.pixels.iter().zip(self.samples_added.iter()){
-//             let rgb = pixel.get_color().scale_colors(*samples);
-//             if *samples > 0 {
-//                 let a = 1;
-//             }
-//             for color in &rgb{
-//                 rgbas.push(*color);
-//             }
-//             rgbas.push(255);
-//         }
-//         rgbas
-//     }
-// }
-
-// impl Index<usize> for Image{
-//     type Output = Pixel;
-//     fn index(&self, index: usize) -> &Self::Output {
-//         &self.pixels[index]
-//     }
-// }
-
-// impl IndexMut<usize> for Image{
-//     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-//         &mut self.pixels[index]
-//     }
-// }
-
-// impl Add for Image {
-//     type Output = Image;
-
-//     fn add(self, other: Image) -> Image {
-//         let mut output = Image::new(self.image_width, self.image_height);
-//         for i in 0..self.pixels.len(){
-//             match (self[i], other.pixels[i])
-//             {
-//                 (Pixel::Color(color_1), Pixel::Color(color_2)) =>  {
-//                     output[i] = Pixel::Color(color_1 + color_2);
-//                     output.samples_added[i] = self.samples_added[i] + other.samples_added[i];
-//                 }
-//                 (Pixel::Transparent, Pixel::Color(color_2)) => {
-//                     output[i] = Pixel::Color(color_2) ;
-//                     output.samples_added[i] = self.samples_added[i] + other.samples_added[i];
-//                 }
-
-//                 (Pixel::Color(color_1), Pixel::Transparent) => {
-//                     output[i] = Pixel::Color(color_1);
-//                     output.samples_added[i] = self.samples_added[i] + other.samples_added[i];
-//                 }
-//                 (Pixel::Transparent, Pixel::Transparent) => output[i] = Pixel::Transparent,
-//                 (Pixel::Outline, _) => output[i] = Pixel::Outline,
-//                 (_, Pixel::Outline) => output[i] = Pixel::Outline
-//             }
-//         }
-//         output
-//     }
-// }
