@@ -7,6 +7,7 @@ use std::fs::File;
 use std::io::Write;
 
 use crate::deg_to_rad;
+use crate::geometry::points::Point3;
 use crate::vec::*;
 use crate::ray::*;
 

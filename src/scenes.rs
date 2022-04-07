@@ -1,11 +1,13 @@
-use crate::primitive::GeometricPrimitive;
+use crate::primitives::GeometricPrimitive;
 use crate::vec::*;
-use crate::sphere::*;
+use crate::primitives::sphere::*;
 use crate::traceable::*;
 use crate::material::*;
-use crate::rect::*;
+use crate::primitives::rect::*;
 use crate::util::*;
-use crate::triangle::*;
+use crate::primitives::triangle::*;
+use crate::points::{Point2, Point3};
+
 
 pub fn sphere_world() -> (GeometricPrimitives, Color, Point3, Point3) {
     let mut world = GeometricPrimitives::new();

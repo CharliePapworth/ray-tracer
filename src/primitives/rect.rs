@@ -1,10 +1,14 @@
 use crate::camera::Camera;
-use crate::geometry::{Line3, Outline};
+use crate::lines::*;
+use crate::plane::*;
+use crate::rasterizer::Outline;
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
-use crate::bvh::*;
+use crate::primitives::bvh::*;
 use crate::material::*;
+use crate::points::{Point2, Point3};
+
 
 #[derive (Copy, Clone)]
 pub enum RectAxes {

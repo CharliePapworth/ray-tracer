@@ -14,24 +14,21 @@ extern crate delegate;
 
 mod vec;
 mod ray;
-mod sphere;
 mod traceable;
 mod camera;
 mod material;
 mod util;
-mod bvh;
-mod rect;
-mod triangle;
-mod scenes;
-mod primitive;
 mod gui;
 mod threads;
 mod geometry;
 mod image;
+mod rasterizer;
+mod primitives;
+mod scenes;
 
 use eframe::egui::Vec2;
-use primitive::GeometricPrimitive;
-use primitive::Primitive;
+use primitives::GeometricPrimitive;
+use primitives::Primitive;
 
 use crate::vec::*;
 use crate::ray::*;
@@ -61,7 +58,7 @@ pub struct SceneData{
 fn main(){
 
     //Scene
-    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
+    let (geometric_primitives, background, look_from, look_at) = scenes::obj_test();
     let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
     let mut primitives = Primitives::new();
     primitives.add(bvh);

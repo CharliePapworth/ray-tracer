@@ -1,13 +1,14 @@
 use crate::camera::Camera;
-use crate::geometry::Line3;
-use crate::geometry::Plane;
-use crate::geometry::Outline;
+use crate::lines::*;
+use crate::plane;
 use crate::vec::*;
 use crate::ray::*;
 use crate::traceable::*;
-use crate::bvh::*;
+use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::util::*;
+use crate::rasterizer::*;
+use crate::points::{Point2, Point3};
 
 #[derive (Copy, Clone)]
 pub struct Triangle {

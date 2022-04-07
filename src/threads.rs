@@ -1,4 +1,5 @@
 use crate::*;
+use crate::rasterizer::*;
 use crate::image::CompositeImage;
 use crate::image::Image;
 use crate::image::OutlinedImage;

@@ -3,29 +3,17 @@ use std::ops::{Index, IndexMut, RangeBounds};
 
 use crate::enum_dispatch::*;
 use crate::ray::{Ray, RayPlaneIntersection};
+use crate::plane::*;
 use line_drawing::Bresenham;
 
-use crate::vec::{Vec2, Vec3, Point3, Point2};
+use crate::vec::{Vec2, Vec3};
 use crate::camera::{Camera, CameraSettings, Orientation};
-use crate::primitive::{GeometricPrimitive, Primitive};
+use crate::primitives::{GeometricPrimitive, Primitive};
+use crate::rasterizer::*;
+use crate::points::{Point2, Point3};
 
 pub type OutCode = i8;
 
-#[derive (PartialEq, Debug, Copy, Clone, Default)]
-pub struct Plane {
-    pub orientation: Orientation,
-    pub origin: Point3
-}
-
-impl Plane {
-    pub fn new(orientation: Orientation, origin: Point3) -> Plane {
-        Plane { orientation, origin }
-    }
-
-    pub fn get_coefficients(&self) -> (f64, f64, f64, f64) {
-        (self.orientation.w[0], self.orientation.w[1], self.orientation.w[2], - self.orientation.w.dot(self.origin))
-    }
-}
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Line2 {
     pub points: [Vec2; 2]
@@ -279,27 +267,7 @@ impl Outline for Line3 {
     }
 }
 
-#[enum_dispatch] 
-pub trait Outline: Send + Sync{
-    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
-}
 
-impl<W> Outline for Vec<W> where W: Outline {
-    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
-        let mut pixels: Vec<[usize; 2]> = Default::default();
-        for object in self {
-            if let Some(mut new_pixels) = object.outline(cam) {
-                pixels.append(&mut new_pixels);
-            }
-        }
-
-        if pixels.len() == 0 {
-            None
-        } else {
-            Some(pixels)
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

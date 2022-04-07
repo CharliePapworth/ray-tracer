@@ -1,14 +1,15 @@
 extern crate fastrand;
 
 use crate::camera::Camera;
-use crate::geometry::Outline;
+use crate::rasterizer::*;
 use crate::vec::*;
 use crate::ray::*;
-use crate::bvh::*;
+use crate::primitives::bvh::*;
 use crate::material::*;
-use crate::triangle::*;
-use crate::primitive::*;
+use crate::primitives::triangle::*;
+use crate::primitives::*;
 use crate::enum_dispatch::*;
+use crate::points::{Point2, Point3};
 
 use core::cmp::Ordering;
 use std::convert::TryFrom;
@@ -413,7 +414,7 @@ pub trait Hit: Send + Sync{
 
 #[cfg(test)]
 mod tests {
-    use crate::sphere::*;
+    use crate::primitives::sphere::*;
     use crate::material::*;
     use super::*;
 

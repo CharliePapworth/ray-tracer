@@ -1,4 +1,7 @@
-use crate::{vec::*, geometry::{Plane, LinePlaneIntersection}};
+use crate::vec::*;
+use crate::plane::*;
+use crate::points::{Point2, Point3};
+
 #[derive (Copy, Clone, Default, PartialEq, Debug)]
 pub struct Ray{
     pub orig: Point3,

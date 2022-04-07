@@ -1,12 +1,21 @@
-use crate::triangle::*;
-use crate::sphere::*;
-use crate::rect::*;
+pub mod bvh;
+pub mod rect;
+pub mod sphere;
+pub mod triangle;
+
+use crate::geometry::points::Point3;
+use crate::primitives::triangle::*;
+use crate::primitives::sphere::*;
+use crate::primitives::rect::*;
 use crate::traceable::*;
 use crate::ray::*;
 use crate::material::*;
 use crate::vec::*;
-use crate::bvh::*;
+use crate::primitives::bvh::*;
 use crate::enum_dispatch::*;
+use crate::rasterizer::Outline;
+use crate::Camera;
+
 
 
 #[enum_dispatch(Hit)]

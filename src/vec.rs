@@ -1,22 +1,22 @@
 use std::{ops, f64::consts::PI};
 use core::cmp::Ordering;
 use std::ops::{Index, IndexMut};
-use crate::*;
+use crate::{*, geometry::{lines::OutCode, plane::Plane}};
+use crate::points::{Point2, Point3};
+
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Vec3{
     arr: [f64; 3]
 }
 
-pub type Point3 = Vec3;
+
 pub type Color = Vec3;
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 pub struct Vec2{
     arr: [f64; 2]
 }
-
-pub type Point2 = Vec2;
 
 impl Vec2{
     pub fn new(x: f64, y: f64) -> Vec2{
@@ -317,18 +317,7 @@ impl IndexMut<usize> for Vec3{
     }
 }
 
-impl Point3 {
-    pub fn is_in_front(self, plane: Plane) -> bool {
-        let (_, _, _, d) = plane.get_coefficients();
-        plane.orientation.w.dot(self) + d <= 0.0
-    } 
 
-    pub fn distance_to_plane(self, plane: Plane) -> f64 {
-        let (_, _, _, d) = plane.get_coefficients();
-        let normal = plane.orientation.w;
-        (self.dot(normal) + d).abs() / normal.length()
-    }
-}
 
 impl Color{
 
