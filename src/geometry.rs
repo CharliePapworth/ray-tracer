@@ -164,10 +164,18 @@ impl Line3{
         Line3 {points: [start, end]}
     }
 
+    /// Returns the length of the line.
     pub fn length(&self) -> f64 {
         (self[1] - self[0]).length()
     }
 
+    /// Returns the direction of the line as a vector.
+    pub fn dir(&self) -> Vec3 {
+        self[1] - self[0]
+    }
+
+    /// Scales the magnitude of the line by a scalar. Both ends of the
+    /// line translate.
     pub fn scale(&self, scale: f64) -> Line3 {
         Line3::new(self.points[0] * scale, self.points[1] * scale)
     }

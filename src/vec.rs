@@ -1,4 +1,4 @@
-use std::ops;
+use std::{ops, f64::consts::PI};
 use core::cmp::Ordering;
 use std::ops::{Index, IndexMut};
 use crate::*;
@@ -169,8 +169,49 @@ impl Vec3{
         self.x().powi(2) + self.y().powi(2) + self.z().powi(2)
     }
 
+    /// Finds the dot product of two vectors
     pub fn dot(self, rhs: Vec3) -> f64{
         self.x()*rhs.x() + self.y() * rhs.y() + self.z() * rhs.z()
+    }
+
+    /// Finds the vector perpendicular to two 3-dimensional lines.
+    pub fn perpendicular(&self, rhs: Vec3) -> Vec3 {
+        self.unit_vector().cross(rhs.unit_vector())
+    }
+
+    /// Returns the signed angle between two 3-dimensional vectors (in radians).
+    pub fn angle(&self, other: Vec3) -> f64 {
+        let normal = self.cross(other).unit_vector();
+        f64::atan2(self.cross(other).dot(normal), self.dot(other))
+        //f64::acos(self.unit_vector().dot(other.unit_vector()))
+    }
+
+    /// Rotate the vector about the rotation axis by the given angle.
+    pub fn rotate(&self, rotation_axis: Vec3, angle: f64) -> Vec3 {
+        let unit_vector = rotation_axis.unit_vector();
+        let x = unit_vector[0];
+        let y = unit_vector[1];
+        let z = unit_vector[2];
+
+        let cos_angle = f64::cos(angle);
+        let sin_angle = f64::sin(angle);
+        
+        let mut rotated_vector = Vec3::default();
+        rotated_vector[0] = (cos_angle + x * x * (1.0 - cos_angle)) * self[0] +
+                            (x * y * (1.0 - cos_angle) - z * sin_angle) * self[1] +
+                            (x * z * (1.0 - cos_angle) + y * sin_angle) * self[2];
+
+        rotated_vector[1] = (y * x * (1.0 - cos_angle) + z * sin_angle) * self[0] + 
+                            (cos_angle + y * y * (1.0 - cos_angle)) * self[1] +
+                            (y * z * (1.0 - cos_angle) - x * sin_angle) * self[2];
+
+        rotated_vector[2] = (z * x * (1.0 - cos_angle) - y * sin_angle) * self[0] + 
+                            (z * y * (1.0 - cos_angle) + x * sin_angle) * self[1] +
+                            (cos_angle + z * z * (1.0 - cos_angle)) * self[2];
+
+        rotated_vector
+                                       
+
     }
 
     pub fn sort_by<F>(&mut self, compare: F)
@@ -507,5 +548,15 @@ mod tests {
 
         let vec = Vec3::new(8.0, -9.0, 0.0);
         assert_eq!(vec.max_dim(), 1);
+    }
+
+    
+    #[test]
+    fn test_rotate() {
+        let vec = Vec3::new(2.0, 0.0, 0.0);
+        let rotation_axis = Vec3::new(0.0, 1.0, 0.0);
+        let angle = PI;
+        let rotated_vec = vec.rotate(rotation_axis, angle);
+        assert!((rotated_vec - Vec3::new(-2.0, 0.0, 0.0)).length() < 0.000001);
     }
 }
