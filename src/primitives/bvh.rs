@@ -1,10 +1,11 @@
 use crate::geometry::points::Point3;
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
 use crate::material::*;
 use crate::primitives::GeometricPrimitive;
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
 use std::cmp::Ordering;
+
+use super::GeometricPrimitives;
 
 #[derive (Debug, Copy, Clone, Default, PartialEq)]
 

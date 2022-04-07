@@ -1,12 +1,11 @@
 use crate::*;
-use crate::rasterizer::*;
+use crate::rasterizing::*;
 use crate::image::CompositeImage;
 use crate::image::Image;
 use crate::image::OutlinedImage;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
 use crate::vec::*;
-use crate::traceable::*;
 use crate::util::*;
 
 use std::sync::Arc;

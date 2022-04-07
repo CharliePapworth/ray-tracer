@@ -2,13 +2,12 @@ use crate::camera::Camera;
 use crate::lines::*;
 use crate::plane;
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::util::*;
-use crate::rasterizer::*;
+use crate::rasterizing::*;
 use crate::points::{Point2, Point3};
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
 
 #[derive (Copy, Clone)]
 pub struct Triangle {

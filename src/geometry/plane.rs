@@ -2,7 +2,7 @@ use core::time;
 use std::ops::{Index, IndexMut, RangeBounds};
 
 use crate::enum_dispatch::*;
-use crate::ray::{Ray, RayPlaneIntersection};
+use crate::raytracing::{Ray, RayPlaneIntersection};
 use line_drawing::Bresenham;
 use crate::points::Point3;
 use crate::vec::{Vec2, Vec3};

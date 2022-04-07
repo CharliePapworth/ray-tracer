@@ -1,7 +1,6 @@
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
 use crate::util::*;
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
 use crate::points::{Point2, Point3};
 
 #[derive(Default, Clone, Copy, PartialEq)]

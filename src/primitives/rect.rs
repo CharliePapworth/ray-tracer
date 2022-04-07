@@ -1,13 +1,12 @@
 use crate::camera::Camera;
 use crate::lines::*;
 use crate::plane::*;
-use crate::rasterizer::Outline;
+use crate::rasterizing::Outline;
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::points::{Point2, Point3};
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
 
 
 #[derive (Copy, Clone)]

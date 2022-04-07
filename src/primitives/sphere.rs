@@ -1,16 +1,16 @@
 use line_drawing::{BresenhamCircle, Midpoint, Bresenham};
 
 use crate::geometry::lines::Line3;
-use crate::rasterizer::*;
+use crate::rasterizing::*;
 use crate::geometry::plane::Plane;
 use crate::{geometry::*, camera};
 use crate::vec::{Vec2, Vec3};
-use crate::ray::*;
-use crate::traceable::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::camera::*;
 use crate::points::{Point2, Point3};
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
+
 
 #[derive (Copy, Clone)]
 pub struct Circle {

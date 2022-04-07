@@ -13,8 +13,6 @@ extern crate line_drawing;
 extern crate delegate;
 
 mod vec;
-mod ray;
-mod traceable;
 mod camera;
 mod material;
 mod util;
@@ -22,17 +20,21 @@ mod gui;
 mod threads;
 mod geometry;
 mod image;
-mod rasterizer;
+mod rasterizing;
 mod primitives;
 mod scenes;
+mod raytracing;
 
 use eframe::egui::Vec2;
 use primitives::GeometricPrimitive;
+use primitives::GeometricPrimitives;
 use primitives::Primitive;
+use primitives::Primitives;
+use raytracing::Hit;
+use raytracing::Ray;
+use raytracing::TraceResult;
 
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
 use crate::camera::*;
 use crate::util::*;
 use crate::gui::*;

@@ -1,7 +1,7 @@
-use crate::primitives::GeometricPrimitive;
+use crate::primitives::{GeometricPrimitive, GeometricPrimitives};
 use crate::vec::*;
 use crate::primitives::sphere::*;
-use crate::traceable::*;
+use crate::raytracing::{HitRecord, TraceResult, Hit};
 use crate::material::*;
 use crate::primitives::rect::*;
 use crate::util::*;

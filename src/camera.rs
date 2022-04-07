@@ -9,8 +9,7 @@ use std::io::Write;
 use crate::deg_to_rad;
 use crate::geometry::points::Point3;
 use crate::vec::*;
-use crate::ray::*;
-
+use crate::raytracing::Ray;
 #[derive (Copy, Clone, Default)]
 pub struct Camera {
     pub origin: Point3,
