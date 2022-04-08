@@ -121,32 +121,35 @@ impl Gui{
     pub fn capture_user_input(&mut self, ctx: &egui::Context) {
         let user_input = ctx.input();
         let mut up = 0.0;
+        let mut forward = 0.0;
         let mut right = 0.0;
 
         if user_input.key_down(egui::Key::W) {
-            up -= 1.0;
-        }
-
-        if user_input.key_down(egui::Key::A) {
-            right -= 1.0;
+            forward += self.camera_speed;
         }
 
         if user_input.key_down(egui::Key::S) {
-            up += 1.0;
+            forward -= self.camera_speed;
+        }
+
+        if user_input.key_down(egui::Key::A) {
+            right -= self.camera_speed;
         }
 
         if user_input.key_down(egui::Key::D) {
-            right += 1.0;
+            right += self.camera_speed;
         }
 
-       
-        if up != 0.0 || right != 0.0 {
-            let cam = self.settings.camera;
-            let w = cam.orientation.w;
-            let u = cam.orientation.u;
-            let forward_delta =  up * w * self.camera_speed;
-            let right_delta = right * u * self.camera_speed;
-            self.settings.camera.translate(forward_delta + right_delta);
+        if user_input.key_down(egui::Key::Space) {
+            up += self.camera_speed;
+        }
+
+        if user_input.key_down(egui::Key::F) {
+            up -= self.camera_speed;
+        }
+
+        if up != 0.0 || right != 0.0 || forward != 0.0 {
+            self.settings.camera.translate(forward, right, up);
             self.thread_coordinator.update_camera(self.settings.camera, Priority::Now);
         }
     }

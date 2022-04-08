@@ -73,7 +73,6 @@ fn main(){
     let aperture = 0.0;
     let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
     let camera = Camera::new(camera_settings);
-    let a = camera.looking_towards();
     
     //Package data
     let image_settings = ImageSettings{ image_width, image_height };

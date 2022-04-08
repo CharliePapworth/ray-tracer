@@ -84,16 +84,8 @@ impl Camera {
         Ray::new(self.origin + offset, (self.lower_left_corner + s*self.horizontal + t*self.vertical - self.origin - offset).unit_vector())
     }
 
-    
-    pub fn looking_towards(&self) -> Vec3 {
-         self.origin - self.orientation.w 
-    }
-
-    pub fn look_towards(&mut self, point: Point3) {
-        self.orientation.w = self.origin - point;
-    }
-
-    pub fn translate(&mut self, delta: Vec3) {
+    pub fn translate(&mut self, forward: f64, right: f64, up: f64) {
+        let delta =  - forward * self.orientation.w + right * self.orientation.u + up * self.v_up;
         self.origin = self.origin + delta;
         self.lower_left_corner = self.lower_left_corner + delta;
     }
