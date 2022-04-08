@@ -99,16 +99,16 @@ impl Camera {
     }
 
     pub fn rotate(&mut self, rotation_axis: Vec3, angle: f64) {
-        let look_vector = - self.orientation.w;
-        let lower_left_corner_vector = self.lower_left_corner - self.origin;
-        let rotated_look_vector = look_vector.rotate(rotation_axis, angle);
-        let rotated_lower_left_corner_vector = lower_left_corner_vector.rotate(rotation_axis, angle);
-        self.lower_left_corner = rotated_lower_left_corner_vector + self.origin;
+        let look_direction = - self.orientation.w;
+        let rotated_look_vector = look_direction.rotate(rotation_axis, angle);
+
         self.orientation.w = - rotated_look_vector;
         self.orientation.u = Vec3::cross(self.v_up, self.orientation.w).unit_vector();
         self.orientation.v = Vec3::cross(self.orientation.w, self.orientation.u).unit_vector();
         self.vertical = self.focus_dist * self.viewport_height * self.orientation.v;
         self.horizontal = self.focus_dist * self.viewport_width * self.orientation.u;
+        self.lower_left_corner = self.origin - self.horizontal/2.0 - self.vertical/2.0 - self.focus_dist * self.orientation.w;
+
     }
 }
 
