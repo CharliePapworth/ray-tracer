@@ -12,7 +12,6 @@ pub struct Gui {
     pub settings: Settings,
     pub labels: Labels,
     pub camera_speed: f64,
-    pub camera_settings:CameraSettings,
     pub expecting_data: bool,
     pub windows: Windows,
     pub renderers: Renderers,
@@ -47,9 +46,8 @@ impl Gui{
         let outline = true;
         let click_vector = Vec3::default();
         let dragging = false;
-        let camera_settings = settings.camera_settings;
 
-        Gui { thread_coordinator, settings, labels, camera_speed, camera_settings, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
+        Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
     }
 
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
@@ -143,16 +141,13 @@ impl Gui{
 
        
         if up != 0.0 || right != 0.0 {
-            let settings = self.settings.camera_settings;
-            let w = (settings.look_from - settings.look_at).unit_vector();
-            let u = Vec3::cross(settings.v_up, w);
-            self.settings.camera_settings.look_from = self.settings.camera_settings.look_from + up * w * self.camera_speed;
-            self.settings.camera_settings.look_at = self.settings.camera_settings.look_at + up * w * self.camera_speed;
-            self.settings.camera_settings.look_from = self.settings.camera_settings.look_from + right * u * self.camera_speed;
-            self.settings.camera_settings.look_at = self.settings.camera_settings.look_at + right * u * self.camera_speed;
-
-
-            self.thread_coordinator.update_camera(settings, Priority::Next);
+            let cam = self.settings.camera;
+            let w = cam.orientation.w;
+            let u = cam.orientation.u;
+            let forward_delta =  up * w * self.camera_speed;
+            let right_delta = right * u * self.camera_speed;
+            self.settings.camera.translate(forward_delta + right_delta);
+            self.thread_coordinator.update_camera(self.settings.camera, Priority::Now);
         }
     }
 }
@@ -226,28 +221,17 @@ impl epi::App for Gui {
         
 
         if response.interact(Sense::drag()).dragged() {
-            let cam = Camera::new(self.settings.camera_settings);
+            let cam = self.settings.camera;
             let egui_pointer_pos = ctx.pointer_interact_pos().unwrap();
             let pointer_position = Vec2::new(egui_pointer_pos[0] as f64, (self.settings.image_settings.image_width as f64) - (egui_pointer_pos[1] as f64));
             let pointer_position_3d = pointer_position[0] * cam.horizontal.length() * cam.orientation.u / (self.settings.image_settings.image_width as f64) + pointer_position[1] * cam.orientation.v * cam.vertical.length() / (self.settings.image_settings.image_height as f64) + cam.lower_left_corner;
             let click_vector = pointer_position_3d - cam.origin;
-            if self.dragging {
-                let perpendicular = click_vector.perpendicular(self.click_vector);
+            if self.dragging && click_vector != self.click_vector{
+                let rotation_axis = click_vector.perpendicular(self.click_vector).unit_vector();
                 let angle =  click_vector.angle(self.click_vector);
-                if angle.abs() > 0.0 && perpendicular != Vec3::new(0.0, 0.0, 0.0) {
-                    let look_vector = self.settings.camera_settings.look_at - self.settings.camera_settings.look_from;
-                    let rotated_look_vector = look_vector.rotate(perpendicular, angle);
-                    let look_at = rotated_look_vector + self.settings.camera_settings.look_from;
-                    for i in 0..3 {
-                        if look_at[i].is_nan() || look_at[i].is_infinite() {
-                            let a = 1;
-                        } 
-                    }
-                    self.settings.camera_settings.look_at = look_at;
-                    self.thread_coordinator.update_camera(self.settings.camera_settings, Priority::Next);
-                    self.click_vector = click_vector.rotate(perpendicular, angle);
-                }
-               
+                self.settings.camera.rotate(rotation_axis, angle);
+                self.thread_coordinator.update_camera(self.settings.camera, Priority::Next);
+                self.click_vector = click_vector.rotate(rotation_axis, angle);
             } else {
                 self.dragging = true;
                 self.click_vector = click_vector

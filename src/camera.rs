@@ -12,13 +12,21 @@ use crate::vec::*;
 use crate::raytracing::Ray;
 #[derive (Copy, Clone, Default)]
 pub struct Camera {
+
+    // These settings affect the camera output
     pub origin: Point3,
     pub horizontal: Vec3,
     pub vertical: Vec3,
     pub lower_left_corner: Vec3,
     pub orientation: Orientation,
     pub lens_radius: f64,
-    pub resoloution: (usize, usize)
+    pub resoloution: (usize, usize),
+    
+    // These settings are used for calculation purposes only
+    v_up: Vec3,
+    focus_dist: f64,
+    viewport_width: f64,
+    viewport_height: f64
 }
 
 
@@ -54,8 +62,10 @@ impl Camera {
         let w = (settings.look_from - settings.look_at).unit_vector();
         let u = Vec3::cross(settings.v_up, w).unit_vector();
         let v = Vec3::cross(w, u).unit_vector();
+        let v_up = settings.v_up;
         let orientation = Orientation::new(u,v,w);
 
+        let focus_dist = settings.focus_dist;
         let origin = settings.look_from;
         let horizontal = settings.focus_dist * viewport_width * u;
         let vertical = settings.focus_dist * viewport_height * v;
@@ -64,7 +74,7 @@ impl Camera {
         let resoloution = (settings.image_width, settings.image_height);
 
         let lens_radius = settings.aperture/2.0;
-        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution}
+        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution, v_up, focus_dist, viewport_width, viewport_height}
     }
 
     pub fn get_ray(&self, s: f64, t:f64) -> Ray {
@@ -72,6 +82,33 @@ impl Camera {
         let offset = self.orientation.u() * rd.x() + self.orientation.v() * rd.y();
 
         Ray::new(self.origin + offset, (self.lower_left_corner + s*self.horizontal + t*self.vertical - self.origin - offset).unit_vector())
+    }
+
+    
+    pub fn looking_towards(&self) -> Vec3 {
+         self.origin - self.orientation.w 
+    }
+
+    pub fn look_towards(&mut self, point: Point3) {
+        self.orientation.w = self.origin - point;
+    }
+
+    pub fn translate(&mut self, delta: Vec3) {
+        self.origin = self.origin + delta;
+        self.lower_left_corner = self.lower_left_corner + delta;
+    }
+
+    pub fn rotate(&mut self, rotation_axis: Vec3, angle: f64) {
+        let look_vector = - self.orientation.w;
+        let lower_left_corner_vector = self.lower_left_corner - self.origin;
+        let rotated_look_vector = look_vector.rotate(rotation_axis, angle);
+        let rotated_lower_left_corner_vector = lower_left_corner_vector.rotate(rotation_axis, angle);
+        self.lower_left_corner = rotated_lower_left_corner_vector + self.origin;
+        self.orientation.w = - rotated_look_vector;
+        self.orientation.u = Vec3::cross(self.v_up, self.orientation.w).unit_vector();
+        self.orientation.v = Vec3::cross(self.orientation.w, self.orientation.u).unit_vector();
+        self.vertical = self.focus_dist * self.viewport_height * self.orientation.v;
+        self.horizontal = self.focus_dist * self.viewport_width * self.orientation.u;
     }
 }
 

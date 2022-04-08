@@ -5,6 +5,7 @@ use crate::image::Image;
 use crate::image::OutlinedImage;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
+use crate::scenes::SceneData;
 use crate::vec::*;
 use crate::util::*;
 
@@ -32,7 +33,7 @@ pub struct RayTraceSettings {
 pub struct Settings {
     pub raytrace_settings: RayTraceSettings,
     pub image_settings: ImageSettings,
-    pub camera_settings: CameraSettings,
+    pub camera: Camera,
     pub scene: SceneData,
     pub draw_mode: DrawMode,
     pub id: i32
@@ -187,9 +188,9 @@ impl ThreadCoordinator {
         self.refresh_image();
     }
 
-    pub fn update_camera(&mut self, new_camera: CameraSettings, priority: Priority)  {
+    pub fn update_camera(&mut self, new_camera: Camera, priority: Priority)  {
         let mut settings = self.global_settings.write().unwrap();
-        settings.camera_settings = new_camera;
+        settings.camera = new_camera;
         settings.id += 1;
         std::mem::drop(settings);
         self.refresh_image();
@@ -331,7 +332,7 @@ impl ThreadCoordinator {
     let mut image = OutlinedImage::new(image_width, image_height);
     let id = settings.id;
 
-    let cam = Camera::new(settings.camera_settings);
+    let cam = settings.camera;
     if let Some(pixels) = settings.scene.geometric_primitives.outline(&cam) {
         for pixel in pixels {
             let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];
@@ -352,7 +353,7 @@ pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_
 
     let mut image = RaytracedImage::new(image_width, image_height);
     image.samples = 1;
-    let cam = Camera::new(settings.camera_settings);
+    let cam = settings.camera;
     for j in 0..image_height{
         for i in 0..image_width{
             let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);

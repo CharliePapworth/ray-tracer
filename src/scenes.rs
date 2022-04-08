@@ -1,4 +1,4 @@
-use crate::primitives::{GeometricPrimitive, GeometricPrimitives};
+use crate::primitives::{GeometricPrimitive, GeometricPrimitives, Primitives};
 use crate::vec::*;
 use crate::primitives::sphere::*;
 use crate::raytracing::{HitRecord, TraceResult, Hit};
@@ -8,6 +8,12 @@ use crate::util::*;
 use crate::primitives::triangle::*;
 use crate::points::{Point2, Point3};
 
+#[derive (Clone)]
+pub struct SceneData{
+    pub primitives: Primitives,
+    pub geometric_primitives: GeometricPrimitives,
+    pub background: Color,   
+}
 
 pub fn sphere_world() -> (GeometricPrimitives, Color, Point3, Point3) {
     let mut world = GeometricPrimitives::new();

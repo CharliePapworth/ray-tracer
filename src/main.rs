@@ -33,6 +33,7 @@ use primitives::Primitives;
 use raytracing::Hit;
 use raytracing::Ray;
 use raytracing::TraceResult;
+use scenes::SceneData;
 
 use crate::vec::*;
 use crate::camera::*;
@@ -50,17 +51,11 @@ use std::sync::RwLock;
 use std::sync::mpsc::*;
 use std::thread::Thread;
 
-#[derive (Clone)]
-pub struct SceneData{
-    pub primitives: Primitives,
-    pub geometric_primitives: GeometricPrimitives,
-    pub background: Color,   
-}
 
 fn main(){
 
     //Scene
-    let (geometric_primitives, background, look_from, look_at) = scenes::obj_test();
+    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
     let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
     let mut primitives = Primitives::new();
     primitives.add(bvh);
@@ -77,12 +72,14 @@ fn main(){
     let focus_dist = 10.0;
     let aperture = 0.0;
     let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
+    let camera = Camera::new(camera_settings);
+    let a = camera.looking_towards();
     
     //Package data
     let image_settings = ImageSettings{ image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
     let scene = SceneData { primitives, geometric_primitives, background };
-    let settings = Settings { raytrace_settings, image_settings, camera_settings, scene, draw_mode: DrawMode::Outline, id: 1 };
+    let settings = Settings { raytrace_settings, image_settings, camera, scene, draw_mode: DrawMode::Outline, id: 1 };
 
     //Threading
     let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
