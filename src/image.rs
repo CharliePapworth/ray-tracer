@@ -9,6 +9,8 @@ use delegate::delegate;
 use crate::{vec::Color, threads::DrawMode, util::bound};
 
 #[derive (Clone, PartialEq)]
+
+
 pub struct Pixel {
     color: Color,
     alpha: f64,
@@ -177,7 +179,7 @@ impl Raster {
     pub fn output_rgba(&self) -> Vec<u8> {
         self.image.output_rgba()
     }
-    
+
     pub fn to_image(&self) -> Image {
         self.image.clone()
     }

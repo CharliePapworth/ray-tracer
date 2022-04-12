@@ -1,6 +1,9 @@
 use enum_dispatch::enum_dispatch;
 use crate::camera::Camera;
 use crate::GeometricPrimitive;
+use crate::image::{Raster, Pixel};
+use crate::primitives::{Primitives, GeometricPrimitives};
+use crate::vec::Color;
 
 #[enum_dispatch] 
 pub trait Rasterize: Send + Sync{
@@ -22,4 +25,19 @@ impl<W> Rasterize for Vec<W> where W: Rasterize {
             Some(pixels)
         }
     }
+}
+
+pub fn rasterize(mut image: Raster, cam: Camera, background: Color, geometric_primitives: &GeometricPrimitives)  -> Raster {
+    
+    let image_width = image.image.image_width;
+    let image_height = image.image.image_height;
+    
+    if let Some(pixels) = geometric_primitives.outline(&cam) {
+        for pixel in pixels {
+            let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];
+            image.image.pixels[pixel_index] = Pixel::new(Color::new(1.0, 1.0, 1.0), 1.0);
+            image.z_buffer[pixel_index] = 1.0;
+        }
+    }
+    image
 }

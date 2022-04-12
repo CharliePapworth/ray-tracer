@@ -2,7 +2,12 @@ extern crate fastrand;
 
 use crate::camera::Camera;
 use crate::geometry::plane::Plane;
+use crate::image::Image;
+use crate::image::Pixel;
+use crate::image::RaytracedImage;
 use crate::rasterizing::*;
+use crate::ray_color;
+use crate::util::rand_double;
 use crate::vec::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
@@ -139,8 +144,21 @@ impl Ray{
         let intersection_point = self.orig + time_of_intersection * dir;
         RayPlaneIntersection::Point(intersection_point)
     }
-    
+}
 
+pub fn raytrace_pixel(mut image: RaytracedImage, cam: Camera, background: Color, primitives: &Primitives, max_depth: i32, pixel_position: (usize, usize))  -> RaytracedImage {
+    let image_width = image.image.image_width;
+    let image_height = image.image.image_height;
+    let i = pixel_position.0;
+    let j = pixel_position.1;
+
+    let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
+    let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
+    let r = cam.get_ray(u,v);
+    let pixel_index = (j*image_width + i) as usize;
+    image.image.pixels[pixel_index] = Pixel::new(ray_color(&r, background, primitives, max_depth), 1.0);
+    
+    image
 }
 
 #[cfg(test)]

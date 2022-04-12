@@ -343,15 +343,7 @@ impl ThreadCoordinator {
     let mut image = Raster::new(image_width, image_height);
     let id = settings.id;
 
-    let cam = settings.camera;
-    if let Some(pixels) = settings.scene.geometric_primitives.outline(&cam) {
-        for pixel in pixels {
-            let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];
-            image.image.pixels[pixel_index] = Pixel::new(Color::new(1.0, 1.0, 1.0), 1.0);
-            image.z_buffer[pixel_index] = 1.0;
-        }
-    }
-
+    image = rasterizing::rasterize(image, settings.camera, settings.scene.background, &settings.scene.geometric_primitives);
     let output = ImageData{ image: CompositeImageContribution::Outline(image), draw_mode: DrawMode::Outline, id};
     thread_to_gui_tx.send(StatusUpdate::Running(output));
  }
@@ -368,11 +360,7 @@ pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_
     let cam = settings.camera;
     for j in 0..image_height{
         for i in 0..image_width{
-            let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
-            let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
-            let r = cam.get_ray(u,v);
-            let pixel_index = (j*image_width + i) as usize;
-            image.image.pixels[pixel_index] = Pixel::new(ray_color(&r, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth), 1.0);
+            image = raytracing::raytrace_pixel(image, cam, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth, (i, j));
             if let Ok(message) = gui_to_thread_rx.try_recv() {
                 match message.instructions {
                     Instructions::Terminate => return,
