@@ -370,7 +370,7 @@ impl Primitives{
                                                     norms[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
                     }
 
-                    let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::Lambertian(Lambertian::new(model_color)));
+                    let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::new_lambertian(model_color));
                     self.add(tri);
                 }
         }

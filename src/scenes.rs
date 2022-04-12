@@ -136,7 +136,7 @@ pub fn obj_test() -> (GeometricPrimitives, Color, Point3, Point3) {
     let rect = GeometricPrimitive::new_rect(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light);
     mesh.add_obj(models, materials);
     mesh.add(ground);
-    mesh.add(rect);
+    //mesh.add(rect);
     
     (mesh, background, look_from, look_at)
 }

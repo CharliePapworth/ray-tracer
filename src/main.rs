@@ -55,7 +55,7 @@ use std::thread::Thread;
 fn main(){
 
     //Scene
-    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
+    let (geometric_primitives, background, look_from, look_at) = scenes::obj_test();
     let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
     let mut primitives = Primitives::new();
     primitives.add(bvh);
@@ -64,7 +64,7 @@ fn main(){
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 1000;
+    let samples_per_pixel = 1;
     let max_depth=  50;
 
     //Camera

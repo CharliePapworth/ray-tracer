@@ -101,10 +101,7 @@ impl Gui{
                 if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                     match self.labels.samples.parse::<usize>(){
                         Ok(num) => {
-                            self.settings.raytrace_settings.samples_per_pixel = num;
-                            if num < self.settings.raytrace_settings.samples_per_pixel {
-                                self.thread_coordinator.update_settings(self.settings.clone(), Priority::Now)
-                            }
+                            self.thread_coordinator.update_samples(num);
                         }
                         Err(_) => {
                         self.labels.samples = self.settings.raytrace_settings.samples_per_pixel.to_string();

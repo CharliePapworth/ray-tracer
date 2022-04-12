@@ -172,6 +172,16 @@ impl ThreadCoordinator {
         self.wake_threads();
     }
 
+    pub fn update_samples(&mut self, samples: usize) {
+        let mut settings = self.global_settings.read().unwrap().clone();
+        if samples < settings.raytrace_settings.samples_per_pixel {
+            self.refresh_image();
+        } else {
+            let mut settings = self.global_settings.write().unwrap();
+            settings.raytrace_settings.samples_per_pixel = samples;
+        }
+    }
+
     pub fn update_settings(&mut self, mut new_settings: Settings, priority: Priority) {
         new_settings.id += 1;
         let mut settings = self.global_settings.write().unwrap();
