@@ -264,7 +264,13 @@ impl CompositeImage {
     pub fn output_rgba(&self, primary_image: PrimaryImage, outlining_on: bool) -> Vec<u8> {
         match (primary_image, outlining_on) {
             (PrimaryImage::Raster, false) => self.raster.output_rgba(),
-            (PrimaryImage::Raytrace, false) => self.raytraced_image.output_rgba(),
+            (PrimaryImage::Raytrace, false) => {
+                if self.raytraced_image.samples == 0 {
+                    self.outline.output_rgba()
+                } else {
+                    self.raytraced_image.output_rgba()
+                }
+            }
             (PrimaryImage::Raster, true) => {
                 let mut rgbas = Vec::<u8>::with_capacity(self.raster.pixels.len() * 4);
                 for (pixel, outline) in self.raster.pixels.iter().zip(self.outline.pixels.iter()) {

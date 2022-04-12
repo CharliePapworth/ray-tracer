@@ -43,7 +43,7 @@ impl Gui{
         let renderers = Renderers {raytracer: false, rasterizer: false};
         let expecting_data = true;
         let image_output = PrimaryImage::Raytrace;
-        let outline = true;
+        let outline = false;
         let click_vector = Vec3::default();
         let dragging = false;
 
