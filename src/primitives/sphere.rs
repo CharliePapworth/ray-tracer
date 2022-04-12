@@ -64,7 +64,8 @@ impl Sphere{
     //https://zingl.github.io/Bresenham.pdf
     pub fn project(&self, cam: &Camera) -> Option<Vec<Line3>>{
 
-        let mut lines = Vec::with_capacity(100);
+        const NUMBER_OF_LINES: usize = 360;
+        let mut lines = Vec::with_capacity(NUMBER_OF_LINES);
         let camera_plane = Plane::new(cam.orientation, cam.lower_left_corner);
         let visible_plane = Plane::new(cam.orientation, cam.origin);
         //Check if sphere is completely out of view
@@ -100,10 +101,9 @@ impl Sphere{
         let horizon_center_offset = (self.radius.powi(2) - horizon_radius.powi(2)).sqrt();
         let origin_horizon_center = radius_origin_vector.unit_vector() * (radius_origin_distance - horizon_center_offset);
 
-        let number_of_lines = 100;
-        for i in 0..number_of_lines {
-            let new_angle = (i as f64 + 1.0) * 2.0 * PI / (number_of_lines as f64);
-            let old_angle = (i as f64) * 2.0 * PI/ (number_of_lines as f64);
+        for i in 0..NUMBER_OF_LINES {
+            let new_angle = (i as f64 + 1.0) * 2.0 * PI / (NUMBER_OF_LINES as f64);
+            let old_angle = (i as f64) * 2.0 * PI/ (NUMBER_OF_LINES as f64);
             let line_start = cam.origin + origin_horizon_center + horizon_vector * f64::cos(old_angle) 
                                                                     + horizon_vector_2 * f64::sin(old_angle);
 
