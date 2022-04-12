@@ -1,0 +1,13 @@
+c:\Users\Charlie\Ray_Tracer\ray-tracer\target\debug\deps\emath-7af58a7973ec5584.rmeta: C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\lib.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\align.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\numeric.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\pos2.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rect.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rect_transform.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rot2.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\smart_aim.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\vec2.rs
+
+c:\Users\Charlie\Ray_Tracer\ray-tracer\target\debug\deps\emath-7af58a7973ec5584.d: C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\lib.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\align.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\numeric.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\pos2.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rect.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rect_transform.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rot2.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\smart_aim.rs C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\vec2.rs
+
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\lib.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\align.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\numeric.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\pos2.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rect.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rect_transform.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\rot2.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\smart_aim.rs:
+C:\Users\Charlie\.cargo\registry\src\github.com-1ecc6299db9ec823\emath-0.17.0\src\vec2.rs:

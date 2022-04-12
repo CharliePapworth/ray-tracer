@@ -237,24 +237,24 @@ impl Line3{
 
         //Check if the line lies behind the camera
         let dividing_plane = Plane::new(plane.orientation, camera_origin);
-        if !visible_line[0].is_in_front(dividing_plane) && !visible_line[1].is_in_front(dividing_plane) {
+        if !visible_line[0].is_in_front(dividing_plane) || !visible_line[1].is_in_front(dividing_plane) {
             return None
         }
 
-        //If the line partially lies behind the camera, reduce it to to the portion which is visible.
-        let intersection = self.plane_intersection(dividing_plane);
-        match intersection {
-            LinePlaneIntersection::Point(intersection_point) => {
-                //Find the point which is out of view
-                    for i in 0..2 {
-                    if !self[i].is_in_front(dividing_plane) {
-                        visible_line[i] = intersection_point;
-                        break;
-                    }
-                }
-            }
-            _ => {}
-        }
+        // //If the line partially lies behind the camera, reduce it to to the portion which is visible.
+        // let intersection = self.plane_intersection(dividing_plane);
+        // match intersection {
+        //     LinePlaneIntersection::Point(intersection_point) => {
+        //         //Find the point which is out of view
+        //             for i in 0..2 {
+        //             if !self[i].is_in_front(dividing_plane) {
+        //                 visible_line[i] = intersection_point;
+        //                 break;
+        //             }
+        //         }
+        //     }
+        //     _ => {}
+        // }
         
         //Project the remaining line onto the viewing plane
         for i in 0..2 as usize{
