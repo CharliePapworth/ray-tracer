@@ -203,6 +203,33 @@ impl Line3{
         LinePlaneIntersection::Point(intersection_point)
     }
 
+    pub fn visible(&self, plane: Plane, camera_origin: Point3) -> Option<Line3> {
+        let mut visible_line = self.clone();
+
+        //Check if the line lies behind the camera
+        let dividing_plane = Plane::new(plane.orientation, camera_origin);
+        if !visible_line[0].is_in_front(dividing_plane) && !visible_line[1].is_in_front(dividing_plane) {
+            return None
+        }
+
+        //If the line partially lies behind the camera, reduce it to to the portion which is visible.
+        let intersection = self.plane_intersection(dividing_plane);
+        match intersection {
+            LinePlaneIntersection::Point(intersection_point) => {
+                //Find the point which is out of view
+                    for i in 0..2 {
+                    if !self[i].is_in_front(dividing_plane) {
+                        visible_line[i] = intersection_point;
+                        break;
+                    }
+                }
+            }
+            _ => return Some(*self)
+        }
+        Some(visible_line)
+    }
+
+
     pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
         
         let mut points: [Vec2; 2] = Default::default();
@@ -254,7 +281,7 @@ impl IndexMut<usize> for Line3 {
     }
 }
 
-impl Outline for Line3 {
+impl Rasterize for Line3 {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
     {
         if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {

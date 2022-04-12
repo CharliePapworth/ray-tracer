@@ -10,7 +10,7 @@ use crate::material::*;
 use crate::vec::*;
 use crate::primitives::bvh::*;
 use crate::enum_dispatch::*;
-use crate::rasterizing::Outline;
+use crate::rasterizing::Rasterize;
 use crate::Camera;
 extern crate fastrand;
 
@@ -29,7 +29,7 @@ use std::convert::TryFrom;
 
 
 #[enum_dispatch(Hit)]
-#[enum_dispatch(Outline)]
+#[enum_dispatch(Rasterize)]
 #[derive (Copy, Clone)]
 pub enum GeometricPrimitive {
     Triangle(Triangle),
@@ -252,7 +252,7 @@ impl Hit for GeometricPrimitives{
     }
 }
 
-impl Outline for GeometricPrimitives {
+impl Rasterize for GeometricPrimitives {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         self.list.outline(cam)
     }

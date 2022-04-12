@@ -32,7 +32,7 @@ pub struct Renderers{
 
 impl Gui{
     pub fn new(settings: Settings, thread_coordinator: ThreadCoordinator) -> Gui {
-        let camera_speed = 1.0;
+        let camera_speed = 0.2;
 
         let image_width = settings.image_settings.image_width;
         let image_height = settings.image_settings.image_height;

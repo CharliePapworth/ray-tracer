@@ -40,7 +40,7 @@ pub fn sphere_world() -> (GeometricPrimitives, Color, Point3, Point3) {
                 let fuzz = rand_double(0.0, 0.5);
                 let sphere_material = Material::new_metal(albedo, fuzz);
                 let sphere = GeometricPrimitive::new_sphere(center, 0.2, sphere_material);
-                world.add(sphere);
+               world.add(sphere);
             } else {
                 let sphere_material = Material::new_dielectric(1.5);
                 let sphere = GeometricPrimitive::new_sphere(center, 0.2, sphere_material);

@@ -1,6 +1,9 @@
+use core::panic;
+use std::f64::consts::PI;
+
 use line_drawing::{BresenhamCircle, Midpoint, Bresenham};
 
-use crate::geometry::lines::Line3;
+use crate::geometry::lines::{Line3, LinePlaneIntersection};
 use crate::rasterizing::*;
 use crate::geometry::plane::Plane;
 use crate::{geometry::*, camera};
@@ -9,7 +12,7 @@ use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::camera::*;
 use crate::points::{Point2, Point3};
-use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray, RayPlaneIntersection};
 
 
 #[derive (Copy, Clone)]
@@ -25,6 +28,18 @@ impl Circle {
 
     pub fn scale(&self, scale: f64) -> Circle {
         Circle::new(self.center * scale, self.radius * scale)
+    }
+
+    pub fn draw(&self) -> Vec<((i32, i32))> {
+        let mut pixels = vec![];
+        for i in (-self.radius).ceil() as i32..(self.radius).ceil() as i32 {
+            for j in (- self.radius).ceil() as i32..(self.radius).ceil() as i32 {
+                if i * i + j * j <= (self.radius * self.radius).round() as i32 {
+                    pixels.push((i + self.center[0].ceil() as i32,j + self.center[1].ceil() as i32));
+                }
+            }
+        }
+        pixels
     }
 }
 
@@ -44,18 +59,63 @@ impl Sphere{
         self.center
     }
 
-    pub fn project(&self, cam: &Camera) -> Option<Circle>{
-        let point = self.center + self.radius * cam.orientation.u;
-        let line = Line3::new(self.center, point);
-        if let Some(projected_line) = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
-            let projected_origin = projected_line[0];
-            let projected_radius = projected_line.length();
-            Some(Circle::new(projected_origin, projected_radius))
+    //https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space
+    //https://math.stackexchange.com/questions/1367710/perspective-projection-of-a-sphere-on-a-plane
+    //https://zingl.github.io/Bresenham.pdf
+    pub fn project(&self, cam: &Camera) -> Option<Vec<Line3>>{
+
+        let mut lines = Vec::with_capacity(100);
+        let camera_plane = Plane::new(cam.orientation, cam.lower_left_corner);
+        let visible_plane = Plane::new(cam.orientation, cam.origin);
+        //Check if sphere is completely out of view
+
+
+        //Find the closest point on the sphere to the viewport
+        let mut closest_point = self.center + self.radius * visible_plane.orientation.w;
+        let origin_in_view = self.center.is_in_front(visible_plane);
+        if !origin_in_view {
+            closest_point = self.center - visible_plane.orientation.w;
         }
-        else {
-            None
+        let closest_point_in_view = closest_point.is_in_front(visible_plane);
+
+        if !origin_in_view && !closest_point_in_view {
+            return None;
         }
         
+        let origin_in_front_of_camera = self.center.is_in_front(camera_plane);
+        let closest_point_in_front_of_camera = closest_point.is_in_front(camera_plane);
+        let b = !origin_in_front_of_camera || !closest_point_in_front_of_camera;
+
+        if b == true {
+            let a = 1;
+        }
+        
+        //Calculate the projected radius
+        let radius_origin_vector = self.center - cam.origin;
+        let radius_origin_distance = (self.center - cam.origin).length();
+        let horizon_radius = (radius_origin_distance.powi(2) - self.radius.powi(2)).sqrt() * self.radius / radius_origin_distance;
+        let view_angle = (horizon_radius / self.radius).acos();
+        let horizon_vector = radius_origin_vector.perpendicular(cam.orientation.w).unit_vector() * horizon_radius;
+        let horizon_vector_2 = horizon_vector.perpendicular(radius_origin_vector).unit_vector() * horizon_radius;
+        let horizon_center_offset = (self.radius.powi(2) - horizon_radius.powi(2)).sqrt();
+        let origin_horizon_center = radius_origin_vector.unit_vector() * (radius_origin_distance - horizon_center_offset);
+
+        let number_of_lines = 100;
+        for i in 0..number_of_lines {
+            let new_angle = (i as f64 + 1.0) * 2.0 * PI / (number_of_lines as f64);
+            let old_angle = (i as f64) * 2.0 * PI/ (number_of_lines as f64);
+            let line_start = cam.origin + origin_horizon_center + horizon_vector * f64::cos(old_angle) 
+                                                                    + horizon_vector_2 * f64::sin(old_angle);
+
+            let line_end = cam.origin + origin_horizon_center + horizon_vector * f64::cos(new_angle) 
+                                                                  + horizon_vector_2 * f64::sin(new_angle);
+            let line = Line3::new(line_start, line_end);
+            lines.push(line);
+        }
+
+
+        Some(lines)
+
     }
 }
 
@@ -93,27 +153,17 @@ impl Hit for Sphere{
     }
 }
 
-impl Outline for Sphere {
+impl Rasterize for Sphere {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
-        //Check if the sphere is at least partially in front of the camera window
         let camera_plane = Plane::new(cam.orientation, cam.origin);
-        let in_front = self.center.is_in_front(camera_plane);
-        let distance_to_plane = self.center.distance_to_plane(camera_plane);
         
+        //Check if the sphere is at least partially in front of the camera window
         if !self.center.is_in_front(camera_plane) && self.radius < self.center.distance_to_plane(camera_plane) {
             return None;
         }
 
-        if let Some(mut circle) = self.project(cam) {
-            let scale = cam.resoloution.1 as f64/ cam.vertical.length();
-            circle = circle.scale(scale);
-            let x = circle.center.x().round() as i32;
-            let y = circle.center.y().round() as i32;
-            let radius = circle.radius.round() as i32;
-            let pixels = BresenhamCircle::new(x, y, radius).filter(|(x, y)| *x > 0 && *x < (cam.horizontal.length() * scale) as i32 && *y > 0 && *y < (cam.vertical.length() * scale) as i32)
-                                                                                             .map(|(x, y)| [x as usize, y as usize])
-                                                                                             .collect();                            
-            Some(pixels)
+        if let Some(lines) = self.project(cam) {
+            lines.outline(cam)
         } else {
             None
         }

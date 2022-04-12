@@ -143,7 +143,7 @@ impl Hit for Triangle {
     }
 }
 
-impl Outline for Triangle {
+impl Rasterize for Triangle {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
 
         let line_1 = Line3::new(self.vertices[1], self.vertices[0]);

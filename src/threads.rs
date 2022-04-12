@@ -230,6 +230,7 @@ impl ThreadCoordinator {
 
 
     pub fn update_image(&mut self) {
+        self.wake_threads();
         loop {
             let message_result = self.threads_to_gui_rx.try_recv();
             if let Ok(message) = message_result {

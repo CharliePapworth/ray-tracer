@@ -1,7 +1,7 @@
 use crate::camera::Camera;
 use crate::lines::*;
 use crate::plane::*;
-use crate::rasterizing::Outline;
+use crate::rasterizing::Rasterize;
 use crate::vec::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
@@ -128,7 +128,7 @@ impl Hit for Rect {
     }
 }
 
-impl Outline for Rect {
+impl Rasterize for Rect {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let lines = self.get_lines().to_vec();
         lines.outline(cam)

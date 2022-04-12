@@ -3,11 +3,11 @@ use crate::camera::Camera;
 use crate::GeometricPrimitive;
 
 #[enum_dispatch] 
-pub trait Outline: Send + Sync{
+pub trait Rasterize: Send + Sync{
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
 }
 
-impl<W> Outline for Vec<W> where W: Outline {
+impl<W> Rasterize for Vec<W> where W: Rasterize {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         let mut pixels: Vec<[usize; 2]> = Default::default();
         for object in self {

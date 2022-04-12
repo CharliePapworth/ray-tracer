@@ -26,7 +26,8 @@ pub struct Camera {
     v_up: Vec3,
     focus_dist: f64,
     viewport_width: f64,
-    viewport_height: f64
+    viewport_height: f64,
+    v_fov: f64
 }
 
 
@@ -63,6 +64,7 @@ impl Camera {
         let u = Vec3::cross(settings.v_up, w).unit_vector();
         let v = Vec3::cross(w, u).unit_vector();
         let v_up = settings.v_up;
+        let v_fov = settings.v_fov;
         let orientation = Orientation::new(u,v,w);
 
         let focus_dist = settings.focus_dist;
@@ -74,7 +76,7 @@ impl Camera {
         let resoloution = (settings.image_width, settings.image_height);
 
         let lens_radius = settings.aperture/2.0;
-        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution, v_up, focus_dist, viewport_width, viewport_height}
+        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution, v_up, focus_dist, viewport_width, viewport_height, v_fov}
     }
 
     pub fn get_ray(&self, s: f64, t:f64) -> Ray {
@@ -101,6 +103,10 @@ impl Camera {
         self.horizontal = self.focus_dist * self.viewport_width * self.orientation.u;
         self.lower_left_corner = self.origin - self.horizontal/2.0 - self.vertical/2.0 - self.focus_dist * self.orientation.w;
 
+    }
+
+    pub fn vertical_field_of_view(&self) ->f64 {
+        self.v_fov
     }
 }
 
