@@ -40,9 +40,6 @@ impl Pixel{
 
     pub fn over(&self, under: &Pixel) -> Pixel {
         let alpha = self.alpha + under.alpha * (1.0 - self.alpha);
-        if self.alpha == 0.0 {
-            let a = 1;
-        }
         let color = (self.color * self.alpha + under.color * under.alpha * (1.0 - self.alpha)) / alpha;
         Pixel::new(color, alpha)
     }
@@ -328,10 +325,6 @@ impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: CompositeImageContribution| {
         CompositeImageContribution::RaytracedImage(raytrace) => lhs.raytrace += raytrace
     }
 });
-
-
-
-
 
 #[derive (Clone)]
 pub enum CompositeImageContribution {
