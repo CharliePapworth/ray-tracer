@@ -2,7 +2,7 @@ use std::default;
 
 use eframe::{egui::{self, Visuals, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epi, epaint::{ColorImage, Color32}};
 
-use crate::{vec::Vec2, image::PrimaryImage};
+use crate::{vec::Vec2, image::PrimaryImageType};
 use crate::*;
 
 
@@ -15,7 +15,7 @@ pub struct Gui {
     pub expecting_data: bool,
     pub windows: Windows,
     pub renderers: Renderers,
-    pub image_output: PrimaryImage,
+    pub image_output: PrimaryImageType,
     pub outline: bool,
     pub click_vector: Vec3,
     pub dragging: bool
@@ -42,7 +42,7 @@ impl Gui{
         let windows = Windows { settings: false };
         let renderers = Renderers {raytracer: false, rasterizer: false};
         let expecting_data = true;
-        let image_output = PrimaryImage::Raytrace;
+        let image_output = PrimaryImageType::Raytrace;
         let outline = false;
         let click_vector = Vec3::default();
         let dragging = false;
@@ -51,9 +51,10 @@ impl Gui{
     }
 
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
-        let rgbas = self.thread_coordinator.image.output_rgba(self.image_output, self.outline);
-        let image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
-        let texture_handle = egui::Context::load_texture(&ctx, "output_image", image);
+        let image = self.thread_coordinator.image.output(self.image_output, self.outline);
+        let rgbas = image.output_rgba();
+        let raw_image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
+        let texture_handle = egui::Context::load_texture(&ctx, "output_image", raw_image);
         ui.image(texture_handle.id(), [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
     }
 
@@ -186,7 +187,7 @@ impl epi::App for Gui {
                 ui.menu_button("File", |ui| {                    
                     if ui.button("Save Image").clicked() {
                         let path = "results.ppm";
-                        self.thread_coordinator.image.save(path, DrawMode::Raytrace, true);
+                        self.thread_coordinator.image.output(PrimaryImageType::Raytrace, true).save(path);
                     }
                 });
 

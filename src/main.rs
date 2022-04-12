@@ -55,7 +55,7 @@ use std::thread::Thread;
 fn main(){
 
     //Scene
-    let (geometric_primitives, background, look_from, look_at) = scenes::obj_test();
+    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
     let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
     let mut primitives = Primitives::new();
     primitives.add(bvh);

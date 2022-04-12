@@ -1,8 +1,8 @@
 use crate::*;
+use crate::image::Pixel;
 use crate::rasterizing::*;
 use crate::image::CompositeImage;
-use crate::image::Image;
-use crate::image::OutlinedImage;
+use crate::image::CompositeImageContribution;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
 use crate::scenes::SceneData;
@@ -84,7 +84,7 @@ pub enum DrawMode {
 }
 #[derive (Clone)]
 pub struct ImageData{
-    pub image: Image,
+    pub image: CompositeImageContribution,
     pub draw_mode: DrawMode,
     pub id: i32
 }
@@ -340,18 +340,19 @@ impl ThreadCoordinator {
     
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
-    let mut image = OutlinedImage::new(image_width, image_height);
+    let mut image = Raster::new(image_width, image_height);
     let id = settings.id;
 
     let cam = settings.camera;
     if let Some(pixels) = settings.scene.geometric_primitives.outline(&cam) {
         for pixel in pixels {
             let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];
-            image.pixels[pixel_index] = true;
+            image.image.pixels[pixel_index] = Pixel::new(Color::new(1.0, 1.0, 1.0), 1.0);
+            image.z_buffer[pixel_index] = 1.0;
         }
     }
 
-    let output = ImageData{ image: Image::Outline(image), draw_mode: DrawMode::Outline, id};
+    let output = ImageData{ image: CompositeImageContribution::Outline(image), draw_mode: DrawMode::Outline, id};
     thread_to_gui_tx.send(StatusUpdate::Running(output));
  }
 
@@ -371,7 +372,7 @@ pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_
             let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
             let r = cam.get_ray(u,v);
             let pixel_index = (j*image_width + i) as usize;
-            image.pixels[pixel_index] = ray_color(&r, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth);
+            image.image.pixels[pixel_index] = Pixel::new(ray_color(&r, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth), 1.0);
             if let Ok(message) = gui_to_thread_rx.try_recv() {
                 match message.instructions {
                     Instructions::Terminate => return,
@@ -385,6 +386,6 @@ pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_
         }
     }
 
-    let output = ImageData { image: Image::RaytracedImage(image), draw_mode: DrawMode::Raytrace, id };
+    let output = ImageData { image: CompositeImageContribution::RaytracedImage(image), draw_mode: DrawMode::Raytrace, id };
     thread_to_gui_tx.send(StatusUpdate::Running(output));
 }

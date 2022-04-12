@@ -10,7 +10,6 @@ pub struct Vec3{
     arr: [f64; 3]
 }
 
-
 pub type Color = Vec3;
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
