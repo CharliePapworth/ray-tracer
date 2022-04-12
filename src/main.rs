@@ -1,116 +1,94 @@
+#![windows_subsystem = "windows"]
+#![allow(dead_code,unused_imports)]
 #[macro_use] 
+
 
 extern crate impl_ops;
 extern crate fastrand;
 extern crate tobj;
 extern crate num_cpus;
 extern crate enum_dispatch;
+extern crate eframe;
+extern crate line_drawing;
+extern crate delegate;
 
 mod vec;
-mod ray;
-mod sphere;
-mod traceable;
 mod camera;
 mod material;
 mod util;
-mod bvh;
-mod rect;
-mod triangle;
+mod gui;
+mod threads;
+mod geometry;
+mod image;
+mod rasterizing;
+mod primitives;
 mod scenes;
-mod primitive;
-mod bounding_box;
+mod raytracing;
+
+use eframe::egui::Vec2;
+use primitives::GeometricPrimitive;
+use primitives::GeometricPrimitives;
+use primitives::Primitive;
+use primitives::Primitives;
+use raytracing::Hit;
+use raytracing::Ray;
+use raytracing::TraceResult;
+use scenes::SceneData;
 
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
 use crate::camera::*;
 use crate::util::*;
-use crate::material::*;
-use crate::bounding_box::*;
-use crate::enum_dispatch::*;
+use crate::gui::*;
+use crate::threads::*;
+use crate::geometry::*;
 
 use std::f64::INFINITY;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::marker::PhantomData;
 use std::sync::Arc;
-use std::sync::Mutex;
-use std::thread;
-use std::thread::JoinHandle;
+use std::sync::RwLock;
+use std::sync::mpsc::*;
+use std::thread::Thread;
 
-#[derive (Copy, Clone)]
-pub struct ImageData {
-    pub image_width: i32,
-    pub image_height:i32,
-    pub samples_per_pixel: i32,
-    pub max_depth: i32
-}
-
-#[derive (Clone)]
-pub struct SceneData<H> where H: Hit{
-    pub world: H,
-    pub background: Color,
-    pub cam: Camera,    
-}
-
-#[derive (Clone)]
-pub struct SharedData{
-    pub pixel_colors: Vec<Color>,
-    pub current_calculations: i64,
-    pub total_calculations: i64,
-    pub progress: i64,
-}
 
 fn main(){
 
     //Scene
-    let (world, background, look_from, look_at) = scenes::obj_test();
-    let world = world.to_Bvh();
+    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
+    let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
+    let mut primitives = Primitives::new();
+    primitives.add(bvh);
 
     //Image
     let aspect_ratio = 3.0/2.0;
-    let image_width = 400;
-    let image_height=  ((image_width as f64)/aspect_ratio) as i32;
-    let samples_per_pixel = 500;
+    let image_width = 800;
+    let image_height=  ((image_width as f64)/aspect_ratio) as usize;
+    let samples_per_pixel = 1000;
     let max_depth=  50;
 
     //Camera
     let v_up = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = 10.0;
+    let focus_dist = 10.0;
     let aperture = 0.0;
-    let cam = Camera::new(look_from, look_at, v_up, 20.0, aspect_ratio, aperture, dist_to_focus);
-
-    //Render
-    let path = "results.ppm";
-    let mut file = initialise_file(path, image_width, image_height);
-   
-    //Shared data
-    let num_threads = (num_cpus::get()) as i32;
-    let samples = ((samples_per_pixel as f64) / (num_threads as f64)).ceil() as i32;
-    let pixel_colors = vec![Color::new(0.0,0.0,0.0); (image_width * image_height) as usize];
-    let current_calculations = 0;
-    let total_calculations = (image_height * image_width * samples_per_pixel) as i64;
-    let progress = 0;
+    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
+    let camera = Camera::new(camera_settings);
     
     //Package data
-    let shared_data = Arc::new(Mutex::new(SharedData {pixel_colors, current_calculations, total_calculations, progress }));
-    let image_data = ImageData { image_width, image_height, samples_per_pixel, max_depth };
-    let scene_data = Arc::new(SceneData { world, background, cam });
+    let image_settings = ImageSettings{ image_width, image_height };
+    let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
+    let scene = SceneData { primitives, geometric_primitives, background };
+    let settings = Settings { raytrace_settings, image_settings, camera, scene, draw_mode: DrawMode::Outline, id: 1 };
 
     //Threading
-    let handles = initialise_threads(image_data.clone(), Arc::clone(&scene_data), samples, Arc::clone(&shared_data), num_threads);
-    let main_thread_samples = samples_per_pixel - samples * (num_threads - 1);
-    iterate_image(image_data.clone(), Arc::clone(&scene_data), main_thread_samples, Arc::clone(&shared_data));
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
+    thread_coordinator.spin_up(4, 1);
 
-    //Write to file
-    let unlocked_data = shared_data.lock().unwrap();
-    for pixel in unlocked_data.pixel_colors.iter() {
-        pixel.write_color(&mut file, samples_per_pixel);
-    }
+    //Gui
+    let app = Gui::new(settings.clone(), thread_coordinator);
+    let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
+    let native_options = eframe::NativeOptions {initial_window_size, decorated: false,..Default::default()};
+    eframe::run_native(Box::new(app), native_options);
 }
 
 pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color where T: Hit {
@@ -121,76 +99,23 @@ pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color 
     }
 
     let result = world.trace(r, 0.001, INFINITY);
-    match result{
+    match result {
         TraceResult::Scattered((attenuation, scattered)) => attenuation.elementwise_mult(&ray_color(&scattered, background, world, depth-1)),
         TraceResult::Absorbed(emitted) => emitted,
         TraceResult::Missed => background      
     }
 }
 
-pub fn initialise_file(path: &str, image_width: i32, image_height: i32) -> File{
+pub fn initialise_file(path: &str, image_width: usize, image_height: usize) -> File{
     let mut file = OpenOptions::new()
                                     .create(true)
                                     .write(true)
                                     .open(path)
                                     .unwrap();
     write!(file, "P3\n{} {} \n255\n", image_width, image_height).unwrap();
-    println!("{}",image_width*image_height);
     file
 }
 
-pub fn initialise_threads<H>(image_data: ImageData, scene_data: Arc<SceneData<H>>, samples: i32, shared_data: Arc<Mutex<SharedData>>, num_threads: i32) -> Vec<JoinHandle<()>>
-where H: Hit + 'static {
-    let mut handles = vec![];
-    for _ in 0..num_threads - 1 {
-        let shared_data = Arc::clone(&shared_data);
-        let scene_data = Arc::clone(&scene_data);
-        let handle = thread::spawn(move || iterate_image(image_data, scene_data, samples, shared_data));
-        handles.push(handle);
-    }
-    handles
-}
-
-pub fn report_data(shared_data: Arc<Mutex<SharedData>>, pixel_colors: Vec<Color>) {
-
-     //Acquire lock
-     let mut unlocked_data  = shared_data.lock().unwrap();
-     let current_calculations = unlocked_data.current_calculations;
-     let total_calculations = unlocked_data.total_calculations;
-     let progress = unlocked_data.progress;
-
-     for i in 0..unlocked_data.pixel_colors.len() {
-        unlocked_data.pixel_colors[i] = unlocked_data.pixel_colors[i] + pixel_colors[i];
-     }
-
-     //Write data and update progress
-     unlocked_data.current_calculations += pixel_colors.len() as i64;
-     let new_progress = ((current_calculations) * 100 /total_calculations) as i64;
-     if new_progress - progress >= 1 {
-         println!("{}", new_progress);
-         unlocked_data.progress += 1;
-     }
- }
-
-pub fn iterate_image<H>(image_data: ImageData, scene_data: Arc<SceneData<H>>, samples: i32, shared_data: Arc<Mutex<SharedData>>)
-where H: Hit + 'static {
-
-    let image_height = image_data.image_height as i64;
-    let image_width = image_data.image_width as i64;
-    for _ in 0..samples{
-        let mut pixel_colors = vec![Color::new(0.0,0.0,0.0); (image_height*image_width) as usize];
-        for j in 0..image_height{
-            for i in 0..image_width{
-                    let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
-                    let v = (rand_double(0.0, 1.0) + (image_width - j) as f64)/((image_width - 1) as f64);
-                    let r = scene_data.cam.get_ray(u,v);
-                    let pixel_index = (j*image_width + i) as usize;
-                    pixel_colors[pixel_index] = pixel_colors[pixel_index] + ray_color(&r, scene_data.background, &scene_data.world, image_data.max_depth);
-                }
-        }
-        report_data(Arc::clone(&shared_data), pixel_colors);  
-    }   
-}
 
 #[cfg(test)]
 mod tests {

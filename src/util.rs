@@ -1,6 +1,3 @@
-use crate::vec::*;
-
-use std::f64::INFINITY;
 use std::f64::consts::PI;
 
 const MACHINE_EPISOLON:f64= (std::f32::EPSILON * 0.5) as f64;
@@ -25,14 +22,14 @@ pub fn import_obj(file_name: &str) -> (Vec<tobj::Model>, Option<Vec<tobj::Materi
     let load_options = &tobj::LoadOptions{single_index: true,
         triangulate: true,
         ignore_lines: true,
-        ignore_points: true,
-        ..Default::default()};
+        ignore_points: true
+    };
         
     let obj = tobj::load_obj(file_name,load_options);
     let (models, materials_res) = obj.expect("Invalid file name.");
     match materials_res{
         Ok(mat) => {
-            if mat.len() > 0{
+            if !mat.is_empty(){
                 (models, Some(mat))
             }else{
                 (models, None)

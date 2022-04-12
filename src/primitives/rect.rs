@@ -1,18 +1,23 @@
+use crate::camera::Camera;
+use crate::lines::*;
+use crate::plane::*;
+use crate::rasterizing::Rasterize;
 use crate::vec::*;
-use crate::ray::*;
-use crate::traceable::*;
-use crate::bvh::*;
+use crate::primitives::bvh::*;
 use crate::material::*;
+use crate::points::{Point2, Point3};
+use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
+
 
 #[derive (Copy, Clone)]
-pub enum RectAxes{
+pub enum RectAxes {
     XY,
     XZ,
     YZ
 }
 
 #[derive (Copy, Clone)]
-pub struct Rect{
+pub struct Rect {
     mat: Material,
     axes: RectAxes,
     corners: [f64; 4],
@@ -20,11 +25,11 @@ pub struct Rect{
 }
 
 impl Rect {
-    pub fn new(axes: RectAxes, axis1_min: f64, axis1_max: f64, axis2_min: f64, axis2_max: f64, k: f64, mat: Material) -> Rect{
+    pub fn new(axes: RectAxes, axis1_min: f64, axis1_max: f64, axis2_min: f64, axis2_max: f64, k: f64, mat: Material) -> Rect {
         Rect{axes, corners: [axis1_min, axis1_max, axis2_min, axis2_max], k, mat}
     }   
 
-    pub fn axes_indices(&self) -> (usize, usize){
+    pub fn axes_indices(&self) -> (usize, usize) {
         match self.axes{
             RectAxes::XY => (0,1),
             RectAxes::XZ => (0,2),
@@ -32,7 +37,7 @@ impl Rect {
         }
     }
 
-    pub fn unused_axis_index(&self) -> usize{
+    pub fn unused_axis_index(&self) -> usize {
         match self.axes{
             RectAxes::XY => 2,
             RectAxes::XZ => 1,
@@ -40,7 +45,48 @@ impl Rect {
         }
     }
 
-    pub fn outward_normal(&self) -> Vec3{
+    pub fn get_lines(&self) -> [Line3; 4] {
+        let mut lines: [Line3; 4] = Default::default();
+        let mut corners: [Point3; 4] = Default::default();
+        let indices = self.axes_indices();
+        let normal_axis = self.unused_axis_index();
+
+        //(min, min)
+        corners[0][indices.0] = self.corner(0);
+        corners[0][indices.1] = self.corner(2);
+        corners[0][normal_axis] = self.k;
+
+        //(max, min)
+        corners[2][indices.0] = self.corner(1);
+        corners[2][indices.1] = self.corner(2);
+        corners[2][normal_axis] = self.k;
+
+        //(min, max)
+        corners[1][indices.0] = self.corner(0);
+        corners[1][indices.1] = self.corner(3);
+        corners[1][normal_axis] = self.k;
+
+        //(max, max)
+        corners[3][indices.0] = self.corner(1);
+        corners[3][indices.1] = self.corner(3);
+        corners[3][normal_axis] = self.k;
+
+        lines[0].points[0] = corners[0];
+        lines[0].points[1] = corners[1];
+
+        lines[1].points[0] = corners[0];
+        lines[1].points[1] = corners[2];
+
+        lines[2].points[0] = corners[3];
+        lines[2].points[1] = corners[1];
+
+        lines[3].points[0] = corners[3];
+        lines[3].points[1] = corners[2];
+
+        lines
+    }
+
+    pub fn outward_normal(&self) -> Vec3 {
         match self.axes{
             RectAxes::XY => Vec3::new(0.0, 0.0, 1.0),
             RectAxes::XZ => Vec3::new(0.0, 1.0, 0.0),
@@ -80,12 +126,17 @@ impl Hit for Rect {
             RectAxes::YZ => Some(Aabb::new(Point3::new(self.k-0.0001, self.corner(0),self.corner(2)), Point3::new(self.k+0.0001, self.corner(1), self.corner(3))))
         }
     }
+}
 
+impl Rasterize for Rect {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
+        let lines = self.get_lines().to_vec();
+        lines.outline(cam)
+    }
 }
 
 mod tests {
     use super::*;
-    use crate::material::*;
 
     #[test]
     fn test_new(){
