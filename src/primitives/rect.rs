@@ -29,6 +29,7 @@ impl Rect {
         Rect{axes, corners: [axis1_min, axis1_max, axis2_min, axis2_max], k, mat}
     }   
 
+    /// Returns the indices corresponding to the dimensions in which the rectangle has non-zero width
     pub fn axes_indices(&self) -> (usize, usize) {
         match self.axes{
             RectAxes::XY => (0,1),
@@ -37,6 +38,7 @@ impl Rect {
         }
     }
 
+    /// Returns the index of the dimension in which the rectangle has zero-width
     pub fn unused_axis_index(&self) -> usize {
         match self.axes{
             RectAxes::XY => 2,
@@ -45,6 +47,8 @@ impl Rect {
         }
     }
 
+
+    /// Returns the lines bounding the rectangle
     pub fn get_lines(&self) -> [Line3; 4] {
         let mut lines: [Line3; 4] = Default::default();
         let mut corners: [Point3; 4] = Default::default();
@@ -86,6 +90,7 @@ impl Rect {
         lines
     }
 
+    /// Returns the normal to the rectangle
     pub fn outward_normal(&self) -> Vec3 {
         match self.axes{
             RectAxes::XY => Vec3::new(0.0, 0.0, 1.0),
