@@ -22,20 +22,24 @@ impl Triangle{
         Triangle{vertices, normals, material: mat}
     }
 
+    ///Returns the vertex corresponding to the index.
+    /// 
+    ///The index must be in the range [0, 3)
     pub fn get_vertex(&self, index: usize) -> Point3{
         self.vertices[index]
     }
 
-    //Determine where [0,0] lies with respect to the 
-    //oriented line connecting p0 to p1. If e0 < 0, the
-    //point lies to the left of the line. If e0 > 0, the
-    //point lies to the right of the line. If e0 = 0, the
-    //point lies on the line
+    ///Determine where (0,0) lies with respect to the 
+    ///oriented line connecting p0 to p1.
+    ///
+    ///If e0 < 0, the point lies to the left of the line. If e0 > 0, the
+    ///point lies to the right of the line. If e0 = 0, the point lies on the line
     pub fn edge_fn(p0: Point3, p1: Point3) -> f64{
         p0.x() * p1.y() - p0.y() * p1.x()
     }
 
-    pub fn shear_xy(&mut self, r: &Ray){
+    /// Shears the x and y dimensions of the triangle
+    fn shear_xy(&mut self, r: &Ray){
         let sx = -r.direction().x()/ r.direction().z();
         let sy = -r.direction().y()/r.direction().z();
 
@@ -47,7 +51,8 @@ impl Triangle{
 
     } 
 
-    pub fn shear_z(&mut self, r: &Ray){
+    ///Shears the z-dimension of the triangle
+    fn shear_z(&mut self, r: &Ray){
         let sz = 1.0/r.direction().z();
         self.vertices[0][2] *= sz;
         self.vertices[1][2] *= sz;
