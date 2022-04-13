@@ -63,7 +63,7 @@ impl Camera {
         let w = (settings.look_from - settings.look_at).unit_vector();
         let u = Vec3::cross(settings.v_up, w).unit_vector();
         let v = Vec3::cross(w, u).unit_vector();
-        let v_up = settings.v_up;
+        let v_up = settings.v_up.unit_vector();
         let v_fov = settings.v_fov;
         let orientation = Orientation::new(u,v,w);
 

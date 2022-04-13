@@ -90,8 +90,8 @@ pub struct ImageData{
 }
 
 pub struct ThreadCoordinator {
-    pub thread_to_gui_tx: Sender<StatusUpdate>,
-    pub threads_to_gui_rx: Receiver<StatusUpdate>,
+    pub thread_to_coordinator_tx: Sender<StatusUpdate>,
+    pub threads_to_coordinator_rx: Receiver<StatusUpdate>,
     pub gui_to_thread_txs: Vec<Sender<Message>>,
     pub global_settings: Arc<RwLock<Settings>>,
     pub local_settings: Vec<Arc<RwLock<ThreadSettings>>>,
@@ -122,7 +122,7 @@ impl ThreadCoordinator {
         let paused_threads = vec![];
         let rasterizing_samples = 0;
 
-        ThreadCoordinator { thread_to_gui_tx, threads_to_gui_rx, gui_to_thread_txs, global_settings, local_settings, paused_threads, raytracing_threads, rasterizing_threads, raytracing_samples, rasterizing_samples, image_id, image }
+        ThreadCoordinator { thread_to_coordinator_tx: thread_to_gui_tx, threads_to_coordinator_rx: threads_to_gui_rx, gui_to_thread_txs, global_settings, local_settings, paused_threads, raytracing_threads, rasterizing_threads, raytracing_samples, rasterizing_samples, image_id, image }
     }
 
     pub fn spin_up(&mut self, num_raytracing_threads: usize, num_rasterizing_threads: usize) {
@@ -143,7 +143,7 @@ impl ThreadCoordinator {
         for i in 0..num_threads {
             let (gui_to_thread_tx, gui_to_thread_rx): (Sender<Message>, Receiver<Message>) = channel();
             let barrier_clone = Arc::clone(&barrier);
-            let thread_to_gui_tx = self.thread_to_gui_tx.clone();
+            let thread_to_gui_tx = self.thread_to_coordinator_tx.clone();
             let global_settings = Arc::clone(&self.global_settings);
             let local_settings = self.local_settings[i].clone();
             self.gui_to_thread_txs.push(gui_to_thread_tx);
@@ -242,7 +242,7 @@ impl ThreadCoordinator {
     pub fn update_image(&mut self) {
         self.wake_threads();
         loop {
-            let message_result = self.threads_to_gui_rx.try_recv();
+            let message_result = self.threads_to_coordinator_rx.try_recv();
             if let Ok(message) = message_result {
                 let settings = self.global_settings.read().unwrap().clone();
                 if let StatusUpdate::Running(image_data) = message {

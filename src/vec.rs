@@ -318,45 +318,6 @@ impl IndexMut<usize> for Vec3{
 
 
 
-impl Color{
-
-    pub fn write_color<T: std::io::Write>(self, writer: &mut T, samples: usize)
-    {
-        let mut r = self.x();
-        let mut g = self.y();
-        let mut b = self.z();
-
-        let scale = 1.0/(samples as f64);
-        r = (scale*r).sqrt();
-        g = (scale*g).sqrt();
-        b = (scale*b).sqrt();
-        
-
-        let ir = (256.0*bound(r, 0.0, 0.999)) as i64;
-        let ig = (256.0*bound(g, 0.0, 0.999)) as i64;
-        let ib = (256.0*bound(b, 0.0, 0.999)) as i64;
-        writeln!(writer, "{} {} {}", ir, ig, ib).unwrap();
-    }
-
-    pub fn scale_colors(&self, samples: usize) -> [u8; 3]{
-        let mut r = self.x();
-        let mut g = self.y();
-        let mut b = self.z();
-
-        let scale = 1.0/(samples as f64);
-        r = (scale*r).sqrt();
-        g = (scale*g).sqrt();
-        b = (scale*b).sqrt();
-        
-
-        let ir = (256.0*bound(r, 0.0, 0.999)) as u8;
-        let ig = (256.0*bound(g, 0.0, 0.999)) as u8;
-        let ib = (256.0*bound(b, 0.0, 0.999)) as u8;
-        [ir, ig, ib]
-    }
-}
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

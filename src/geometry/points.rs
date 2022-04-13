@@ -21,9 +21,4 @@ impl Point3 {
         let (_, _, _, d) = plane.get_coefficients();
         plane.orientation.w.dot(self) == plane.orientation.w.dot(other)
     }
-
-    pub fn is_in_view(self, viewing_plane: Plane,) -> bool {
-        let visible_point = viewing_plane.origin - viewing_plane.orientation.w;
-        !self.is_on_the_side_of(viewing_plane, visible_point)
-    }
 }
