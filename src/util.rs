@@ -44,3 +44,26 @@ pub fn gamma(n: i64) -> f64{
     let n = n as f64;
     (n * MACHINE_EPISOLON)/(1.0 - n * MACHINE_EPISOLON)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::f64::consts::PI;
+    use super::*;
+
+    #[test]
+    fn test_bound(){
+        let x = 10.0;
+        let max_x = bound(x, 5.0, 7.0);
+        let min_x = bound(x, 11.0, 14.0);
+        assert_eq!(max_x, 7.0);
+        assert_eq!(min_x, 11.0);
+    }
+
+    #[test]
+    fn test_deg_2_rad(){
+        let deg = 180.0;
+        let rad = deg_to_rad(deg);
+        assert_eq!(PI, rad);
+    }
+
+}

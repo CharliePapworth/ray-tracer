@@ -6,7 +6,6 @@ use crate::image::Image;
 use crate::image::Pixel;
 use crate::image::RaytracedImage;
 use crate::rasterizing::*;
-use crate::ray_color;
 use crate::util::rand_double;
 use crate::vec::*;
 use crate::primitives::bvh::*;
@@ -18,6 +17,7 @@ use crate::points::{Point2, Point3};
 
 use core::cmp::Ordering;
 use std::convert::TryFrom;
+use std::f64::INFINITY;
 
 #[derive (Copy, Clone)]
 pub struct HitRecord{
@@ -159,6 +159,21 @@ pub fn raytrace_pixel(mut image: RaytracedImage, cam: Camera, background: Color,
     image.image.pixels[pixel_index] = Pixel::new(ray_color(&r, background, primitives, max_depth), 1.0);
     
     image
+}
+
+pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color where T: Hit {
+
+    //If we've exceeded the ray bounce limit, no more light is gathered.
+    if depth <= 0{
+        return Color::new(0.0,0.0,0.0)
+    }
+
+    let result = world.trace(r, 0.001, INFINITY);
+    match result {
+        TraceResult::Scattered((attenuation, scattered)) => attenuation.elementwise_mult(&ray_color(&scattered, background, world, depth-1)),
+        TraceResult::Absorbed(emitted) => emitted,
+        TraceResult::Missed => background      
+    }
 }
 
 #[cfg(test)]

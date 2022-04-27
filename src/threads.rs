@@ -2,15 +2,18 @@ use crate::*;
 use crate::image::Pixel;
 use crate::rasterizing::*;
 use crate::image::CompositeImage;
-use crate::image::CompositeImageContribution;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
 use crate::scenes::SceneData;
 use crate::vec::*;
 use crate::util::*;
 
+use std::ops;
+use std::ops::Add;
 use std::sync::Arc;
 use std::sync::Barrier;
+use std::sync::Condvar;
+use std::sync::Mutex;
 use std::sync::RwLock;
 use std::sync::mpsc::*;
 use std::thread;
@@ -19,6 +22,68 @@ use std::thread;
 pub struct ImageSettings {
     pub image_width: usize,
     pub image_height: usize,
+}
+
+#[derive (Clone)]
+pub struct TrackedCompositeImage {
+    pub image: CompositeImage,
+    pub id: i32,
+    pub rasterization_samples: usize,
+}
+
+impl TrackedCompositeImage {
+    pub fn new (image_width: usize, image_height: usize, id: i32) -> TrackedCompositeImage {
+        let image = CompositeImage::new(image_width, image_height);
+        TrackedCompositeImage { image, id, rasterization_samples: 0 }
+    }
+
+    pub fn from_image(image: CompositeImage, rasterization_samples: usize, raytracing_samples: usize, id: i32) -> TrackedCompositeImage {
+        TrackedCompositeImage { image, id, rasterization_samples}
+    }
+
+    pub fn is_finished_rasterizing(&self, desired_id: i32, desired_rasterization_samples: usize) -> bool{
+        self.id >= desired_id && self.rasterization_samples >= desired_rasterization_samples
+    }
+
+    pub fn is_finished_raytracing(&self, desired_id: i32, desired_raytracing_samples: usize) -> bool{
+        self.id >= desired_id && self.image.raytrace.samples >= desired_raytracing_samples
+    }
+
+    pub fn add_outline(&mut self, outline: Raster, id: i32) {
+        if self.image.image_height != outline.image.image_height || self.image.image_width != outline.image.image_width {
+            panic!("Image dimensions do not match");
+        }
+
+        if id > self.id {
+            self.rasterization_samples = 0;
+            self.image.raytrace.samples = 0;
+            self.id = id;
+        }
+
+        if self.rasterization_samples == 0 {
+            self.image.outline = outline;
+            self.rasterization_samples = 1;
+        }
+    }
+
+    pub fn add_raytraced_sample(&mut self, sample: RaytracedImage, id: i32) {
+        if self.image.image_height != sample.image.image_height || self.image.image_width != sample.image.image_width {
+            panic!("Image dimensions do not match");
+        }
+
+        if id > self.id {
+            self.rasterization_samples = 0;
+            self.image.raytrace.samples = 1;
+            self.id = id;
+            self.image.raytrace = sample;
+        } else if self.image.raytrace.samples == 0 && id == self.id {
+            self.image.raytrace = sample;
+            self.image.raytrace.samples = 1;
+        } else if self.image.raytrace.samples > 0 && id == self.id {
+            self.image.raytrace += &sample;
+            self.image.raytrace.samples += 1;
+        }
+    }
 }
 
 
@@ -30,135 +95,67 @@ pub struct RayTraceSettings {
 }
 
 #[derive (Clone)]
-pub struct Settings {
+pub struct GlobalSettings {
     pub raytrace_settings: RayTraceSettings,
     pub image_settings: ImageSettings,
     pub camera: Camera,
     pub scene: SceneData,
-    pub draw_mode: DrawMode,
     pub id: i32
 }
 
-#[derive (Clone)]
-pub struct ThreadSettings{
-    draw_mode: DrawMode,
-    id: usize
-}
-
-pub enum StatusUpdate {
-    Paused(ThreadSettings),
-    Awake(ThreadSettings),
-    Running(ImageData)
-}
-
 #[derive (Copy, Clone)]
-pub enum Progress {
-    Complete,
-    Interrupted(Instructions)
-}
+pub struct LocalSettings {
 
-#[derive (Copy, Clone)]
-pub enum Priority {
-    Now,
-    Next,
-    Eventually
 }
 
 #[derive (Copy, Clone)]
 pub enum Instructions {
     NewTask,
-    Pause,
     Terminate
 }
 
-#[derive (Copy, Clone)]
-pub struct Message {
-    pub instructions: Instructions,
-    pub priority: Priority,
-}
-
-#[derive (Copy, Clone, PartialEq)]
-pub enum DrawMode {
-    Raytrace,
-    Outline
-}
-#[derive (Clone)]
-pub struct ImageData{
-    pub image: CompositeImageContribution,
-    pub draw_mode: DrawMode,
-    pub id: i32
-}
 
 pub struct ThreadCoordinator {
-    pub thread_to_coordinator_tx: Sender<StatusUpdate>,
-    pub threads_to_coordinator_rx: Receiver<StatusUpdate>,
-    pub gui_to_thread_txs: Vec<Sender<Message>>,
-    pub global_settings: Arc<RwLock<Settings>>,
-    pub local_settings: Vec<Arc<RwLock<ThreadSettings>>>,
-    pub paused_threads: Vec<ThreadSettings>,
-    pub raytracing_threads: i32,
-    pub rasterizing_threads: i32,
-    pub raytracing_samples: usize,
-    pub rasterizing_samples: usize,
-    pub image_id: i32,
-    pub image: CompositeImage
+    pub gui_to_thread_txs: Vec<Sender<Instructions>>,
+    pub global_settings: Arc<RwLock<GlobalSettings>>,
+    pub local_settings: Vec<Arc<RwLock<LocalSettings>>>,
+    pub image: Arc<(Mutex<TrackedCompositeImage>, Condvar)>
 }
 
 impl ThreadCoordinator {
 
-    pub fn new(initial_settings: Settings) -> ThreadCoordinator {
+    pub fn new(initial_settings: GlobalSettings) -> ThreadCoordinator {
         let global_settings = Arc::new(RwLock::new(initial_settings.clone()));
-        let (thread_to_gui_tx, threads_to_gui_rx): (Sender<StatusUpdate>, Receiver<StatusUpdate>) = channel();
         let local_settings = vec![];
         let gui_to_thread_txs = vec![];
-        let raytracing_threads = 0;
-        let rasterizing_threads = 0;
-        let image_id = 0;
 
         let image_height = initial_settings.image_settings.image_height;
         let image_width = initial_settings.image_settings.image_width;
-        let image = CompositeImage::new(image_width, image_height);
-        let raytracing_samples = 0;
-        let paused_threads = vec![];
-        let rasterizing_samples = 0;
+        let image = Arc::new((Mutex::new(TrackedCompositeImage::new(image_width, image_height, 0)), Condvar::new()));
 
-        ThreadCoordinator { thread_to_coordinator_tx: thread_to_gui_tx, threads_to_coordinator_rx: threads_to_gui_rx, gui_to_thread_txs, global_settings, local_settings, paused_threads, raytracing_threads, rasterizing_threads, raytracing_samples, rasterizing_samples, image_id, image }
+        ThreadCoordinator {gui_to_thread_txs, global_settings, local_settings, image }
     }
 
-    pub fn spin_up(&mut self, num_raytracing_threads: usize, num_rasterizing_threads: usize) {
+    pub fn spin_up(&mut self, num_threads: usize) {
         
-        let num_threads = num_rasterizing_threads + num_raytracing_threads;
-        let barrier = Arc::new(Barrier::new((num_threads) as usize));
-        
-        for i in 0..num_rasterizing_threads {
-            let thread_settings = ThreadSettings {draw_mode: DrawMode::Outline, id: i};
-            self.local_settings.push(Arc::new(RwLock::new(thread_settings)));
-        }
-
-        for i in num_rasterizing_threads..num_threads {
-            let thread_settings = ThreadSettings {draw_mode: DrawMode::Raytrace, id: i};
-            self.local_settings.push(Arc::new(RwLock::new(thread_settings)));
-        }
-
         for i in 0..num_threads {
-            let (gui_to_thread_tx, gui_to_thread_rx): (Sender<Message>, Receiver<Message>) = channel();
-            let barrier_clone = Arc::clone(&barrier);
-            let thread_to_gui_tx = self.thread_to_coordinator_tx.clone();
+            let thread_settings = LocalSettings {};
+            self.local_settings.push(Arc::new(RwLock::new(thread_settings)));
+            let (gui_to_thread_tx, gui_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
+            let image = Arc::clone(&self.image);
             let global_settings = Arc::clone(&self.global_settings);
             let local_settings = self.local_settings[i].clone();
             self.gui_to_thread_txs.push(gui_to_thread_tx);
-            thread::spawn(move || run_thread(global_settings, local_settings, thread_to_gui_tx,  gui_to_thread_rx, barrier_clone));
+            thread::spawn(move || run_thread(global_settings, local_settings, image,  gui_to_thread_rx));
         }
     }
 
-    pub fn transmit_message(&mut self, message: Message, recipient: DrawMode) {
+    pub fn transmit_instructions(&mut self, instructions: Instructions) {
         let mut threads_to_remove = vec!();
         for (index, transmitter, ) in self.gui_to_thread_txs.iter().enumerate() {
             let thread =  self.local_settings[index].read().unwrap();
-            if thread.draw_mode == recipient {
-                if transmitter.send(message).is_err() {
-                    threads_to_remove.push(index);
-                }
+            if transmitter.send(instructions).is_err() {
+                threads_to_remove.push(index);
             }
         }
         for index in threads_to_remove {
@@ -167,13 +164,17 @@ impl ThreadCoordinator {
     }
 
     pub fn refresh_image(&mut self) {
-        self.raytracing_samples = 0;
-        self.rasterizing_samples = 0;
-        self.wake_threads();
+        let mut settings = self.global_settings.read().unwrap().clone();
+        settings.id += 1;
+        self.transmit_instructions(Instructions::NewTask);
+        //let mut image = self.image.0.lock().unwrap();
+        //image.id += 1;
+        //image.rasterization_samples = 0;
+        //image.raytracing_samples = 0;
     }
 
     pub fn update_samples(&mut self, samples: usize) {
-        let mut settings = self.global_settings.read().unwrap().clone();
+        let settings = self.global_settings.read().unwrap().clone();
         if samples < settings.raytrace_settings.samples_per_pixel {
             self.refresh_image();
         } else {
@@ -182,198 +183,86 @@ impl ThreadCoordinator {
         }
     }
 
-    pub fn update_settings(&mut self, mut new_settings: Settings, priority: Priority) {
-        new_settings.id += 1;
+    pub fn update_settings(&mut self, mut new_settings: GlobalSettings) {
         let mut settings = self.global_settings.write().unwrap();
+        new_settings.id = settings.id + 1;
         *settings = new_settings;
-        std::mem::drop(settings);
-        self.refresh_image();
-    }
-
-    pub fn update_scene(&mut self, new_scene: SceneData, priority: Priority)  {
-        let mut settings = self.global_settings.write().unwrap();
-        settings.scene = new_scene;
-        settings.id += 1;
-        std::mem::drop(settings);
-        self.refresh_image();
-    }
-
-    pub fn update_camera(&mut self, new_camera: Camera, priority: Priority)  {
-        let mut settings = self.global_settings.write().unwrap();
-        settings.camera = new_camera;
-        settings.id += 1;
-        std::mem::drop(settings);
-        self.refresh_image();
+        self.image.1.notify_all();
     }
 
     pub fn is_done(&self) -> bool {
         let settings = self.global_settings.read().unwrap();
-        self.raytracing_samples == settings.raytrace_settings.samples_per_pixel && self.rasterizing_samples == 1 && self.image_id == settings.id
-    }
-    
-    pub fn wake_threads(&mut self) {
-        let settings = self.global_settings.read().unwrap();
-        let mut threads_to_remove = vec!();
-        let message = Message { instructions: Instructions::NewTask, priority: Priority::Now };
-        for thread in &self.paused_threads {
-            if self.raytracing_samples < settings.raytrace_settings.samples_per_pixel && thread.draw_mode == DrawMode::Raytrace
-            || self.rasterizing_samples < 1 && thread.draw_mode == DrawMode::Outline {
-                let transmitter = &self.gui_to_thread_txs[thread.id];
-                if transmitter.send(message).is_err() {
-                    threads_to_remove.push(thread.id);
-                }
-            }
-        }
-        for index in threads_to_remove {
-            self.gui_to_thread_txs.remove(index);
-        }
+        let image = self.image.0.lock().unwrap();
+        image.image.raytrace.samples >= settings.raytrace_settings.samples_per_pixel && image.rasterization_samples >= 1 && image.id == settings.id
     }
 
-    pub fn sleep_threads(&mut self, recipient: DrawMode) {
-        for thread in &self.paused_threads {
-            if thread.draw_mode == recipient {
-                return
-            }
-        }
-        self.transmit_message(Message {instructions: Instructions::Pause, priority: Priority::Now}, recipient);
-    }
-
-
-    pub fn update_image(&mut self) {
-        self.wake_threads();
-        loop {
-            let message_result = self.threads_to_coordinator_rx.try_recv();
-            if let Ok(message) = message_result {
-                let settings = self.global_settings.read().unwrap().clone();
-                if let StatusUpdate::Running(image_data) = message {
-                    if image_data.id > self.image_id {  
-                        self.image_id = image_data.id;
-                        self.image.clear();
-                        self.image += image_data.image;
-                        match image_data.draw_mode {
-                            DrawMode::Outline => {
-                                self.raytracing_samples = 0;
-                                self.rasterizing_samples = 1;
-                            }
-
-                            DrawMode::Raytrace => {
-                                self.rasterizing_samples = 0;
-                                self.raytracing_samples = 1;
-                            }
-                        }
-                    }
-                    else if image_data.id == self.image_id {
-                        match image_data.draw_mode {
-                            DrawMode::Raytrace => {
-                                if self.raytracing_samples < settings.raytrace_settings.samples_per_pixel {
-                                    self.image += image_data.image;
-                                    self.raytracing_samples += 1;
-                                } 
-
-                                if self.raytracing_samples >= settings.raytrace_settings.samples_per_pixel {
-                                    self.sleep_threads(DrawMode::Raytrace);
-                                }
-                            }
-
-                            DrawMode::Outline => {
-                                if self.rasterizing_samples < 1 {
-                                    self.image += image_data.image;
-                                }
-
-                            }
-                        }
-                    }
-                }  else if let StatusUpdate::Paused(thread) = message {
-                    self.paused_threads.push(thread);
-                } else if let StatusUpdate::Awake(awake_thread) = message {
-                    self.paused_threads.retain(|thread| thread.id != awake_thread.id);
-                }
-            } else {
-                return
-            }
-        } 
+    pub fn output_image(&self) -> CompositeImage {
+        let image = self.image.0.lock().unwrap();
+        image.image.clone()
     }
 }
 
 
- pub fn run_thread(global_settings: Arc<RwLock<Settings>>, local_settings: Arc<RwLock<ThreadSettings>>, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: Receiver<Message>, barrier: Arc<Barrier>) {
+ pub fn run_thread(global_settings: Arc<RwLock<GlobalSettings>>, local_settings: Arc<RwLock<LocalSettings>>, image_data: Arc<(Mutex<TrackedCompositeImage>, Condvar)>, coordinator_to_thread_rx: Receiver<Instructions>) {
 
     let mut terminated = false;
-    let mut paused = false; 
 
     while !terminated {
-        if !paused {
-            let global_settings = global_settings.read().unwrap().clone();
-            let local_settings = local_settings.read().unwrap().clone();
-            match local_settings.draw_mode {
-                DrawMode::Raytrace => {
-                    raytrace(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx, &mut paused);
-                }
-                DrawMode::Outline => {
-                    outline(global_settings, thread_to_gui_tx.clone() , &gui_to_thread_rx, &mut paused);
-                    paused = true;
-                }
+        let global_settings = global_settings.read().unwrap().clone();
+        let settings_id = global_settings.id;
+        let local_settings = local_settings.read().unwrap().clone();
+        let cond_var = &image_data.1;
+        let desired_raytracing_samples = global_settings.raytrace_settings.samples_per_pixel;
+        let desired_rasterization_samples = 1;
+        let image = image_data.0.lock().unwrap();
+        if !image.is_finished_rasterizing(settings_id, desired_rasterization_samples) {
+            drop(image);
+            if let Some(contribution) = outline(global_settings) {
+                let mut image = image_data.0.lock().unwrap();
+                image.add_outline(contribution, settings_id);
             }
-        }
-        
-        else {
-            thread_to_gui_tx.send(StatusUpdate::Paused(local_settings.read().unwrap().clone()));
-            let message = gui_to_thread_rx.recv();
-            match message {
-                Ok(message) => {
-                    match message.instructions {
-                        Instructions::Terminate => terminated = true,
-                        Instructions::Pause => {}
-                        Instructions::NewTask => {
-                            thread_to_gui_tx.send(StatusUpdate::Awake(local_settings.read().unwrap().clone()));
-                            paused = false;
-                        }
-                    }
-                }
-                Err(_) => terminated = true
+            
+       } else if !image.is_finished_raytracing(settings_id, desired_raytracing_samples) {
+            drop(image);
+            if let Some(contribution) = raytrace(global_settings, &coordinator_to_thread_rx) {
+                let mut image = image_data.0.lock().unwrap();
+                image.add_raytraced_sample(contribution, settings_id);
             }
+        } else {
+            cond_var.wait(image);
         }
     }
  }
 
- pub fn outline(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: &Receiver<Message>, paused: &mut bool) {
+ pub fn outline(settings: GlobalSettings) -> Option<Raster>{
     
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
-    let mut image = Raster::new(image_width, image_height);
-    let id = settings.id;
+    let mut raster = Raster::new(image_width, image_height);
 
-    image = rasterizing::rasterize(image, settings.camera, settings.scene.background, &settings.scene.geometric_primitives);
-    let output = ImageData{ image: CompositeImageContribution::Outline(image), draw_mode: DrawMode::Outline, id};
-    thread_to_gui_tx.send(StatusUpdate::Running(output));
+    raster = rasterizing::rasterize(raster, settings.camera, settings.scene.background, &settings.scene.geometric_primitives);
+    Some(raster)
  }
 
 
-pub fn raytrace(settings: Settings, thread_to_gui_tx: Sender<StatusUpdate>, gui_to_thread_rx: &Receiver<Message>, paused: &mut bool) {
+pub fn raytrace(settings: GlobalSettings, gui_to_thread_rx: &Receiver<Instructions>) -> Option<RaytracedImage> {
 
     let image_height = settings.image_settings.image_height;
     let image_width = settings.image_settings.image_width;
-    let id = settings.id;
 
-    let mut image = RaytracedImage::new(image_width, image_height);
-    image.samples = 1;
+    let mut raytrace = RaytracedImage::new(image_width, image_height);
+    raytrace.samples = 1;
     let cam = settings.camera;
-    for j in 0..image_height{
-        for i in 0..image_width{
-            image = raytracing::raytrace_pixel(image, cam, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth, (i, j));
-            if let Ok(message) = gui_to_thread_rx.try_recv() {
-                match message.instructions {
-                    Instructions::Terminate => return,
-                    Instructions::Pause => {
-                        *paused = true;
-                        return;
-                    }
-                    _ => {}
+    for j in 0..image_height {
+        for i in 0..image_width {
+            if let Ok(instructions) = gui_to_thread_rx.try_recv() {
+                match instructions {
+                    Instructions::Terminate => return None,
+                    Instructions::NewTask => return None,
                 }
             }
+            raytrace = raytracing::raytrace_pixel(raytrace, cam, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth, (i, j));
         }
     }
-
-    let output = ImageData { image: CompositeImageContribution::RaytracedImage(image), draw_mode: DrawMode::Raytrace, id };
-    thread_to_gui_tx.send(StatusUpdate::Running(output));
+    Some(raytrace)
 }

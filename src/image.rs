@@ -6,14 +6,18 @@ use std::ops;
 use enum_dispatch::enum_dispatch;
 use delegate::delegate;
 
-use crate::{vec::Color, threads::DrawMode, util::bound};
+use crate::{vec::{Color, Vec3}, util::bound};
 
 #[derive (Clone, PartialEq)]
 
 
+
+/// Wraps a color together with an alpha channel. 
+/// 
+/// An Image consists of a vector of pixels, together with some width and height information. 
 pub struct Pixel {
-    color: Color,
-    alpha: f64,
+    pub color: Color,
+    pub alpha: f64,
 }
 
 impl Pixel{
@@ -22,6 +26,7 @@ impl Pixel{
         Pixel { color, alpha }
     }
 
+    /// Outputs the color as an array of u8 (traditional RGB)
     pub fn to_rgb(&self) -> [u8; 3] {
         let r = self.color.x().sqrt();
         let g = self.color.y().sqrt();
@@ -40,6 +45,7 @@ impl Pixel{
         writeln!(writer, "{} {} {}", ir, ig, ib).unwrap();
     }
 
+    /// Overlay another pixel with this pixel using alpha blending
     pub fn over(&self, under: &Pixel) -> Pixel {
         let alpha = self.alpha + under.alpha * (1.0 - self.alpha);
         let color = (self.color * self.alpha + under.color * under.alpha * (1.0 - self.alpha)) / alpha;
@@ -48,6 +54,9 @@ impl Pixel{
 }
 
 #[derive (Clone, PartialEq)]
+
+/// The base image class. Wrapped by RaytracedImage and Raster to provide basic
+/// image functionality (including compositing images, interfacing with egui and writing to disk)
 pub struct Image {
     pub pixels: Vec<Pixel>,
     pub image_width: usize,
@@ -73,6 +82,7 @@ impl Image {
         rgbas
     }
 
+    /// Overlays another image with this image using alpha blending
     pub fn over(&self, under: &Image) -> Image {
         if self.image_height != under.image_height || self.image_width != under.image_width {
             panic!("Image dimensions do not match");
@@ -83,6 +93,7 @@ impl Image {
         image
     }
 
+    /// Saves the image to a PPF file
     pub fn save(&self, path: &str) {
         let mut file = OpenOptions::new().create(true)
                                                 .write(true)
@@ -131,23 +142,23 @@ impl RaytracedImage {
     }
 }
 
-impl Add for RaytracedImage {
+impl<'a> Add for &'a RaytracedImage {
     type Output = RaytracedImage;
 
-    fn add(self, other: RaytracedImage) -> RaytracedImage {
+    fn add(self, other: &'a RaytracedImage) -> RaytracedImage {
         if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
         
-        let mut output = RaytracedImage::new(self.image.image_height, self.image.image_width);
+        let mut output = RaytracedImage::new(self.image.image_width, self.image.image_height);
         output.samples = self.samples + other.samples;
         output.image.pixels = self.image.pixels.iter().zip(other.image.pixels.iter()).map(|(a,b)| Pixel::new(a.color + b.color, 1.0)).collect();
         output
     }
 }
 
-impl AddAssign for RaytracedImage {
-    fn add_assign(&mut self, other: RaytracedImage) {
+impl AddAssign<&RaytracedImage> for RaytracedImage {
+    fn add_assign(&mut self, other: &RaytracedImage) {
         if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
@@ -185,15 +196,15 @@ impl Raster {
     }
 }
 
-impl Add for Raster {
+impl<'a> Add for &'a Raster {
     type Output = Raster;
 
-    fn add(self, other: Raster) -> Raster {
+    fn add(self, other: &'a Raster) -> Raster {
         if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
         
-        let mut output = Raster::new(self.image.image_height, self.image.image_width);
+        let mut output = Raster::new(self.image.image_width, self.image.image_height);
         for index in 0..self.image.pixels.len() {
             if self.z_buffer[index] < other.z_buffer[index] {
                 output.image.pixels[index] = self.image.pixels[index].over(&other.image.pixels[index]);
@@ -205,8 +216,8 @@ impl Add for Raster {
     }
 }
 
-impl AddAssign for Raster {
-    fn add_assign(&mut self, other: Raster) {
+impl AddAssign<&Raster> for Raster {
+    fn add_assign(&mut self, other: &Raster) {
         if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
@@ -216,6 +227,7 @@ impl AddAssign for Raster {
                 self.image.pixels[index] = self.image.pixels[index].over(&other.image.pixels[index]);
             } else if self.z_buffer[index] > other.z_buffer[index] {
                 self.image.pixels[index] = other.image.pixels[index].over(&self.image.pixels[index]);
+                self.z_buffer[index] = other.z_buffer[index];
             }
         }
     }
@@ -224,9 +236,9 @@ impl AddAssign for Raster {
 
 #[derive (Clone)]
 pub struct CompositeImage {
-    raster: Raster,
-    outline: Raster,
-    raytrace: RaytracedImage,
+    pub raster: Raster,
+    pub outline: Raster,
+    pub raytrace: RaytracedImage,
     pub image_width: usize,
     pub image_height: usize
 }
@@ -249,7 +261,7 @@ impl CompositeImage {
         let outline = Raster::new(image_width, image_height);
         let raytraced_image = RaytracedImage::new(image_width, image_height);
 
-        CompositeImage { raster, outline, raytrace: raytraced_image, image_width, image_height}
+        CompositeImage { raster, outline, raytrace: raytraced_image, image_width, image_height }
     }
 
     pub fn clear(&mut self) {
@@ -289,49 +301,44 @@ impl Add for CompositeImage {
         }
         
         let mut output = CompositeImage::new(self.image_height, self.image_width);
-        output.outline = self.outline + other.outline;
-        output.raster = self.raster + other.raster;
-        output.raytrace = self.raytrace + other.raytrace;
+        output.outline = &self.outline + &other.outline;
+        output.raster = &self.raster + &other.raster;
+        output.raytrace = &self.raytrace + &other.raytrace;
+        output
+    }
+}
+
+impl<'a> Add for &'a CompositeImage {
+    type Output = CompositeImage;
+
+    fn add(self, other: &'a CompositeImage) -> CompositeImage {
+        if self.image_height != other.image_height || self.image_width != other.image_width {
+            panic!("Image dimensions do not match");
+        }
+        
+        let mut output = CompositeImage::new(self.image_width, self.image_height);
+        output.outline = &self.outline + &other.outline;
+        output.raster = &self.raster + &other.raster;
+        output.raytrace = &self.raytrace + &other.raytrace;
         output
     }
 }
 
 impl_op_ex_commutative!(+ |lhs: CompositeImage, rhs: Raster| -> CompositeImage { 
-    CompositeImage {raster: lhs.raster + rhs, outline: lhs.outline, raytrace: lhs.raytrace, image_height: lhs.image_height, image_width: lhs.image_width }
+    CompositeImage {raster: &lhs.raster + &rhs, outline: lhs.outline, raytrace: lhs.raytrace, image_height: lhs.image_height, image_width: lhs.image_width }
 });
 
 impl_op_ex_commutative!(+ |lhs: CompositeImage, rhs: RaytracedImage| -> CompositeImage { 
-    CompositeImage {raster: lhs.raster, outline: lhs.outline, raytrace: lhs.raytrace + rhs, image_height: lhs.image_height, image_width: lhs.image_width }
+    CompositeImage {raster: lhs.raster, outline: lhs.outline, raytrace: &lhs.raytrace + &rhs, image_height: lhs.image_height, image_width: lhs.image_width }
 });
 
-impl_op_ex_commutative!(+ |lhs: CompositeImage, rhs: CompositeImageContribution| -> CompositeImage {
-    match rhs {
-        CompositeImageContribution::Outline(outline) => lhs + outline,
-        CompositeImageContribution::Raster(raster) => lhs + raster,
-        CompositeImageContribution::RaytracedImage(raytrace) => lhs + raytrace
-    } 
+impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: &Raster| { lhs.raster += rhs});
+impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: &RaytracedImage| { lhs.raytrace += rhs});
+impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: &CompositeImage| { 
+    lhs.raytrace += &rhs.raytrace;
+    lhs.outline += &rhs.outline;
+    lhs.raster += &rhs.raster;
 });
 
-impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: Raster| { lhs.raster += rhs});
-impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: RaytracedImage| { lhs.raytrace += rhs});
-impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: CompositeImage| { 
-    lhs.raytrace += rhs.raytrace;
-    lhs.outline += rhs.outline;
-    lhs.raster += rhs.raster;
-});
 
-impl_op_ex!(+= |lhs: &mut CompositeImage, rhs: CompositeImageContribution| {
-    match rhs {
-        CompositeImageContribution::Outline(outline) => lhs.outline += outline,
-        CompositeImageContribution::Raster(raster) => lhs.raster += raster,
-        CompositeImageContribution::RaytracedImage(raytrace) => lhs.raytrace += raytrace
-    }
-});
-
-#[derive (Clone)]
-pub enum CompositeImageContribution {
-    Outline(Raster),
-    Raster(Raster),
-    RaytracedImage(RaytracedImage)
-}
 

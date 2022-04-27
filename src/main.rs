@@ -2,7 +2,6 @@
 #![allow(dead_code,unused_imports)]
 #[macro_use] 
 
-
 extern crate impl_ops;
 extern crate fastrand;
 extern crate tobj;
@@ -52,7 +51,7 @@ use std::sync::mpsc::*;
 use std::thread::Thread;
 
 
-fn main(){
+fn main() {
 
     //Scene
     let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
@@ -64,7 +63,7 @@ fn main(){
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 1;
     let max_depth=  50;
 
     //Camera
@@ -75,67 +74,18 @@ fn main(){
     let camera = Camera::new(camera_settings);
     
     //Package data
-    let image_settings = ImageSettings{ image_width, image_height };
+    let image_settings = ImageSettings { image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
     let scene = SceneData { primitives, geometric_primitives, background };
-    let settings = Settings { raytrace_settings, image_settings, camera, scene, draw_mode: DrawMode::Outline, id: 1 };
+    let settings = GlobalSettings { raytrace_settings, image_settings, camera, scene, id: 1 };
 
     //Threading
     let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
-    thread_coordinator.spin_up(4, 1);
+    thread_coordinator.spin_up(3);
 
     //Gui
     let app = Gui::new(settings.clone(), thread_coordinator);
     let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
-    let native_options = eframe::NativeOptions {initial_window_size, decorated: false,..Default::default()};
+    let native_options = eframe::NativeOptions { initial_window_size, decorated: false,..Default::default() };
     eframe::run_native(Box::new(app), native_options);
-}
-
-pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color where T: Hit {
-
-    //If we've exceeded the ray bounce limit, no more light is gathered.
-    if depth <= 0{
-        return Color::new(0.0,0.0,0.0)
-    }
-
-    let result = world.trace(r, 0.001, INFINITY);
-    match result {
-        TraceResult::Scattered((attenuation, scattered)) => attenuation.elementwise_mult(&ray_color(&scattered, background, world, depth-1)),
-        TraceResult::Absorbed(emitted) => emitted,
-        TraceResult::Missed => background      
-    }
-}
-
-pub fn initialise_file(path: &str, image_width: usize, image_height: usize) -> File{
-    let mut file = OpenOptions::new()
-                                    .create(true)
-                                    .write(true)
-                                    .open(path)
-                                    .unwrap();
-    write!(file, "P3\n{} {} \n255\n", image_width, image_height).unwrap();
-    file
-}
-
-
-#[cfg(test)]
-mod tests {
-    use std::f64::consts::PI;
-    use super::*;
-
-    #[test]
-    fn test_bound(){
-        let x = 10.0;
-        let max_x = bound(x, 5.0, 7.0);
-        let min_x = bound(x, 11.0, 14.0);
-        assert_eq!(max_x, 7.0);
-        assert_eq!(min_x, 11.0);
-    }
-
-    #[test]
-    fn test_deg_2_rad(){
-        let deg = 180.0;
-        let rad = deg_to_rad(deg);
-        assert_eq!(PI, rad);
-    }
-
 }

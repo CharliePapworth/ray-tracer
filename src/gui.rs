@@ -9,7 +9,7 @@ use crate::*;
 
 pub struct Gui {
     pub thread_coordinator: ThreadCoordinator,
-    pub settings: Settings,
+    pub settings: GlobalSettings,
     pub labels: Labels,
     pub camera_speed: f64,
     pub expecting_data: bool,
@@ -31,7 +31,7 @@ pub struct Renderers{
 }
 
 impl Gui{
-    pub fn new(settings: Settings, thread_coordinator: ThreadCoordinator) -> Gui {
+    pub fn new(settings: GlobalSettings, thread_coordinator: ThreadCoordinator) -> Gui {
         let camera_speed = 0.2;
 
         let image_width = settings.image_settings.image_width;
@@ -51,11 +51,11 @@ impl Gui{
     }
 
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
-        let image = self.thread_coordinator.image.output(self.image_output, self.outline);
-        let rgbas = image.output_rgba();
-        let raw_image = ColorImage::from_rgba_unmultiplied([self.thread_coordinator.image.image_width, self.thread_coordinator.image.image_height], &rgbas);
+        let image = self.thread_coordinator.output_image();
+        let rgbas = image.output(self.image_output, self.outline).output_rgba();
+        let raw_image = ColorImage::from_rgba_unmultiplied([image.image_width, image.image_height], &rgbas);
         let texture_handle = egui::Context::load_texture(&ctx, "output_image", raw_image);
-        ui.image(texture_handle.id(), [self.thread_coordinator.image.image_width as f32, self.thread_coordinator.image.image_height as f32]);
+        ui.image(texture_handle.id(), [image.image_width as f32, image.image_height as f32]);
     }
 
     pub fn show_settings_window(&mut self, ctx: &Context, ui: &mut Ui) {
@@ -68,7 +68,7 @@ impl Gui{
                     match self.labels.width.parse::<usize>(){
                         Ok(num) => {
                             self.settings.image_settings.image_width = num;
-                            self.thread_coordinator.update_settings(self.settings.clone(), Priority::Now);
+                            self.thread_coordinator.update_settings(self.settings.clone());
                         }
                         Err(_) => {
                             self.labels.width = self.settings.image_settings.image_width.to_string();
@@ -81,7 +81,7 @@ impl Gui{
                     match self.labels.height.parse::<usize>(){
                         Ok(num) => {
                             self.settings.image_settings.image_height = num;
-                            self.thread_coordinator.update_settings(self.settings.clone(), Priority::Now);
+                            self.thread_coordinator.update_settings(self.settings.clone());
                         }
                         Err(_) => {
                             self.labels.height = self.settings.image_settings.image_height.to_string();
@@ -148,7 +148,7 @@ impl Gui{
 
         if up != 0.0 || right != 0.0 || forward != 0.0 {
             self.settings.camera.translate(forward, right, up);
-            self.thread_coordinator.update_camera(self.settings.camera, Priority::Now);
+            self.thread_coordinator.update_settings(self.settings.clone());
         }
     }
 }
@@ -187,7 +187,7 @@ impl epi::App for Gui {
                 ui.menu_button("File", |ui| {                    
                     if ui.button("Save Image").clicked() {
                         let path = "results.ppm";
-                        self.thread_coordinator.image.output(PrimaryImageType::Raytrace, true).save(path);
+                        self.thread_coordinator.output_image().output(PrimaryImageType::Raytrace, true).save(path);
                     }
                 });
 
@@ -231,7 +231,7 @@ impl epi::App for Gui {
                 let rotation_axis = click_vector.perpendicular(self.click_vector).unit_vector();
                 let angle =  click_vector.angle(self.click_vector);
                 self.settings.camera.rotate(rotation_axis, angle);
-                self.thread_coordinator.update_camera(self.settings.camera, Priority::Next);
+                self.thread_coordinator.update_settings(self.settings.clone());
                 self.click_vector = click_vector.rotate(rotation_axis, angle);
             } else {
                 self.dragging = true;
@@ -243,7 +243,6 @@ impl epi::App for Gui {
 
         if !self.thread_coordinator.is_done() {
             ctx.request_repaint();
-            self.thread_coordinator.update_image();
         } 
     }
 }
