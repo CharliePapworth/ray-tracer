@@ -164,18 +164,6 @@ pub struct Labels{
 
 
 impl eframe::App for Gui {
-    // fn name(&self) -> &str {
-    //     "Ray Tracer"
-    // }
-
-    // /// Called once before the first frame.
-    // fn setup(
-    //     &mut self,
-    //     _ctx: &egui::Context,
-    //     _frame: &epi::Frame,
-    //     _storage: Option<&dyn epi::Storage>,
-    // ) {
-    // }
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
