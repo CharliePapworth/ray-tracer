@@ -23,6 +23,7 @@ mod rasterizing;
 mod primitives;
 mod scenes;
 mod raytracing;
+mod radiometry;
 
 use eframe::egui::Vec2;
 use primitives::GeometricPrimitive;
@@ -76,7 +77,7 @@ fn main() {
     //Package data
     let image_settings = ImageSettings { image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
-    let scene = SceneData { primitives, geometric_primitives, background };
+    let scene = SceneData { raytracing_primitives: primitives, rasterization_primitives: geometric_primitives, background };
     let settings = GlobalSettings { raytrace_settings, image_settings, camera, scene, id: 1 };
 
     //Threading

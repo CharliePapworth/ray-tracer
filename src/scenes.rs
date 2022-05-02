@@ -9,12 +9,17 @@ use crate::primitives::triangle::*;
 use crate::points::{Point2, Point3};
 
 #[derive (Clone)]
-pub struct SceneData{
-    pub primitives: Primitives,
-    pub geometric_primitives: GeometricPrimitives,
+
+/// Contains all information regarding the scene. The raytracing_primitives and the rasterization_primitives contain
+/// the same primtitives, but raytracing_primitives may contain acceleration structures designed to improve
+/// raytracing performance. The background color is the ambient color of the scene.
+pub struct SceneData {
+    pub raytracing_primitives: Primitives,
+    pub rasterization_primitives: GeometricPrimitives,
     pub background: Color,   
 }
 
+/// Returns a world filled with spheres.
 pub fn sphere_world() -> (GeometricPrimitives, Color, Point3, Point3) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.7, 0.8, 1.0);
@@ -64,6 +69,7 @@ pub fn sphere_world() -> (GeometricPrimitives, Color, Point3, Point3) {
     (world, background, look_from, look_at)
 }
 
+/// Returns a scene containing a single light.
 pub fn light_test() -> (GeometricPrimitives, Color, Point3, Point3) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
@@ -83,6 +89,7 @@ pub fn light_test() -> (GeometricPrimitives, Color, Point3, Point3) {
 
 }
 
+/// Returns a scene containing a single triangle.
 pub fn triangle_test() -> (GeometricPrimitives, Color, Point3, Point3) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
@@ -105,23 +112,8 @@ pub fn triangle_test() -> (GeometricPrimitives, Color, Point3, Point3) {
 
 }
 
-pub fn rasterizer_test() -> (GeometricPrimitives, Color, Point3, Point3) {
-    let mut world = GeometricPrimitives::new();
-    let background = Color::new(0.9, 0.9, 0.9);
-    let look_from = Point3::new(0.0, 0.0, 26.0);
-    let look_at = Point3::new(0.0, 0.0, 0.0);
-    let v0 = Vec3::new(-2.0, 0.1, -1.0);
-    let v1 = Vec3::new(2.0, 0.1, 3.0);
-    let v2 = Vec3::new(0.0, 2.1, 0.0);
-    let norms = [Vec3::new(0.0, 0.0, 1.0); 3];
-    let mat = Material::new_lambertian(Vec3::new(0.8, 0.8, 0.8));
-    let tri = GeometricPrimitive::new_triangle([v0, v1, v2], norms, mat);
-    world.add(tri);
-    
-    (world, background, look_from, look_at)
-}
 
-
+/// Returns a scene containing an object defined by a .obj file (on a spherical world).
 pub fn obj_test() -> (GeometricPrimitives, Color, Point3, Point3) {
     let _world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);

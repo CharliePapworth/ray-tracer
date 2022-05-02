@@ -6,7 +6,7 @@ use std::ops;
 use enum_dispatch::enum_dispatch;
 use delegate::delegate;
 
-use crate::{vec::{Color, Vec3}, util::bound};
+use crate::{vec::{Color, Vec3}, util::bound_f64};
 
 #[derive (Clone, PartialEq)]
 
@@ -22,6 +22,16 @@ pub struct Pixel {
 
 impl Pixel{
 
+    /// Wraps a color and an alpha value into a pixel struct.
+    /// 
+    ///# Arguments
+    ///
+    /// * `color` - A color value, representing the color of the pixel. Each of the elements of the color struct
+    /// should be between `0` and `1`.
+    /// * `alpha` - A floating point value between `0` and `1`, representing the
+    /// transparency of the pixel. A value of `0` indicates that the pixel is completely transparent,
+    /// whereas a value of `1` indicates the the pixel is compeltely opaque. This information is used 
+    /// when composing multiple images together.
     pub fn new(color: Color, alpha: f64) -> Pixel {
         Pixel { color, alpha }
     }
@@ -32,9 +42,9 @@ impl Pixel{
         let g = self.color.y().sqrt();
         let b = self.color.z().sqrt();
 
-        let ir = (256.0*bound(r, 0.0, 0.999)) as u8;
-        let ig = (256.0*bound(g, 0.0, 0.999)) as u8;
-        let ib = (256.0*bound(b, 0.0, 0.999)) as u8;
+        let ir = (256.0*bound_f64(r, 0.0, 0.999)) as u8;
+        let ig = (256.0*bound_f64(g, 0.0, 0.999)) as u8;
+        let ib = (256.0*bound_f64(b, 0.0, 0.999)) as u8;
 
         [ir, ig, ib]
     }
@@ -56,7 +66,9 @@ impl Pixel{
 #[derive (Clone, PartialEq)]
 
 /// The base image class. Wrapped by RaytracedImage and Raster to provide basic
-/// image functionality (including compositing images, interfacing with egui and writing to disk)
+/// image functionality (including compositing images, interfacing with egui and writing to disk). 
+/// 
+/// Composes a vector of pixels with height and width information.
 pub struct Image {
     pub pixels: Vec<Pixel>,
     pub image_width: usize,
@@ -65,11 +77,18 @@ pub struct Image {
 
 impl Image {
 
+    /// Initialises a black, transparent image of the given width and height.
+    /// 
+    ///# Arguments
+    ///
+    /// * `image_width` - The number of pixels wide the image should be.
+    /// * `image_height` - The number of pixels high the image should be.
     pub fn new(image_width: usize, image_height: usize) -> Image {
         let pixels = vec![Pixel::new(Color::new(0.0, 0.0, 0.0), 0.0); image_width * image_height];
         Image { pixels, image_width, image_height }
     }
 
+    /// Outputs the image as an array of u8 (traditional RGB)
     pub fn output_rgba(&self) -> Vec<u8> {
         let mut rgbas = Vec::<u8>::with_capacity(self.pixels.len() * 4);
         for pixel in self.pixels.iter() {
@@ -108,6 +127,8 @@ impl Image {
 }
 
 #[derive (Clone, PartialEq)]
+/// An image produced via raytracing. Wraps the Image struct, but also contains some additional
+/// information required to compose multiple raytraced images together.
 pub struct RaytracedImage {
     pub image: Image,
     pub samples: usize
@@ -170,6 +191,10 @@ impl AddAssign<&RaytracedImage> for RaytracedImage {
 
 
 #[derive (Clone, PartialEq)]
+/// An image produced via rasterization. 
+/// 
+/// Wraps the Image struct, but, also contains some additional 
+/// information required to rasterize multiple primitives on to the same image.
 pub struct Raster {
     pub image: Image,
     pub z_buffer: Vec<f32>,

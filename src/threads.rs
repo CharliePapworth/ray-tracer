@@ -240,7 +240,7 @@ impl ThreadCoordinator {
     let image_width = settings.image_settings.image_width;
     let mut raster = Raster::new(image_width, image_height);
 
-    raster = rasterizing::rasterize(raster, settings.camera, settings.scene.background, &settings.scene.geometric_primitives);
+    raster = rasterizing::rasterize(raster, settings.camera, settings.scene.background, &settings.scene.rasterization_primitives);
     Some(raster)
  }
 
@@ -261,7 +261,7 @@ pub fn raytrace(settings: GlobalSettings, gui_to_thread_rx: &Receiver<Instructio
                     Instructions::NewTask => return None,
                 }
             }
-            raytrace = raytracing::raytrace_pixel(raytrace, cam, settings.scene.background, &settings.scene.primitives, settings.raytrace_settings.max_depth, (i, j));
+            raytrace = raytracing::raytrace_pixel(raytrace, cam, settings.scene.background, &settings.scene.raytracing_primitives, settings.raytrace_settings.max_depth, (i, j));
         }
     }
     Some(raytrace)

@@ -15,27 +15,33 @@ use crate::points::{Point2, Point3};
 pub type OutCode = i8;
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
+
+/// Represents a 2-dimensional line of finite length. The line is defined by a start point and an end point.
 pub struct Line2 {
-    pub points: [Vec2; 2]
+    pub points: [Point2; 2]
 }
 
 impl Line2 {
-    pub fn new(start: Vec2, end: Vec2) -> Line2 {
+    pub fn new(start: Point2, end: Point2) -> Line2 {
         Line2 {points: [start, end]}
     }
 
-    pub fn start(&self) -> Vec2 {
+    /// Returns the start point of the line.
+    pub fn start(&self) -> Point2 {
         self[0]
     }
 
-    pub fn end(&self) -> Vec2 {
+    /// Returns the end point of the line.
+    pub fn end(&self) -> Point2 {
         self[1]
     }
 
+    /// Returns the length of the line.
     pub fn length(&self) -> f64 {
         (self[1] - self[0]).length()
     }
 
+    /// Scales the line by a constant. Both the start point and the end point are multiplied by the scalar value.
     pub fn scale(&self, scale: f64) -> Line2 {
         Line2::new(self.points[0] * scale, self.points[1] * scale)
     }
@@ -113,7 +119,7 @@ impl Line2 {
             }
         }
     }
-
+    
     pub fn bresenham(&self) -> Vec<[usize; 2]> {
         let line_start = (self.start().x().round() as isize, self.start().y().round() as isize);
         let line_end = (self.end().x().round() as isize, self.end().y().round() as isize);
@@ -122,7 +128,7 @@ impl Line2 {
 }
 
 impl Index<usize> for Line2 {
-    type Output = Vec2;
+    type Output = Point2;
     fn index(&self, index: usize) -> &Self::Output {
         &self.points[index]
     }
@@ -143,12 +149,14 @@ pub enum LinePlaneIntersection {
 }
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
+
+/// Represents a 3-dimensional line of finite length. The line is defined by a start point and an end point.
 pub struct Line3{
-    pub points: [Vec3; 2]
+    pub points: [Point3; 2]
 }
 
 impl Line3{
-    pub fn new(start: Vec3, end: Vec3) -> Line3 {
+    pub fn new(start: Point3, end: Point3) -> Line3 {
         Line3 {points: [start, end]}
     }
 
@@ -193,7 +201,7 @@ impl Line3{
 
     pub fn project(&self, plane: Plane, camera_origin: Point3) -> Option<Line2> {
         
-        let mut points: [Vec2; 2] = Default::default();
+        let mut points: [Point2; 2] = Default::default();
         let visible_line = self.clone();
 
         //Check if the line lies behind the camera
@@ -207,7 +215,7 @@ impl Line3{
             let ray = Ray::new(camera_origin, self.points[i] - camera_origin);
             if let RayPlaneIntersection::Point(projection_3d) = ray.plane_intersection(plane) {
                 let relative_point = projection_3d - plane.origin;
-                points[i] = Vec2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
+                points[i] = Point2::new(relative_point.dot(plane.orientation.u), relative_point.dot(plane.orientation.v));
             } 
         }        
 
@@ -216,7 +224,7 @@ impl Line3{
 }
 
 impl Index<usize> for Line3 {
-    type Output = Vec3;
+    type Output = Point3;
     fn index(&self, index: usize) -> &Self::Output {
         &self.points[index]
     }
@@ -265,8 +273,8 @@ mod tests {
         
         let line = Line3::new(Point3::new(1.0, 1.0, 1.0), Point3::new(1.0, 5.0, 4.0));
         let projected_line = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin).unwrap();
-        assert!((projected_line[0] - Vec2::new(11.0, 11.0)).length() < 0.00001);
-        assert!((projected_line[1] - Vec2::new(15.0, 14.0)).length() < 0.00001);
+        assert!((projected_line[0] - Point2::new(11.0, 11.0)).length() < 0.00001);
+        assert!((projected_line[1] - Point2::new(15.0, 14.0)).length() < 0.00001);
     }
 
     #[test]

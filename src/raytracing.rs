@@ -7,6 +7,7 @@ use crate::image::Pixel;
 use crate::image::RaytracedImage;
 use crate::rasterizing::*;
 use crate::util::rand_double;
+use crate::util::bound_f32;
 use crate::vec::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
@@ -21,9 +22,12 @@ use core::cmp::Ordering;
 use std::convert::TryFrom;
 use std::f64::INFINITY;
 use std::ops::Add;
+use std::ops::Index;
+use std::ops::IndexMut;
+use std::ops::Neg;
 
 #[derive (Copy, Clone)]
-pub struct HitRecord{
+pub struct HitRecord {
     
     pub p: Point3,
     pub normal: Vec3,
@@ -32,71 +36,6 @@ pub struct HitRecord{
     pub p_err: Vec3,
 }
 
-const COEFFICIENTCOUNT: usize = 60;
-pub struct CoefficientSpectrum {
-    coefficients: [f32; COEFFICIENTCOUNT],
-}
-
-impl CoefficientSpectrum {
-    pub fn new(constant: f32) -> CoefficientSpectrum {
-        let coefficients = [constant; COEFFICIENTCOUNT];
-        CoefficientSpectrum { coefficients } 
-    }
-
-    fn elementwise_binary_operation(&self, rhs: &CoefficientSpectrum, operation: fn(f32, f32) -> f32) -> CoefficientSpectrum {
-        let mut coefficients = [0f32; COEFFICIENTCOUNT];
-        for i in 0..COEFFICIENTCOUNT {
-            coefficients[i] = operation(self.coefficients[i], rhs.coefficients[i]);
-        }
-        CoefficientSpectrum { coefficients } 
-    }
-
-    fn elementwise_binary_operation_in_place(&mut self, rhs: &CoefficientSpectrum, operation: fn(f32, f32) -> f32) {
-        for i in 0..COEFFICIENTCOUNT {
-            self.coefficients[i] = operation(self.coefficients[i], rhs.coefficients[i]);
-        }
-    }
-}
-
-impl_op_ex!(+ |lhs: CoefficientSpectrum, rhs: CoefficientSpectrum| -> CoefficientSpectrum {
-        lhs.elementwise_binary_operation(&rhs, |a, b| a + b)
-    }
-);
-
-impl_op_ex!(+= |lhs: &mut CoefficientSpectrum, rhs: CoefficientSpectrum| {
-        lhs.elementwise_binary_operation_in_place(&rhs, |a, b| a + b);
-    }
-);
-
-impl_op_ex!(- |lhs: CoefficientSpectrum, rhs: CoefficientSpectrum| -> CoefficientSpectrum {
-        lhs.elementwise_binary_operation(&rhs, |a, b| a - b)
-    }
-);
-
-impl_op_ex!(-= |lhs: &mut CoefficientSpectrum, rhs: CoefficientSpectrum| {
-        lhs.elementwise_binary_operation_in_place(&rhs, |a, b| a - b);
-    }
-);
-
-impl_op_ex!(* |lhs: CoefficientSpectrum, rhs: CoefficientSpectrum| -> CoefficientSpectrum {
-        lhs.elementwise_binary_operation(&rhs, |a, b| a * b)
-    }
-);
-
-impl_op_ex!(*= |lhs: &mut CoefficientSpectrum, rhs: CoefficientSpectrum| {
-        lhs.elementwise_binary_operation_in_place(&rhs, |a, b| a * b);
-    }
-);
-
-impl_op_ex!(/ |lhs: CoefficientSpectrum, rhs: CoefficientSpectrum| -> CoefficientSpectrum {
-        lhs.elementwise_binary_operation(&rhs, |a, b| a / b)
-    }
-);
-
-impl_op_ex!(/= |lhs: &mut CoefficientSpectrum, rhs: CoefficientSpectrum| {
-        lhs.elementwise_binary_operation_in_place(&rhs, |a, b| a / b);
-    }
-);
 
 
 

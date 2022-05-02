@@ -11,11 +11,34 @@ pub fn rand_double(min_inc: f64, max_exc: f64) -> f64{
     fastrand::f64()*(max_exc - min_inc) + min_inc
 }
 
-pub fn bound(x: f64, min: f64, max:f64) -> f64{
+pub fn bound_f64(x: f64, min: f64, max:f64) -> f64{
     if x < min{return min}
     if x > max{return max}
     x
 }
+
+pub fn bound_f32(x: f32, min: f32, max:f32) -> f32{
+    if x < min{return min}
+    if x > max{return max}
+    x
+}
+
+/// Linearly interpolates between the start and the end. The interpolation time must be between 
+/// 0 and 1.
+/// 
+/// # Example
+/// ```
+/// lerp(4.0, 5.0, 0.0) == 4.0;
+/// lerp(4.0, 5.0, 0.0) == 5.0;
+/// lerp(4.0, 5.0, 0.2) == 4.2;
+/// ```
+pub fn lerp(start: f32, end: f32, interpolation_time: f32) -> f32 {
+    if interpolation_time < 0.0 || interpolation_time > 1.0 {
+        panic!("interpolation_time must be between 0.0 and 1.0 (inclusive)")
+    }
+    (1.0 - interpolation_time) * start + interpolation_time * end
+}
+
 
 pub fn import_obj(file_name: &str) -> (Vec<tobj::Model>, Option<Vec<tobj::Material>>){
 
@@ -53,8 +76,8 @@ mod tests {
     #[test]
     fn test_bound(){
         let x = 10.0;
-        let max_x = bound(x, 5.0, 7.0);
-        let min_x = bound(x, 11.0, 14.0);
+        let max_x = bound_f64(x, 5.0, 7.0);
+        let min_x = bound_f64(x, 11.0, 14.0);
         assert_eq!(max_x, 7.0);
         assert_eq!(min_x, 11.0);
     }
