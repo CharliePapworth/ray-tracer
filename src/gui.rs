@@ -1,9 +1,10 @@
 use std::default;
 
-use eframe::{egui::{self, Visuals, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epi, epaint::{ColorImage, Color32}};
+use eframe::{egui::{self, Visuals, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
 use crate::{vec::Vec2, image::PrimaryImageType};
 use crate::*;
+
 
 
 
@@ -162,26 +163,26 @@ pub struct Labels{
 }
 
 
-impl epi::App for Gui {
-    fn name(&self) -> &str {
-        "Ray Tracer"
-    }
+impl eframe::App for Gui {
+    // fn name(&self) -> &str {
+    //     "Ray Tracer"
+    // }
 
-    /// Called once before the first frame.
-    fn setup(
-        &mut self,
-        _ctx: &egui::Context,
-        _frame: &epi::Frame,
-        _storage: Option<&dyn epi::Storage>,
-    ) {
-    }
+    // /// Called once before the first frame.
+    // fn setup(
+    //     &mut self,
+    //     _ctx: &egui::Context,
+    //     _frame: &epi::Frame,
+    //     _storage: Option<&dyn epi::Storage>,
+    // ) {
+    // }
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
         self.capture_user_input(ctx);  
-        let top_frame = egui::Frame{margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
+        let top_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
         let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").frame(top_frame).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {                    
@@ -217,7 +218,7 @@ impl epi::App for Gui {
         // };
 
 
-        let central_panel = egui::CentralPanel::default().frame(egui::Frame{ margin: Margin::same(0.0),..Default::default() });
+        let central_panel = egui::CentralPanel::default().frame(egui::Frame{ outer_margin: Margin::same(0.0),..Default::default() });
         let response = central_panel.show(ctx, |ui| {self.show_image(ctx, ui)}).response;
         
 

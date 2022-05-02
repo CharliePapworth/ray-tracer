@@ -41,6 +41,7 @@ use crate::util::*;
 use crate::gui::*;
 use crate::threads::*;
 use crate::geometry::*;
+use crate::eframe::egui::*;
 
 use std::f64::INFINITY;
 use std::fs::File;
@@ -88,5 +89,5 @@ fn main() {
     let app = Gui::new(settings.clone(), thread_coordinator);
     let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
     let native_options = eframe::NativeOptions { initial_window_size, decorated: false,..Default::default() };
-    eframe::run_native(Box::new(app), native_options);
+    eframe::run_native("Raytracer", native_options, Box::new(|_cc| Box::new(app)));
 }
