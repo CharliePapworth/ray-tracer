@@ -105,7 +105,8 @@ pub struct GlobalSettings {
 
 #[derive (Copy, Clone)]
 pub struct LocalSettings {
-
+    pub rasterizing: bool,
+    pub raytracing: bool
 }
 
 #[derive (Copy, Clone)]
@@ -139,7 +140,13 @@ impl ThreadCoordinator {
     pub fn spin_up(&mut self, num_threads: usize) {
         
         for i in 0..num_threads {
-            let thread_settings = LocalSettings {};
+            let mut raytracing = true;
+            let mut rasterizing = false;
+            if i == 0 {
+                raytracing = false;
+                rasterizing = true;
+            }
+            let thread_settings = LocalSettings { raytracing, rasterizing };
             self.local_settings.push(Arc::new(RwLock::new(thread_settings)));
             let (gui_to_thread_tx, gui_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
             let image = Arc::clone(&self.image);
@@ -215,14 +222,14 @@ impl ThreadCoordinator {
         let desired_raytracing_samples = global_settings.raytrace_settings.samples_per_pixel;
         let desired_rasterization_samples = 1;
         let image = image_data.0.lock().unwrap();
-        if !image.is_finished_rasterizing(settings_id, desired_rasterization_samples) {
+        if !image.is_finished_rasterizing(settings_id, desired_rasterization_samples) && local_settings.rasterizing == true {
             drop(image);
             if let Some(contribution) = outline(global_settings) {
                 let mut image = image_data.0.lock().unwrap();
                 image.add_outline(contribution, settings_id);
             }
             
-       } else if !image.is_finished_raytracing(settings_id, desired_raytracing_samples) {
+       } else if !image.is_finished_raytracing(settings_id, desired_raytracing_samples) && local_settings.raytracing == true {
             drop(image);
             if let Some(contribution) = raytrace(global_settings, &coordinator_to_thread_rx) {
                 let mut image = image_data.0.lock().unwrap();

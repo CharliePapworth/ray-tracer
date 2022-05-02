@@ -65,7 +65,7 @@ fn main() {
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
     let image_height=  ((image_width as f64)/aspect_ratio) as usize;
-    let samples_per_pixel = 1;
+    let samples_per_pixel = 1000;
     let max_depth=  50;
 
     //Camera
