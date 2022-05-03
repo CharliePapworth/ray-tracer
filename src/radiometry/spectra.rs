@@ -6,9 +6,13 @@ use std::iter::zip;
 /// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
 /// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
 ///  visual spectrum where the human visual system is most sensitive. 
+
+const FIRST_WAVELENGTH: f32 = 400.0;
+const LAST_WAVELENGTH: f32 = 700.0;
+
 pub struct SampledSpectrum<const T: usize> {
     pub coefficients: Coefficients<T>,
-    pub number_of_samples: usize
+    pub number_of_samples: usize,
 }
 
 impl<const T: usize> SampledSpectrum<T> {
@@ -21,7 +25,8 @@ impl<const T: usize> SampledSpectrum<T> {
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
     /// define a piecewise linear function to represent the SPD.
-    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>, ) {
+    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>) -> SampledSpectrum<T> {
+        let mut spectrum = SampledSpectrum::<T>::new(0.0);
         if sample_values.len() == 0 || sample_wavelengths.len() == 0 {
             panic!("One of the inputted vectors has length zero.")
         }
@@ -41,13 +46,19 @@ impl<const T: usize> SampledSpectrum<T> {
                                                                          .collect();
         //Sort the sample values from lowest wavelength to highest.
         sample_dictionary.sort_by(|a,b| a.0.partial_cmp(&b.0).unwrap());
+        for i in 0..T {
+            let from_wavelength = lerp((i as f32) / (T as f32), FIRST_WAVELENGTH, LAST_WAVELENGTH);
+            let to_wavelength = lerp(((i as f32) + 1.0) / (T as f32), FIRST_WAVELENGTH, LAST_WAVELENGTH);
+            spectrum.coefficients[i] = average_samples(&sample_values, &sample_wavelengths, from_wavelength, to_wavelength);
+        }
+        spectrum
     }
 }
 
 /// Compute the average of the piecewise linear function over the range of wavelengths that each
 /// SPD sample is responsible for. The samples (submitted as two seperate vectors, containing the values for each wavelength)
 /// must be sorted.
-fn average_samples(values: Vec<f32>, wavelengths: Vec<f32>, from_wavelength: f32, to_wavelength: f32) -> f32 {
+fn average_samples(values: &Vec<f32>, wavelengths: &Vec<f32>, from_wavelength: f32, to_wavelength: f32) -> f32 {
     if to_wavelength <= wavelengths[0] {
         return values[0];
     }
