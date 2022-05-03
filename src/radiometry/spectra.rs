@@ -1,19 +1,22 @@
+use crate::util::lerp;
+
 use super::coefficients::Coefficients;
 use std::iter::zip;
 
 /// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
 /// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
 ///  visual spectrum where the human visual system is most sensitive. 
-pub struct SampledSpectrum {
-    pub coefficients: Coefficients
+pub struct SampledSpectrum<const T: usize> {
+    pub coefficients: Coefficients<T>,
+    pub number_of_samples: usize
 }
 
-impl SampledSpectrum {
+impl<const T: usize> SampledSpectrum<T> {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
-    pub fn new(constant: f32) -> SampledSpectrum {
-        let coefficients = Coefficients::new(constant);
-        SampledSpectrum { coefficients } 
+    pub fn new(constant: f32) -> SampledSpectrum<T> {
+        let coefficients = Coefficients::<T>::new(constant);
+        SampledSpectrum { coefficients, number_of_samples: T } 
     }
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
@@ -68,7 +71,24 @@ fn average_samples(values: Vec<f32>, wavelengths: Vec<f32>, from_wavelength: f32
         sum += values.last().unwrap() * (from_wavelength - wavelengths.last().unwrap())
     }
 
+    // Advance to first relevant wavelength segment
+    let mut i = 0;
+    while from_wavelength > values[i + 1] {
+        i += 1;
+    } 
 
-    todo!()
+    let interp = |wavelength: f32, i: usize| -> f32 {
+        lerp(values[i], values[i + 1], (wavelength - wavelengths[i]) / (wavelengths[i + 1] - wavelengths[i]))
+    };
+
+    // Loop over wavelength segments and add contributions
+    while i + 1 <= wavelengths.len()  && to_wavelength >= wavelengths[i] {
+        let segment_start = from_wavelength.max(wavelengths[i]);
+        let segment_end = to_wavelength.min(wavelengths[i + 1]);
+        sum += 0.5 * (interp(segment_start, i) + interp(segment_end, i)) * (segment_end - segment_start);
+        i += 1;
+    }
+
+    sum / (to_wavelength - from_wavelength)
 
 }

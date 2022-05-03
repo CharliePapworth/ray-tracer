@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut, Neg, Add, Sub, Mul, AddAssign, SubAssign, Div};
+use std::ops::{Index, IndexMut, Neg, Add, Sub, Mul, AddAssign, SubAssign, Div, MulAssign, DivAssign};
 use std::iter::zip;
 use std::ops;
 
@@ -36,11 +36,11 @@ impl<const T: usize> Coefficients<T> {
         }
     }
 
-    pub fn elementwise_multiplication(&self, other: &Coefficients<T>) {
+    pub fn elementwise_multiplication(&self, other: &Coefficients<T>) -> Coefficients<T> {
         self.elementwise_binary_operation(&other, |a, b| a * b)
     }
 
-    pub fn elementwise_division(&self, other: &Coefficients<T>) {
+    pub fn elementwise_division(&self, other: &Coefficients<T>) -> Coefficients<T> {
         self.elementwise_binary_operation(&other, |a, b| a * b)
     }
 
@@ -103,7 +103,7 @@ impl<const T: usize> Add for Coefficients<T> {
     }
 }
 
-impl<const T: usize> Add for &Coefficients<T> {
+impl<const T: usize> Add<&Coefficients<T>> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn add(self, other: &Coefficients<T>) -> Coefficients<T> {
@@ -111,18 +111,18 @@ impl<const T: usize> Add for &Coefficients<T> {
     }
 }
 
-impl<const T: usize> Add for Coefficients<T> {
+impl<const T: usize> Add<Coefficients<T>> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn add(&self, other: &Coefficients<T>) -> Coefficients<T> {
+    fn add(self, other: Coefficients<T>) -> Coefficients<T> {
         self.elementwise_binary_operation(&other, |a, b| a + b)
     }
 }
 
-impl<const T: usize> Add for &Coefficients<T> {
+impl<const T: usize> Add<&Coefficients<T>> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn add(&self, other: &Coefficients<T>) -> Coefficients<T> {
+    fn add(self, other: &Coefficients<T>) -> Coefficients<T> {
         self.elementwise_binary_operation(&other, |a, b| a + b)
     }
 }
@@ -133,13 +133,13 @@ impl<const T: usize> AddAssign for Coefficients<T> {
     }
 }
 
-impl<const T: usize> AddAssign for &Coefficients<T> {
+impl<const T: usize> AddAssign for &mut Coefficients<T> {
     fn add_assign(&mut self, other: Self) {
         self.elementwise_binary_operation_in_place(&other, |a, b| a + b)
     }
 }
 
-impl<const T: usize> Sub for Coefficients<T> {
+impl<const T: usize> Sub<Coefficients<T>> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn sub(self, other: Coefficients<T>) -> Coefficients<T> {
@@ -147,7 +147,15 @@ impl<const T: usize> Sub for Coefficients<T> {
     }
 }
 
-impl<const T: usize> Sub for &Coefficients<T> {
+impl<const T: usize> Sub<Coefficients<T>> for &Coefficients<T> {
+    type Output = Coefficients<T>;
+
+    fn sub(self, other: Coefficients<T>) -> Coefficients<T> {
+        self.elementwise_binary_operation(&other, |a, b| a - b)
+    }
+}
+
+impl<const T: usize> Sub<&Coefficients<T>> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn sub(self, other: &Coefficients<T>) -> Coefficients<T> {
@@ -155,18 +163,10 @@ impl<const T: usize> Sub for &Coefficients<T> {
     }
 }
 
-impl<const T: usize> Sub for Coefficients<T> {
+impl<const T: usize> Sub<&Coefficients<T>> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn sub(&self, other: &Coefficients<T>) -> Coefficients<T> {
-        self.elementwise_binary_operation(&other, |a, b| a - b)
-    }
-}
-
-impl<const T: usize> Sub for &Coefficients<T> {
-    type Output = Coefficients<T>;
-
-    fn sub(&self, other: &Coefficients<T>) -> Coefficients<T> {
+    fn sub(self, other: &Coefficients<T>) -> Coefficients<T> {
         self.elementwise_binary_operation(&other, |a, b| a - b)
     }
 }
@@ -177,27 +177,27 @@ impl<const T: usize> SubAssign for Coefficients<T> {
     }
 }
 
-impl<const T: usize> SubAssign for &Coefficients<T> {
+impl<const T: usize> SubAssign for &mut Coefficients<T> {
     fn sub_assign(&mut self, other: Self) {
         self.elementwise_binary_operation_in_place(&other, |a, b| a - b)
     }
 }
 
 
-// Scalar Operations
+// Right-Hand Side Scalar Operations
 impl<const T: usize> Mul<f32> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn mul(self, scalar: f32) -> Coefficients<T> {
-        self.arr.map(|a| a * scalar)
+        Coefficients{ arr: self.arr.map(|a| a * scalar) }
     }
 }
 
 impl<const T: usize> Mul<f32> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn mul(&self, scalar: f32) -> Coefficients<T> {
-        self.arr.map(|a| a * scalar)
+    fn mul(self, scalar: f32) -> Coefficients<T> {
+        Coefficients{ arr: self.arr.map(|a| a * scalar) }
     }
 }
 
@@ -205,15 +205,39 @@ impl<const T: usize> Mul<&f32> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn mul(self, scalar: &f32) -> Coefficients<T> {
-        self.arr.map(|a| a * scalar)
+        Coefficients{ arr: self.arr.map(|a| a * scalar) }
     }
 }
 
 impl<const T: usize> Mul<&f32> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn mul(&self, scalar: &f32) -> Coefficients<T> {
-        self.arr.map(|a| a * scalar)
+    fn mul(self, scalar: &f32) -> Coefficients<T> {
+        Coefficients{ arr: self.arr.map(|a| a * scalar) }
+    }
+}
+
+impl<const T: usize> MulAssign<f32> for Coefficients<T> {
+    fn mul_assign(&mut self, scalar: f32) {
+        self.unary_operation_in_place(|a| a * scalar);
+    }
+}
+
+impl<const T: usize> MulAssign<f32> for &mut Coefficients<T> {
+    fn mul_assign(&mut self, scalar: f32) {
+        self.unary_operation_in_place(|a| a * scalar);
+    }
+}
+
+impl<const T: usize> MulAssign<&f32> for Coefficients<T> {
+    fn mul_assign(&mut self, scalar: &f32) {
+        self.unary_operation_in_place(|a| a * scalar);
+    }
+}
+
+impl<const T: usize> MulAssign<&f32> for &mut Coefficients<T> {
+    fn mul_assign(&mut self, scalar: &f32) {
+        self.unary_operation_in_place(|a| a * scalar);
     }
 }
 
@@ -221,15 +245,15 @@ impl<const T: usize> Div<f32> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn div(self, scalar: f32) -> Coefficients<T> {
-        self.arr.map(|a| a / scalar)
+        Coefficients{ arr: self.arr.map(|a| a / scalar) }
     }
 }
 
 impl<const T: usize> Div<f32> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn div(&self, scalar: f32) -> Coefficients<T> {
-        self.arr.map(|a| a / scalar)
+    fn div(self, scalar: f32) -> Coefficients<T> {
+        Coefficients{ arr: self.arr.map(|a| a / scalar) }
     }
 }
 
@@ -237,14 +261,104 @@ impl<const T: usize> Div<&f32> for Coefficients<T> {
     type Output = Coefficients<T>;
 
     fn div(self, scalar: &f32) -> Coefficients<T> {
-        self.arr.map(|a| a * scalar)
+        Coefficients{ arr: self.arr.map(|a| a / scalar) }
     }
 }
 
 impl<const T: usize> Div<&f32> for &Coefficients<T> {
     type Output = Coefficients<T>;
 
-    fn div(&self, scalar: &f32) -> Coefficients<T> {
-        self.arr.map(|a| a * scalar)
+    fn div(self, scalar: &f32) -> Coefficients<T> {
+        Coefficients{ arr: self.arr.map(|a| a / scalar) }
     }
 }
+
+impl<const T: usize> DivAssign<f32> for Coefficients<T> {
+    fn div_assign(&mut self, scalar: f32) {
+        self.unary_operation_in_place(|a| a / scalar);
+    }
+}
+
+impl<const T: usize> DivAssign<f32> for &mut Coefficients<T> {
+    fn div_assign(&mut self, scalar: f32) {
+        self.unary_operation_in_place(|a| a / scalar);
+    }
+}
+
+impl<const T: usize> DivAssign<&f32> for Coefficients<T> {
+    fn div_assign(&mut self, scalar: &f32) {
+        self.unary_operation_in_place(|a| a / scalar);
+    }
+}
+
+impl<const T: usize> DivAssign<&f32> for &mut Coefficients<T> {
+    fn div_assign(&mut self, scalar: &f32) {
+        self.unary_operation_in_place(|a| a / scalar);
+    }
+}
+
+// Left-Hand Side Scalar Operations
+impl<const T: usize> Mul<Coefficients<T>> for f32 {
+    type Output = Coefficients<T>;
+
+    fn mul(self, vector: Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a * self) }
+    }
+}
+
+impl<const T: usize> Mul<&Coefficients<T>> for f32 {
+    type Output = Coefficients<T>;
+
+    fn mul(self, vector: &Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a * self) }
+    }
+}
+
+impl<const T: usize> Mul<Coefficients<T>> for &f32 {
+    type Output = Coefficients<T>;
+
+    fn mul(self, vector: Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a * self) }
+    }
+}
+
+impl<const T: usize> Mul<&Coefficients<T>> for &f32 {
+    type Output = Coefficients<T>;
+
+    fn mul(self, vector: &Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a * self) }
+    }
+}
+
+impl<const T: usize> Div<Coefficients<T>> for f32 {
+    type Output = Coefficients<T>;
+
+    fn div(self, vector: Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a / self) }
+    }
+}
+
+impl<const T: usize> Div<&Coefficients<T>> for f32 {
+    type Output = Coefficients<T>;
+
+    fn div(self, vector: &Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a / self) }
+    }
+}
+
+impl<const T: usize> Div<Coefficients<T>> for &f32 {
+    type Output = Coefficients<T>;
+
+    fn div(self, vector: Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a / self) }
+    }
+}
+
+impl<const T: usize> Div<&Coefficients<T>> for &f32 {
+    type Output = Coefficients<T>;
+
+    fn div(self, vector: &Coefficients<T>) -> Coefficients<T> {
+        Coefficients{ arr: vector.arr.map(|a| a / self) }
+    }
+}
+
