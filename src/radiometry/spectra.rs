@@ -3,29 +3,36 @@ use crate::util::lerp;
 use super::coefficients::Coefficients;
 use std::iter::zip;
 
+
+pub fn Init() {
+
+
+}
+
 /// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
 /// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
 ///  visual spectrum where the human visual system is most sensitive. 
 
 const FIRST_WAVELENGTH: f32 = 400.0;
 const LAST_WAVELENGTH: f32 = 700.0;
+const SPECTRAL_SAMPLES: usize = 60;
 
-pub struct SampledSpectrum<const T: usize> {
-    pub coefficients: Coefficients<T>
+pub struct SampledSpectrum {
+    pub coefficients: Coefficients<SPECTRAL_SAMPLES>
 }
 
-impl<const T: usize> SampledSpectrum<T> {
+impl SampledSpectrum {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
-    pub fn new(constant: f32) -> SampledSpectrum<T> {
-        let coefficients = Coefficients::<T>::new(constant);
+    pub fn new(constant: f32) -> SampledSpectrum {
+        let coefficients = Coefficients::<SPECTRAL_SAMPLES>::new(constant);
         SampledSpectrum { coefficients } 
     }
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
     /// define a piecewise linear function to represent the SPD.
-    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>) -> SampledSpectrum<T> {
-        let mut spectrum = SampledSpectrum::<T>::new(0.0);
+    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>) -> SampledSpectrum {
+        let mut spectrum = SampledSpectrum::new(0.0);
         if sample_values.len() == 0 || sample_wavelengths.len() == 0 {
             panic!("One of the inputted vectors has length zero.")
         }
@@ -45,12 +52,16 @@ impl<const T: usize> SampledSpectrum<T> {
                                                                          .collect();
         //Sort the sample values from lowest wavelength to highest.
         sample_dictionary.sort_by(|a,b| a.0.partial_cmp(&b.0).unwrap());
-        for i in 0..T {
-            let from_wavelength = lerp((i as f32) / (T as f32), FIRST_WAVELENGTH, LAST_WAVELENGTH);
-            let to_wavelength = lerp(((i as f32) + 1.0) / (T as f32), FIRST_WAVELENGTH, LAST_WAVELENGTH);
+        for i in 0..SPECTRAL_SAMPLES {
+            let from_wavelength = lerp((i as f32) / (SPECTRAL_SAMPLES as f32), FIRST_WAVELENGTH, LAST_WAVELENGTH);
+            let to_wavelength = lerp(((i as f32) + 1.0) / (SPECTRAL_SAMPLES as f32), FIRST_WAVELENGTH, LAST_WAVELENGTH);
             spectrum.coefficients[i] = average_samples(&sample_values, &sample_wavelengths, from_wavelength, to_wavelength);
         }
         spectrum
+    }
+
+    pub fn from_coefficients(coefficients: Coefficients<SPECTRAL_SAMPLES>) -> SampledSpectrum {
+        SampledSpectrum { coefficients }
     }
 }
 
