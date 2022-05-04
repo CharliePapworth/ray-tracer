@@ -11,8 +11,7 @@ const FIRST_WAVELENGTH: f32 = 400.0;
 const LAST_WAVELENGTH: f32 = 700.0;
 
 pub struct SampledSpectrum<const T: usize> {
-    pub coefficients: Coefficients<T>,
-    pub number_of_samples: usize,
+    pub coefficients: Coefficients<T>
 }
 
 impl<const T: usize> SampledSpectrum<T> {
@@ -20,7 +19,7 @@ impl<const T: usize> SampledSpectrum<T> {
     /// Initialises a SampledSpectrum with coefficients of a constant value.
     pub fn new(constant: f32) -> SampledSpectrum<T> {
         let coefficients = Coefficients::<T>::new(constant);
-        SampledSpectrum { coefficients, number_of_samples: T } 
+        SampledSpectrum { coefficients } 
     }
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
