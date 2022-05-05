@@ -1,17 +1,11 @@
 use crate::*;
-use crate::image::Pixel;
-use crate::rasterizing::*;
+use crate::camera::Camera;
 use crate::image::CompositeImage;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
 use crate::scenes::SceneData;
-use crate::vec::*;
-use crate::util::*;
 
-use std::ops;
-use std::ops::Add;
 use std::sync::Arc;
-use std::sync::Barrier;
 use std::sync::Condvar;
 use std::sync::Mutex;
 use std::sync::RwLock;

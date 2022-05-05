@@ -1,18 +1,15 @@
-use core::panic;
 use std::f64::consts::PI;
 
-use line_drawing::{BresenhamCircle, Midpoint, Bresenham};
 
-use crate::geometry::lines::{Line3, LinePlaneIntersection};
+use crate::geometry::lines::{Line3};
 use crate::rasterizing::*;
 use crate::geometry::plane::Plane;
-use crate::{geometry::*, camera};
-use crate::vec::{Vec2, Vec3};
+use crate::vec::{Vec3};
 use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::camera::*;
-use crate::points::{Point2, Point3};
-use crate::raytracing::{HitRecord, TraceResult, Hit, Ray, RayPlaneIntersection};
+use crate::geometry::points::{Point3};
+use crate::raytracing::{HitRecord, Hit, Ray};
 
 #[derive (Copy, Clone)]
 pub struct Sphere {
@@ -56,7 +53,7 @@ impl Sphere{
     //https://zingl.github.io/Bresenham.pdf
     pub fn wrap_horizon(&self, cam: &Camera) -> Option<Vec<Line3>>{
 
-        const NUMBER_OF_LINES: usize = 100;
+        const NUMBER_OF_LINES: usize = 200;
         let mut lines = Vec::with_capacity(NUMBER_OF_LINES);
         let visible_plane = Plane::new(cam.orientation, cam.origin);
 

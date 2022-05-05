@@ -1,12 +1,27 @@
 use crate::util::lerp;
 
 use super::coefficients::Coefficients;
+use super::constants::*;
 use std::iter::zip;
 
+fn init_CIE() -> [SampledSpectrum; 3] {
+    let mut i = 0;
+    let spectral_samples_f32 = SPECTRAL_SAMPLES as f32;
+    let mut x = SampledSpectrum::new(0.0);
+    let mut y = SampledSpectrum::new(0.0);
+    let mut z = SampledSpectrum::new(0.0);
 
-pub fn Init() {
-
-
+    while i < SPECTRAL_SAMPLES {
+        let i_f32 = i as f32;
+        let next_i_f32 = (i + 1) as f32;
+        let from_wavelength = lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, i_f32 / spectral_samples_f32);
+        let to_wavelength =  lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, next_i_f32 / spectral_samples_f32);
+        x.coefficients[i] = average_samples(&CIE_X.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+        y.coefficients[i] = average_samples(&CIE_Y.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+        z.coefficients[i] = average_samples(&CIE_Z.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+        i += 1;
+    }
+    [x, y, z]
 }
 
 /// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
@@ -24,7 +39,7 @@ pub struct SampledSpectrum {
 impl SampledSpectrum {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
-    pub fn new(constant: f32) -> SampledSpectrum {
+    pub const fn new(constant: f32) -> SampledSpectrum {
         let coefficients = Coefficients::<SPECTRAL_SAMPLES>::new(constant);
         SampledSpectrum { coefficients } 
     }

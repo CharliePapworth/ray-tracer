@@ -1,8 +1,7 @@
 use crate::geometry::points::Point3;
-use crate::vec::*;
 use crate::material::*;
 use crate::primitives::GeometricPrimitive;
-use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
+use crate::raytracing::{HitRecord, Hit, Ray};
 use std::cmp::Ordering;
 
 use super::GeometricPrimitives;
@@ -234,12 +233,8 @@ impl Hit for BvhNode{
 
 #[cfg(test)]
 mod tests {
-    use crate::primitives::sphere::*;
-    use crate::material::*;
-    use crate::primitives::GeometricPrimitive;
-    use crate::primitives::triangle::*;
-        
     use super::*;
+    use crate::vec::*;
 
     #[test]
     fn min(){

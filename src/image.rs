@@ -1,12 +1,9 @@
-use std::{ops::{Index, IndexMut, Add, AddAssign}, fs::OpenOptions};
-use std::fs::File;
+use std::{ops::{Add, AddAssign}, fs::OpenOptions};
 use std::io::Write;
 use std::ops;
+use impl_ops::*;
 
-use enum_dispatch::enum_dispatch;
-use delegate::delegate;
-
-use crate::{vec::{Color, Vec3}, util::bound_f64};
+use crate::{vec::{Color}, util::bound_f64};
 
 #[derive (Clone, PartialEq)]
 

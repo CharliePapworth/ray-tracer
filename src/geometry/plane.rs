@@ -1,12 +1,5 @@
-use core::time;
-use std::ops::{Index, IndexMut, RangeBounds};
-
-use crate::enum_dispatch::*;
-use crate::raytracing::{Ray, RayPlaneIntersection};
-use line_drawing::Bresenham;
-use crate::points::Point3;
-use crate::vec::{Vec2, Vec3};
-use crate::camera::{Camera, CameraSettings, Orientation};
+use super::points::Point3;
+use crate::camera::Orientation;
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
 /// Represents an infinite, 3-dimensional plane. The plane is defined by two basis vectors and a normal (given by its orientation),

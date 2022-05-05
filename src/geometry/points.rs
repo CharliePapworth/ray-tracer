@@ -1,4 +1,3 @@
-use crate::raytracing::{Ray, RayPlaneIntersection};
 use crate::vec::{Vec3, Vec2};
 use crate::geometry::plane::*;
 

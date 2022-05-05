@@ -1,7 +1,4 @@
 use std::ops::{Index, IndexMut, Neg, Add, Sub, Mul, AddAssign, SubAssign, Div, MulAssign, DivAssign};
-use std::iter::zip;
-use std::ops;
-
 use crate::util::bound_f32;
 
 /// Infrastructure underpining the spectrum implementations. Each implementation contains an array of coefficients, on
@@ -11,7 +8,7 @@ pub struct Coefficients<const T: usize> {
 }
 
 impl<const T: usize> Coefficients<T> {
-    pub fn new(constant: f32) -> Coefficients<T> {
+    pub const fn new(constant: f32) -> Coefficients<T> {
         let coefficients = [constant; T];
         Coefficients { arr: coefficients } 
     }

@@ -1,12 +1,9 @@
 use crate::primitives::{GeometricPrimitive, GeometricPrimitives, Primitives};
 use crate::vec::*;
-use crate::primitives::sphere::*;
-use crate::raytracing::{HitRecord, TraceResult, Hit};
 use crate::material::*;
 use crate::primitives::rect::*;
 use crate::util::*;
-use crate::primitives::triangle::*;
-use crate::points::{Point2, Point3};
+use crate::geometry::points::{Point3};
 
 #[derive (Clone)]
 

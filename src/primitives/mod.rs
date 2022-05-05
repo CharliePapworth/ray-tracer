@@ -11,17 +11,11 @@ use crate::vec::*;
 use crate::primitives::bvh::*;
 use crate::enum_dispatch::*;
 use crate::rasterizing::Rasterize;
-use crate::Camera;
 extern crate fastrand;
 
-use crate::rasterizing::*;
-use crate::vec::*;
-use crate::primitives::bvh::*;
-use crate::material::*;
-use crate::primitives::triangle::*;
-use crate::enum_dispatch::*;
-use crate::points::{Point2, Point3};
-use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
+use crate::camera::Camera;
+use crate::geometry::points::{Point3};
+use crate::raytracing::{HitRecord, Hit, Ray};
 
 use core::cmp::Ordering;
 use std::convert::TryFrom;

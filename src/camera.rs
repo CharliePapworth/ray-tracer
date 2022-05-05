@@ -1,12 +1,6 @@
 use core::f64;
-use std::fs::OpenOptions;
-use std::ops::Add;
-use std::ops::Index;
-use std::ops::IndexMut;
-use std::fs::File;
-use std::io::Write;
 
-use crate::deg_to_rad;
+use crate::util::deg_to_rad;
 use crate::geometry::points::Point3;
 use crate::vec::*;
 use crate::raytracing::Ray;

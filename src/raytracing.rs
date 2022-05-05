@@ -2,29 +2,17 @@ extern crate fastrand;
 
 use crate::camera::Camera;
 use crate::geometry::plane::Plane;
-use crate::image::Image;
 use crate::image::Pixel;
 use crate::image::RaytracedImage;
-use crate::rasterizing::*;
 use crate::util::rand_double;
-use crate::util::bound_f32;
 use crate::vec::*;
 use crate::primitives::bvh::*;
 use crate::material::*;
-use crate::primitives::triangle::*;
 use crate::primitives::*;
 use crate::enum_dispatch::*;
-use crate::points::{Point2, Point3};
-use std::iter::zip;
-use std::ops;
+use crate::geometry::points::{Point3};
 
-use core::cmp::Ordering;
-use std::convert::TryFrom;
 use std::f64::INFINITY;
-use std::ops::Add;
-use std::ops::Index;
-use std::ops::IndexMut;
-use std::ops::Neg;
 
 #[derive (Copy, Clone)]
 pub struct HitRecord {

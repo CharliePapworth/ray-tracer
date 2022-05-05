@@ -1,12 +1,7 @@
-use std::default;
+use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
-use eframe::{egui::{self, Visuals, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
-
-use crate::{vec::Vec2, image::PrimaryImageType};
+use crate::{vec::{Vec2, Vec3}, image::PrimaryImageType, threads::{ThreadCoordinator, GlobalSettings}};
 use crate::*;
-
-
-
 
 pub struct Gui {
     pub thread_coordinator: ThreadCoordinator,

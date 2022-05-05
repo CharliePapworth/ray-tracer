@@ -1,16 +1,13 @@
-use core::time;
-use std::ops::{Index, IndexMut, RangeBounds};
 
-use crate::enum_dispatch::*;
 use crate::raytracing::{Ray, RayPlaneIntersection};
-use crate::plane::*;
+use crate::geometry::plane::*;
 use line_drawing::Bresenham;
+use std::ops::{Index, IndexMut};
 
-use crate::vec::{Vec2, Vec3};
-use crate::camera::{Camera, CameraSettings, Orientation};
-use crate::primitives::{GeometricPrimitive, Primitive};
+use crate::vec::*;
+use crate::camera::*;
 use crate::rasterizing::*;
-use crate::points::{Point2, Point3};
+use super::points::*;
 
 pub type OutCode = i8;
 

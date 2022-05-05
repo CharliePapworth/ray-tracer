@@ -1,8 +1,10 @@
-use std::{ops, f64::consts::PI};
+use std::{ops};
 use core::cmp::Ordering;
 use std::ops::{Index, IndexMut};
-use crate::{*, geometry::{lines::OutCode, plane::Plane}};
-use crate::points::{Point2, Point3};
+use impl_ops::*;
+
+use crate::{*, geometry::{lines::OutCode}, util::rand_double};
+use crate::geometry::points::{Point3};
 
 
 #[derive (PartialEq, Debug, Copy, Clone, Default)]
@@ -321,6 +323,7 @@ impl IndexMut<usize> for Vec3{
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{f64::consts::PI};
 
     #[test]
     fn test_new(){

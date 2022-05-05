@@ -1,4 +1,8 @@
-pub const N_CIE_SAMPLES: u16 = 471_u16;
+/// the values of the standard X(lambda), Y(lambda), and Z(lambda) response curves sampled at 1-nm
+///  increments from 360 nm to 830 nm. The wavelengths of the nth sample in the arrays below are given
+///  by the nth element of CIE_lambda;
+
+pub const N_CIE_SAMPLES: usize = 471;
 pub const CIE_X: [f32; N_CIE_SAMPLES as usize] = [
     // CIE X function values
     0.000_129_900_0,

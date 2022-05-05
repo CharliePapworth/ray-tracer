@@ -1,8 +1,7 @@
 use enum_dispatch::enum_dispatch;
 use crate::camera::Camera;
-use crate::GeometricPrimitive;
 use crate::image::{Raster, Pixel};
-use crate::primitives::{Primitives, GeometricPrimitives};
+use crate::primitives::{GeometricPrimitives};
 use crate::vec::Color;
 
 #[enum_dispatch] 

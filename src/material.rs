@@ -1,7 +1,6 @@
 use crate::vec::*;
 use crate::util::*;
-use crate::raytracing::{HitRecord, TraceResult, Hit, Ray};
-use crate::points::{Point2, Point3};
+use crate::raytracing::{HitRecord, Ray};
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Lambertian{
@@ -194,7 +193,9 @@ pub trait Scatter: Clone{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{primitives::sphere::*, primitives::{Primitive, GeometricPrimitive}, geometry::points::Point3};
+    use crate::primitives::{GeometricPrimitive};
+    use crate::raytracing::{Hit, Ray};
+    use crate::geometry::points::{Point3};
 
     #[test]
     fn test_lambertian_deterministic_scatter(){
