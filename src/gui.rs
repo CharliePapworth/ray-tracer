@@ -110,9 +110,30 @@ impl Gui{
         }
     }
 
+    pub fn capture_mouse_input(&mut self, ctx: &egui::Context, response: Response) {
+        if response.interact(Sense::drag()).dragged() {
+            let cam = self.settings.camera;
+            let egui_pointer_pos = ctx.pointer_interact_pos().unwrap();
+            let pointer_position = Vec2::new(egui_pointer_pos[0] as f64, (self.settings.image_settings.image_width as f64) - (egui_pointer_pos[1] as f64));
+            let pointer_position_3d = pointer_position[0] * cam.horizontal.length() * cam.orientation.u / (self.settings.image_settings.image_width as f64) + pointer_position[1] * cam.orientation.v * cam.vertical.length() / (self.settings.image_settings.image_height as f64) + cam.lower_left_corner;
+            let click_vector = pointer_position_3d - cam.origin;
+            if self.dragging && click_vector != self.click_vector{
+                let rotation_axis = click_vector.perpendicular(self.click_vector).unit_vector();
+                let angle =  click_vector.angle(self.click_vector);
+                self.settings.camera.rotate(rotation_axis, angle);
+                self.thread_coordinator.update_settings(self.settings.clone());
+                self.click_vector = click_vector.rotate(rotation_axis, angle);
+            } else {
+                self.dragging = true;
+                self.click_vector = click_vector
+            }
+        } else {
+            self.dragging = false;
+        }
+    }
 
 
-    pub fn capture_user_input(&mut self, ctx: &egui::Context) {
+    pub fn capture_keyboard_input(&mut self, ctx: &egui::Context) {
         let user_input = ctx.input();
         let mut up = 0.0;
         let mut forward = 0.0;
@@ -164,7 +185,7 @@ impl eframe::App for Gui {
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
-        self.capture_user_input(ctx);  
+        self.capture_keyboard_input(ctx);  
         let top_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
         let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").frame(top_frame).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -203,28 +224,8 @@ impl eframe::App for Gui {
 
         let central_panel = egui::CentralPanel::default().frame(egui::Frame{ outer_margin: Margin::same(0.0),..Default::default() });
         let response = central_panel.show(ctx, |ui| {self.show_image(ctx, ui)}).response;
+        self.capture_mouse_input(ctx, response);  
         
-
-        if response.interact(Sense::drag()).dragged() {
-            let cam = self.settings.camera;
-            let egui_pointer_pos = ctx.pointer_interact_pos().unwrap();
-            let pointer_position = Vec2::new(egui_pointer_pos[0] as f64, (self.settings.image_settings.image_width as f64) - (egui_pointer_pos[1] as f64));
-            let pointer_position_3d = pointer_position[0] * cam.horizontal.length() * cam.orientation.u / (self.settings.image_settings.image_width as f64) + pointer_position[1] * cam.orientation.v * cam.vertical.length() / (self.settings.image_settings.image_height as f64) + cam.lower_left_corner;
-            let click_vector = pointer_position_3d - cam.origin;
-            if self.dragging && click_vector != self.click_vector{
-                let rotation_axis = click_vector.perpendicular(self.click_vector).unit_vector();
-                let angle =  click_vector.angle(self.click_vector);
-                self.settings.camera.rotate(rotation_axis, angle);
-                self.thread_coordinator.update_settings(self.settings.clone());
-                self.click_vector = click_vector.rotate(rotation_axis, angle);
-            } else {
-                self.dragging = true;
-                self.click_vector = click_vector
-            }
-        } else {
-            self.dragging = false;
-        }
-
         if !self.thread_coordinator.is_done() {
             ctx.request_repaint();
         } 
