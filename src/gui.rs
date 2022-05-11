@@ -182,9 +182,7 @@ pub struct Labels{
 impl eframe::App for Gui {
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        //let Self {thread_output_rx, thread_input_tx, input_data, image_data, labels, count} = self;
         self.capture_keyboard_input(ctx);  
         let top_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
         let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").frame(top_frame).show(ctx, |ui| {
