@@ -151,6 +151,12 @@ impl ThreadCoordinator {
         }
     }
 
+    /// Returns the number of raytracing samples completed.
+    pub fn get_progress(&self) -> usize {
+        let image = self.image.0.lock().unwrap();
+        image.image.raytrace.samples
+    }
+
     pub fn transmit_instructions(&mut self, instructions: Instructions) {
         let mut threads_to_remove = vec!();
         for (index, transmitter, ) in self.gui_to_thread_txs.iter().enumerate() {

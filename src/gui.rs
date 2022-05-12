@@ -1,7 +1,11 @@
+pub mod progress_bar;
+
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
 use crate::{vec::{Vec2, Vec3}, image::PrimaryImageType, threads::{ThreadCoordinator, GlobalSettings}};
 use crate::*;
+
+use self::progress_bar::CustomProgressBar;
 
 pub struct Gui {
     pub thread_coordinator: ThreadCoordinator,
@@ -183,9 +187,10 @@ impl eframe::App for Gui {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        //ctx.set_style(Style{visuals: Visuals {code_bg_color: Color32::from_rgb(200, 200, 200), ,..Default::default()}, ..Default::default()});
         self.capture_keyboard_input(ctx);  
         let top_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
-        let response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").frame(top_frame).show(ctx, |ui| {
+        let top_frame_response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel").frame(top_frame).show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {                    
                     if ui.button("Save Image").clicked() {
@@ -215,14 +220,23 @@ impl eframe::App for Gui {
             });
         });
             
-        // if response.response.interact(Sense::drag()).dragged() {
+        // if top_frame_response.response.interact(Sense::drag()).dragged() {
         //     frame.drag_window();
         // };
 
 
         let central_panel = egui::CentralPanel::default().frame(egui::Frame{ outer_margin: Margin::same(0.0),..Default::default() });
-        let response = central_panel.show(ctx, |ui| {self.show_image(ctx, ui)}).response;
-        self.capture_mouse_input(ctx, response);  
+        let central_panel_response = central_panel.show(ctx, |ui| {self.show_image(ctx, ui)}).response;
+        self.capture_mouse_input(ctx, central_panel_response); 
+        
+        let completed_samples = self.thread_coordinator.get_progress() as f32;
+        let requested_samples = self.settings.raytrace_settings.samples_per_pixel as f32;
+        let progress = completed_samples / requested_samples;
+        let bottom_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), fill: Color32::WHITE, ..Default::default()};
+        egui::TopBottomPanel::new(TopBottomSide::Bottom, "bottom_panel").frame(bottom_frame).show(ctx, |ui| {
+            ui.add(CustomProgressBar::new(progress).desired_width(200.0).text(completed_samples.to_string() + "/" + &requested_samples.to_string() + " samples").animate(true));
+        });
+
         
         if !self.thread_coordinator.is_done() {
             ctx.request_repaint();
