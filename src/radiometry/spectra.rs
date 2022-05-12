@@ -4,50 +4,68 @@ use super::coefficients::Coefficients;
 use super::constants::*;
 use std::iter::zip;
 
-fn init_CIE() -> [SampledSpectrum; 3] {
-    let mut i = 0;
-    let spectral_samples_f32 = SPECTRAL_SAMPLES as f32;
-    let mut x = SampledSpectrum::new(0.0);
-    let mut y = SampledSpectrum::new(0.0);
-    let mut z = SampledSpectrum::new(0.0);
-
-    while i < SPECTRAL_SAMPLES {
-        let i_f32 = i as f32;
-        let next_i_f32 = (i + 1) as f32;
-        let from_wavelength = lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, i_f32 / spectral_samples_f32);
-        let to_wavelength =  lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, next_i_f32 / spectral_samples_f32);
-        x.coefficients[i] = average_samples(&CIE_X.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
-        y.coefficients[i] = average_samples(&CIE_Y.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
-        z.coefficients[i] = average_samples(&CIE_Z.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
-        i += 1;
-    }
-    [x, y, z]
-}
-
-/// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
-/// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
-///  visual spectrum where the human visual system is most sensitive. 
-
 const FIRST_WAVELENGTH: f32 = 400.0;
 const LAST_WAVELENGTH: f32 = 700.0;
 const SPECTRAL_SAMPLES: usize = 60;
 
-pub struct SampledSpectrum {
+pub struct MatchingCurve {
     pub coefficients: Coefficients<SPECTRAL_SAMPLES>
 }
 
-impl SampledSpectrum {
+impl MatchingCurve {
+        /// Initialises a MatchingCurve with coefficients of a constant value. Not for public consumption.
+        fn new(constant: f32) -> MatchingCurve {
+            let coefficients = Coefficients::<SPECTRAL_SAMPLES>::new(constant);
+            MatchingCurve { coefficients } 
+        }
+
+        /// Initialises the three matching curves: X, Y & Z. These are referenced by each instance of SampledSpectrum,
+        /// and must therefore have a longer lifetime than every instance. Initialising them in main() is therefore recommended.
+        pub fn init_xyz<'a>() -> [MatchingCurve; 3] {
+            let mut i = 0;
+            let spectral_samples_f32 = SPECTRAL_SAMPLES as f32;
+            let mut x = MatchingCurve::new(0.0);
+            let mut y = MatchingCurve::new(0.0);
+            let mut z = MatchingCurve::new(0.0);
+
+            while i < SPECTRAL_SAMPLES {
+                let i_f32 = i as f32;
+                let next_i_f32 = (i + 1) as f32;
+                let from_wavelength = lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, i_f32 / spectral_samples_f32);
+                let to_wavelength =  lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, next_i_f32 / spectral_samples_f32);
+                x.coefficients[i] = average_samples(&CIE_X.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+                y.coefficients[i] = average_samples(&CIE_Y.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+                z.coefficients[i] = average_samples(&CIE_Z.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+                i += 1;
+            }
+            [x, y, z]
+        }
+}
+
+/// SampledSpectrum<'a> uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
+/// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
+///  visual spectrum where the human visual system is most sensitive. 
+pub struct SampledSpectrum<'a> {
+    pub coefficients: Coefficients<SPECTRAL_SAMPLES>,
+    matching_curves: &'a [SampledSpectrum<'a>; 3]
+}
+
+impl<'a> SampledSpectrum<'a> {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
-    pub const fn new(constant: f32) -> SampledSpectrum {
+    ///     
+    /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
+    pub fn new(constant: f32, matching_curves: &'a[SampledSpectrum<'a>; 3]) -> SampledSpectrum<'a> {
         let coefficients = Coefficients::<SPECTRAL_SAMPLES>::new(constant);
-        SampledSpectrum { coefficients } 
+        SampledSpectrum { coefficients, matching_curves } 
     }
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
     /// define a piecewise linear function to represent the SPD.
-    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>) -> SampledSpectrum {
-        let mut spectrum = SampledSpectrum::new(0.0);
+    /// 
+    /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
+    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>, matching_curves: &'a [SampledSpectrum<'a>; 3]) -> SampledSpectrum<'a> {
+        let mut spectrum = SampledSpectrum::<'a>::new(0.0, matching_curves);
         if sample_values.len() == 0 || sample_wavelengths.len() == 0 {
             panic!("One of the inputted vectors has length zero.")
         }
@@ -75,8 +93,8 @@ impl SampledSpectrum {
         spectrum
     }
 
-    pub fn from_coefficients(coefficients: Coefficients<SPECTRAL_SAMPLES>) -> SampledSpectrum {
-        SampledSpectrum { coefficients }
+    pub fn from_coefficients(coefficients: Coefficients<SPECTRAL_SAMPLES>, matching_curves: &'a [SampledSpectrum<'a>; 3]) -> SampledSpectrum<'a> {
+        SampledSpectrum { coefficients, matching_curves }
     }
 }
 
