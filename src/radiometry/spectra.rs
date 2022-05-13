@@ -96,6 +96,22 @@ impl<'a> SampledSpectrum<'a> {
     pub fn from_coefficients(coefficients: Coefficients<SPECTRAL_SAMPLES>, matching_curves: &'a [SampledSpectrum<'a>; 3]) -> SampledSpectrum<'a> {
         SampledSpectrum { coefficients, matching_curves }
     }
+
+    /// Computes X, Y & Z coefficients. This is calculated by integrating the product of the matching curves
+    /// with the sampled spectrum.
+    pub fn to_xyz(&self) -> [f32; 3] {
+        let mut xyz = [0.0; 3];
+        for i in 0..SPECTRAL_SAMPLES {
+            xyz[0] += self.matching_curves[0].coefficients[i] * self.coefficients[i];
+            xyz[1] += self.matching_curves[1].coefficients[i] * self.coefficients[i];
+            xyz[2] += self.matching_curves[2].coefficients[i] * self.coefficients[i];
+        }
+        let scale = (LAST_WAVELENGTH - FIRST_WAVELENGTH as f32) / (CIE_Y_INTEGRAL * SPECTRAL_SAMPLES as f32);
+        xyz[0] *= scale;
+        xyz[1] *= scale;
+        xyz[2] *= scale;
+        xyz        
+    }
 }
 
 /// Compute the average of the piecewise linear function over the range of wavelengths that each
