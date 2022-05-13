@@ -7,53 +7,53 @@ pub struct Coefficients<const T: usize> {
     arr: [f32; T],
 }
 
-impl<const T: usize> Coefficients<T> {
-    pub const fn new(constant: f32) -> Coefficients<T> {
-        let coefficients = [constant; T];
+impl<const N: usize> Coefficients<N> {
+    pub fn new(constant: f32) -> Coefficients<N> {
+        let coefficients = [constant; N];
         Coefficients { arr: coefficients } 
     }
 
-    fn elementwise_binary_operation(&self, rhs: &Coefficients<T>, operation: fn(f32, f32) -> f32) -> Coefficients<T> {
-        let mut coefficients = [0f32; T];
-        for i in 0..T {
+    fn elementwise_binary_operation(&self, rhs: &Coefficients<N>, operation: fn(f32, f32) -> f32) -> Coefficients<N> {
+        let mut coefficients = [0f32; N];
+        for i in 0..N {
             coefficients[i] = operation(self.arr[i], rhs.arr[i]);
         }
         Coefficients { arr: coefficients } 
     }
 
-    fn elementwise_binary_operation_in_place(&mut self, rhs: &Coefficients<T>, operation: fn(f32, f32) -> f32) {
-        for i in 0..T {
+    fn elementwise_binary_operation_in_place(&mut self, rhs: &Coefficients<N>, operation: fn(f32, f32) -> f32) {
+        for i in 0..N {
             self.arr[i] = operation(self.arr[i], rhs.arr[i]);
         }
     }
 
     fn unary_operation_in_place<F>(&mut self, operation: F) where F: Fn(f32) -> f32 {
-        for i in 0..T {
+        for i in 0..N {
             self.arr[i] = operation(self.arr[i]);
         }
     }
 
-    pub fn elementwise_multiplication(&self, other: &Coefficients<T>) -> Coefficients<T> {
+    pub fn elementwise_multiplication(&self, other: &Coefficients<N>) -> Coefficients<N> {
         self.elementwise_binary_operation(&other, |a, b| a * b)
     }
 
-    pub fn elementwise_division(&self, other: &Coefficients<T>) -> Coefficients<T> {
+    pub fn elementwise_division(&self, other: &Coefficients<N>) -> Coefficients<N> {
         self.elementwise_binary_operation(&other, |a, b| a * b)
     }
 
-    pub fn powi(&self, exponent: i32) -> Coefficients<T> {
+    pub fn powi(&self, exponent: i32) -> Coefficients<N> {
         Coefficients { arr: self.arr.map(|a| a.powi(exponent)) }
     }
 
-    pub fn exp(&self) -> Coefficients<T> {
+    pub fn exp(&self) -> Coefficients<N> {
         Coefficients { arr: self.arr.map(|a| a.exp()) }
     }
 
-    pub fn sqrt(&self) -> Coefficients<T> {
+    pub fn sqrt(&self) -> Coefficients<N> {
         Coefficients { arr: self.arr.map(|a| a.sqrt()) }
     }
 
-    pub fn lerp(&self, other: &Coefficients<T>, t: f32) -> Coefficients<T> {
+    pub fn lerp(&self, other: &Coefficients<N>, t: f32) -> Coefficients<N> {
         (1.0 - t) * self + t * other
     }
 
@@ -65,8 +65,17 @@ impl<const T: usize> Coefficients<T> {
         self.arr.iter().any(|a| a.is_nan())
     }
 
-    pub fn clamp(&self, min: f32, max: f32) -> Coefficients<T> {
+    pub fn clamp(&self, min: f32, max: f32) -> Coefficients<N> {
         Coefficients{ arr: self.arr.map(|a| bound_f32(a, min, max)) }
+    }
+}
+
+impl<'a, const N: usize,> IntoIterator for &'a Coefficients<N> {
+    type Item = &'a f32;
+    type IntoIter = std::slice::Iter<'a, f32>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.arr.into_iter()
     }
 }
 
