@@ -65,15 +65,19 @@ impl TrackedCompositeImage {
             panic!("Image dimensions do not match");
         }
 
+        if self.image.raytrace.samples >= max_samples {
+            return;
+        }
+
         if id > self.id {
             self.rasterization_samples = 0;
             self.image.raytrace.samples = 1;
             self.id = id;
             self.image.raytrace = sample;
-        } else if self.image.raytrace.samples == 0 && self.image.raytrace.samples < max_samples && id == self.id {
+        } else if self.image.raytrace.samples == 0 && id == self.id {
             self.image.raytrace = sample;
             self.image.raytrace.samples = 1;
-        } else if self.image.raytrace.samples > 0 && self.image.raytrace.samples < max_samples && id == self.id {
+        } else if self.image.raytrace.samples > 0 && id == self.id {
             self.image.raytrace += &sample;
             self.image.raytrace.samples += 1;
         }
@@ -220,6 +224,7 @@ impl ThreadCoordinator {
         let local_settings = local_settings.read().unwrap().clone();
         let cond_var = &image_data.1;
         let desired_raytracing_samples = global_settings.raytrace_settings.samples_per_pixel;
+        let desired_raytracing_samples = 3;
         let desired_rasterization_samples = 1;
         let image = image_data.0.lock().unwrap();
         if !image.is_finished_rasterizing(settings_id, desired_rasterization_samples) && local_settings.rasterizing == true {
