@@ -227,6 +227,7 @@ impl<'a> SampledSpectrum<'a> {
                 output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_refl_to_spect_red.coefficients;
             }
         }
+        output.coefficients.clamp(0.0, f32::INFINITY);
         output
     }
 
@@ -263,6 +264,7 @@ impl<'a> SampledSpectrum<'a> {
                 output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_illum_to_spect_red.coefficients;
             }
         }
+        output.coefficients.clamp(0.0, f32::INFINITY);
         output
     }
 
