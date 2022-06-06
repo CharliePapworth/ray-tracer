@@ -184,19 +184,87 @@ impl<'a> SampledSpectrum<'a> {
     ///  are smooth and such that computing the weighted sum of them with the given RGB coefficients and then converting back
     ///  to RGB give a result that is close to the original RGB coefficients. These spectra were found through a numerical 
     /// optimization procedure. 
-    pub fn from_rgb(rgb: Color, spectrum_type: SpectrumType) -> SampledSpectrum<'a>{
+    pub fn from_rgb(rgb: Color, spectrum_type: SpectrumType, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a>{
         match spectrum_type {
             SpectrumType::Reflectance => {
-
+                return SampledSpectrum::from_rgb_reflectance(rgb, constant_spectra);
             }
             SpectrumType::Illuminant => {
-
+                return SampledSpectrum::from_rgb_illuminant(rgb, constant_spectra);
             }
         }
-
-        todo!()
     }
 
+    fn from_rgb_reflectance(rgb: Color, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
+        let mut output = SampledSpectrum::new(0.0, constant_spectra);
+        let rgb = [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32];
+        if rgb[0] <= rgb[1] && rgb[0] <= rgb[2] {
+            //Compute reflectance SampledSpectrum with rgb[0] as minimum
+            output.coefficients += rgb[0] * &constant_spectra.rgb_refl_to_spect_white.coefficients;
+            if rgb[1] <= rgb[2] {
+            output.coefficients += (rgb[1] - rgb[0]) * &constant_spectra.rgb_refl_to_spect_cyan.coefficients;
+            output.coefficients += (rgb[2] - rgb[1]) * &constant_spectra.rgb_refl_to_spect_blue.coefficients;
+            } else {
+            output.coefficients += (rgb[2] - rgb[0]) * &constant_spectra.rgb_refl_to_spect_cyan.coefficients;
+            output.coefficients += (rgb[1] - rgb[2]) * &constant_spectra.rgb_refl_to_spect_green.coefficients;
+            }
+        } else if rgb[1] <= rgb[0] && rgb[1] <= rgb[2] { 
+            output.coefficients += rgb[1] * &constant_spectra.rgb_refl_to_spect_white.coefficients;
+            if rgb[0] <= rgb[2] {
+                output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_refl_to_spect_magenta.coefficients;
+                output.coefficients += (rgb[2] - rgb[0]) * &constant_spectra.rgb_refl_to_spect_blue.coefficients;
+            } else {
+                output.coefficients += (rgb[2] - rgb[1]) * &constant_spectra.rgb_refl_to_spect_magenta.coefficients;
+                output.coefficients += (rgb[0] - rgb[2]) * &constant_spectra.rgb_refl_to_spect_red.coefficients;
+            }
+        } else {
+            output.coefficients += rgb[2] * &constant_spectra.rgb_refl_to_spect_white.coefficients;
+            if rgb[0] <= rgb[1] {
+            output.coefficients += (rgb[0] - rgb[2]) * &constant_spectra.rgb_refl_to_spect_yellow.coefficients;
+            output.coefficients += (rgb[1] - rgb[0]) * &constant_spectra.rgb_refl_to_spect_green.coefficients;
+            } else {
+            output.coefficients += (rgb[1] - rgb[2]) * &constant_spectra.rgb_refl_to_spect_yellow.coefficients;
+                output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_refl_to_spect_red.coefficients;
+            }
+        }
+        output
+    }
+
+
+    fn from_rgb_illuminant(rgb: Color, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
+        let mut output = SampledSpectrum::new(0.0, constant_spectra);
+        let rgb = [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32];
+        if rgb[0] <= rgb[1] && rgb[0] <= rgb[2] {
+            //Compute reflectance SampledSpectrum with rgb[0] as minimum
+            output.coefficients += rgb[0] * &constant_spectra.rgb_illum_to_spect_white.coefficients;
+            if rgb[1] <= rgb[2] {
+            output.coefficients += (rgb[1] - rgb[0]) * &constant_spectra.rgb_illum_to_spect_cyan.coefficients;
+            output.coefficients += (rgb[2] - rgb[1]) * &constant_spectra.rgb_illum_to_spect_blue.coefficients;
+            } else {
+            output.coefficients += (rgb[2] - rgb[0]) * &constant_spectra.rgb_illum_to_spect_cyan.coefficients;
+            output.coefficients += (rgb[1] - rgb[2]) * &constant_spectra.rgb_illum_to_spect_green.coefficients;
+            }
+        } else if rgb[1] <= rgb[0] && rgb[1] <= rgb[2] { 
+            output.coefficients += rgb[1] * &constant_spectra.rgb_illum_to_spect_white.coefficients;
+            if rgb[0] <= rgb[2] {
+                output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_illum_to_spect_magenta.coefficients;
+                output.coefficients += (rgb[2] - rgb[0]) * &constant_spectra.rgb_illum_to_spect_blue.coefficients;
+            } else {
+                output.coefficients += (rgb[2] - rgb[1]) * &constant_spectra.rgb_illum_to_spect_magenta.coefficients;
+                output.coefficients += (rgb[0] - rgb[2]) * &constant_spectra.rgb_illum_to_spect_red.coefficients;
+            }
+        } else {
+            output.coefficients += rgb[2] * &constant_spectra.rgb_illum_to_spect_white.coefficients;
+            if rgb[0] <= rgb[1] {
+            output.coefficients += (rgb[0] - rgb[2]) * &constant_spectra.rgb_illum_to_spect_yellow.coefficients;
+            output.coefficients += (rgb[1] - rgb[0]) * &constant_spectra.rgb_illum_to_spect_green.coefficients;
+            } else {
+            output.coefficients += (rgb[1] - rgb[2]) * &constant_spectra.rgb_illum_to_spect_yellow.coefficients;
+                output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_illum_to_spect_red.coefficients;
+            }
+        }
+        output
+    }
 
     ///The Y coefficient of XYZ color is closely related to luminance, which measures the perceived brightness of a color. 
     /// This method calculates the Y coefficient alone.
