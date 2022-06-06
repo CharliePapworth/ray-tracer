@@ -60,7 +60,7 @@ impl TrackedCompositeImage {
         }
     }
 
-    pub fn add_raytraced_sample(&mut self, sample: RaytracedImage, id: i32) {
+    pub fn add_raytraced_sample(&mut self, sample: RaytracedImage, id: i32, max_samples: usize) {
         if self.image.image_height != sample.image.image_height || self.image.image_width != sample.image.image_width {
             panic!("Image dimensions do not match");
         }
@@ -70,10 +70,10 @@ impl TrackedCompositeImage {
             self.image.raytrace.samples = 1;
             self.id = id;
             self.image.raytrace = sample;
-        } else if self.image.raytrace.samples == 0 && id == self.id {
+        } else if self.image.raytrace.samples == 0 && self.image.raytrace.samples < max_samples && id == self.id {
             self.image.raytrace = sample;
             self.image.raytrace.samples = 1;
-        } else if self.image.raytrace.samples > 0 && id == self.id {
+        } else if self.image.raytrace.samples > 0 && self.image.raytrace.samples < max_samples && id == self.id {
             self.image.raytrace += &sample;
             self.image.raytrace.samples += 1;
         }
@@ -233,7 +233,7 @@ impl ThreadCoordinator {
             drop(image);
             if let Some(contribution) = raytrace(global_settings, &coordinator_to_thread_rx) {
                 let mut image = image_data.0.lock().unwrap();
-                image.add_raytraced_sample(contribution, settings_id);
+                image.add_raytraced_sample(contribution, settings_id, desired_raytracing_samples);
             }
         } else {
             cond_var.wait(image);
