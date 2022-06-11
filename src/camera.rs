@@ -1,23 +1,25 @@
 use core::f64;
 
+use nalgebra::{Translation3, Unit, Transform3};
+
+use crate::sampler;
 use crate::util::deg_to_rad;
-use crate::geometry::points::Point3;
-use crate::vec::*;
+use crate::nalgebra::{Vector3, Point3, Rotation3};
 use crate::raytracing::Ray;
-#[derive (Copy, Clone, Default)]
+#[derive (Copy, Clone)]
 pub struct Camera {
 
     // These settings affect the camera output
-    pub origin: Point3,
-    pub horizontal: Vec3,
-    pub vertical: Vec3,
-    pub lower_left_corner: Vec3,
+    pub origin: Point3<f64>,
+    pub horizontal: Vector3<f64>,
+    pub vertical: Vector3<f64>,
+    pub lower_left_corner: Point3<f64>,
     pub orientation: Orientation,
     pub lens_radius: f64,
     pub resoloution: (usize, usize),
     
     // These settings are used for calculation purposes only
-    v_up: Vec3,
+    v_up: Unit<Vector3<f64>>,
     focus_dist: f64,
     viewport_width: f64,
     viewport_height: f64,
@@ -27,9 +29,9 @@ pub struct Camera {
 
 #[derive (Copy, Clone, Default)]
 pub struct CameraSettings {
-    pub look_from: Point3,
-    pub look_at: Point3,
-    pub v_up: Vec3, 
+    pub look_from: Point3<f64>,
+    pub look_at: Point3<f64>,
+    pub v_up: Vector3<f64>, 
     pub v_fov: f64, 
     pub aspect_ratio:f64, 
     pub aperture: f64, 
@@ -39,33 +41,32 @@ pub struct CameraSettings {
 }
 
 
-#[derive (PartialEq, Debug, Copy, Clone, Default)]
+#[derive (PartialEq, Debug, Copy, Clone)]
 pub struct Orientation{
-    pub u: Vec3,
-    pub v: Vec3,
-    pub w: Vec3
+    pub u: Unit<Vector3<f64>>,
+    pub v: Unit<Vector3<f64>>,
+    pub w: Unit<Vector3<f64>>
 }
 
 impl Camera {
 
     pub fn new(settings: CameraSettings) -> Camera {
         let theta = deg_to_rad(settings.v_fov);
-        let h = (0.5*theta).tan();
-        let viewport_height = 2.0*h;
+        let h = (0.5 * theta).tan();
+        let viewport_height = 2.0 * h;
         let viewport_width = settings.aspect_ratio * viewport_height;
-
-        let w = (settings.look_from - settings.look_at).unit_vector();
-        let u = Vec3::cross(settings.v_up, w).unit_vector();
-        let v = Vec3::cross(w, u).unit_vector();
-        let v_up = settings.v_up.unit_vector();
+        let w: Unit<Vector3<f64>> = Unit::new_normalize(settings.look_from - settings.look_at);
+        let u: Unit<Vector3<f64>> = Unit::new_normalize(settings.v_up.cross(&w));
+        let v: Unit<Vector3<f64>> = Unit::new_normalize(w.cross(&u));
+        let v_up: Unit<Vector3<f64>> = Unit::new_normalize(settings.v_up);
         let v_fov = settings.v_fov;
         let orientation = Orientation::new(u,v,w);
 
         let focus_dist = settings.focus_dist;
-        let origin = settings.look_from;
-        let horizontal = settings.focus_dist * viewport_width * u;
-        let vertical = settings.focus_dist * viewport_height * v;
-        let lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - settings.focus_dist * w;
+        let origin: Point3<f64> = settings.look_from;
+        let horizontal: Vector3<f64> = settings.focus_dist * viewport_width * u.into_inner();
+        let vertical: Vector3<f64> = settings.focus_dist * viewport_height * v.into_inner();
+        let lower_left_corner: Point3<f64> = origin - horizontal / 2.0 - vertical / 2.0 - settings.focus_dist * w.into_inner();
 
         let resoloution = (settings.image_width, settings.image_height);
 
@@ -74,28 +75,29 @@ impl Camera {
     }
 
     pub fn get_ray(&self, s: f64, t:f64) -> Ray {
-        let rd = self.lens_radius * Vec3::rand_in_unit_disk();
-        let offset = self.orientation.u() * rd.x() + self.orientation.v() * rd.y();
+        let rd = self.lens_radius * sampler::rand_in_unit_disk();
+        let offset = self.orientation.u().into_inner() * rd[0] + self.orientation.v().into_inner() * rd[1];
 
-        Ray::new(self.origin + offset, (self.lower_left_corner + s*self.horizontal + t*self.vertical - self.origin - offset).unit_vector())
+        Ray::new(self.origin + offset, Unit::new_normalize(self.lower_left_corner + s*self.horizontal + t*self.vertical - self.origin - offset).into_inner())
     }
 
     pub fn translate(&mut self, forward: f64, right: f64, up: f64) {
-        let delta =  - forward * self.orientation.w + right * self.orientation.u + up * self.v_up;
+        let delta =  - forward * self.orientation.w.into_inner() + right * self.orientation.u.into_inner() + up * self.v_up.into_inner();
         self.origin = self.origin + delta;
         self.lower_left_corner = self.lower_left_corner + delta;
     }
 
-    pub fn rotate(&mut self, rotation_axis: Vec3, angle: f64) {
+    pub fn rotate(&mut self, rotation_axis: Unit<Vector3<f64>>, angle: f64) {
         let look_direction = - self.orientation.w;
-        let rotated_look_vector = look_direction.rotate(rotation_axis, angle);
+        let rotation = Rotation3::from_axis_angle(&rotation_axis, angle);
+        let rotated_look_vector = rotation.transform_vector(&look_direction);
 
-        self.orientation.w = - rotated_look_vector;
-        self.orientation.u = Vec3::cross(self.v_up, self.orientation.w).unit_vector();
-        self.orientation.v = Vec3::cross(self.orientation.w, self.orientation.u).unit_vector();
-        self.vertical = self.focus_dist * self.viewport_height * self.orientation.v;
-        self.horizontal = self.focus_dist * self.viewport_width * self.orientation.u;
-        self.lower_left_corner = self.origin - self.horizontal/2.0 - self.vertical/2.0 - self.focus_dist * self.orientation.w;
+        self.orientation.w = - Unit::new_normalize(rotated_look_vector);
+        self.orientation.u = Unit::new_normalize(self.v_up.cross(&self.orientation.w));
+        self.orientation.v = Unit::new_normalize(self.orientation.w.cross(&self.orientation.u));
+        self.vertical = self.focus_dist * self.viewport_height * self.orientation.v.into_inner();
+        self.horizontal = self.focus_dist * self.viewport_width * self.orientation.u.into_inner();
+        self.lower_left_corner = self.origin - self.horizontal/2.0 - self.vertical/2.0 - self.focus_dist * self.orientation.w.into_inner();
 
     }
 
@@ -106,19 +108,19 @@ impl Camera {
 
 impl Orientation{
 
-    pub fn new(u: Vec3, v: Vec3, w: Vec3) -> Orientation{
+    pub fn new(u: Unit<Vector3<f64>>, v: Unit<Vector3<f64>>, w: Unit<Vector3<f64>>) -> Orientation{
         Orientation{u, v, w}
     }
 
-    pub fn u(&self) -> Vec3{
+    pub fn u(&self) -> Unit<Vector3<f64>>{
         self.u
     }
 
-    pub fn v(&self) -> Vec3{
+    pub fn v(&self) -> Unit<Vector3<f64>>{
         self.v
     }
 
-    pub fn w(&self) -> Vec3{
+    pub fn w(&self) -> Unit<Vector3<f64>>{
         self.w
     }
 }

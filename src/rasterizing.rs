@@ -2,7 +2,7 @@ use enum_dispatch::enum_dispatch;
 use crate::camera::Camera;
 use crate::image::{Raster, Pixel};
 use crate::primitives::{GeometricPrimitives};
-use crate::vec::Color;
+use crate::image::Color;
 
 #[enum_dispatch] 
 pub trait Rasterize: Send + Sync{

@@ -2,7 +2,7 @@ pub mod progress_bar;
 
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
-use crate::{vec::{Vec2, Vec3}, image::PrimaryImageType, threads::{ThreadCoordinator, GlobalSettings}};
+use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, threads::{ThreadCoordinator, GlobalSettings}};
 use crate::*;
 
 use self::progress_bar::CustomProgressBar;
@@ -17,7 +17,7 @@ pub struct Gui {
     pub renderers: Renderers,
     pub image_output: PrimaryImageType,
     pub outline: bool,
-    pub click_vector: Vec3,
+    pub click_vector: Vector3<f64>,
     pub dragging: bool
 }
 
@@ -44,7 +44,7 @@ impl Gui{
         let expecting_data = true;
         let image_output = PrimaryImageType::Raytrace;
         let outline = false;
-        let click_vector = Vec3::default();
+        let click_vector: Vector3::<f64> = Vector3::<f64>::default();
         let dragging = false;
 
         Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
@@ -118,15 +118,16 @@ impl Gui{
         if response.interact(Sense::drag()).dragged() {
             let cam = self.settings.camera;
             let egui_pointer_pos = ctx.pointer_interact_pos().unwrap();
-            let pointer_position = Vec2::new(egui_pointer_pos[0] as f64, (self.settings.image_settings.image_width as f64) - (egui_pointer_pos[1] as f64));
-            let pointer_position_3d = pointer_position[0] * cam.horizontal.length() * cam.orientation.u / (self.settings.image_settings.image_width as f64) + pointer_position[1] * cam.orientation.v * cam.vertical.length() / (self.settings.image_settings.image_height as f64) + cam.lower_left_corner;
+            let pointer_position: Point2<f64> = Point2::<f64>::new(egui_pointer_pos[0] as f64, (self.settings.image_settings.image_width as f64) - (egui_pointer_pos[1] as f64));
+            let pointer_position_3d: Point3<f64> = cam.lower_left_corner + pointer_position[0] * cam.horizontal.norm() * cam.orientation.u.into_inner() / (self.settings.image_settings.image_width as f64) + pointer_position[1] * cam.orientation.v.into_inner() * cam.vertical.norm() / (self.settings.image_settings.image_height as f64);
             let click_vector = pointer_position_3d - cam.origin;
             if self.dragging && click_vector != self.click_vector{
-                let rotation_axis = click_vector.perpendicular(self.click_vector).unit_vector();
-                let angle =  click_vector.angle(self.click_vector);
+                let rotation_axis = Unit::new_normalize(click_vector.cross(&self.click_vector));
+                let angle =  click_vector.angle(&self.click_vector);
+                let rotation = Rotation3::from_axis_angle(&rotation_axis, angle);
                 self.settings.camera.rotate(rotation_axis, angle);
                 self.thread_coordinator.update_settings(self.settings.clone());
-                self.click_vector = click_vector.rotate(rotation_axis, angle);
+                self.click_vector = rotation.transform_vector(&click_vector);
             } else {
                 self.dragging = true;
                 self.click_vector = click_vector

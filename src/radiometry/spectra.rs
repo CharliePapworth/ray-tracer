@@ -1,7 +1,8 @@
-use crate::util::lerp;
-use crate::vec::Color;
+use nalgebra::{Vector, SVector};
 
-use super::coefficients::Coefficients;
+use crate::util::{lerp, bound_f32};
+use crate::image::Color;
+
 use super::constants::*;
 use std::iter::zip;
 
@@ -16,7 +17,7 @@ pub enum SpectrumType {
 }
 
 pub struct ConstantSpectrum {
-    pub coefficients: Coefficients<SPECTRAL_SAMPLES>
+    pub coefficients: SVector<f32, SPECTRAL_SAMPLES>
 }
 
 
@@ -100,7 +101,7 @@ impl ConstantSpectra {
 impl ConstantSpectrum {
     /// Initialises a spectrum with coefficients of a constant value. Not for public consumption.
     fn new(constant: f32) -> ConstantSpectrum {
-        let coefficients = Coefficients::<SPECTRAL_SAMPLES>::new(constant);
+        let coefficients = SVector::<f32, SPECTRAL_SAMPLES>::repeat(constant);
         ConstantSpectrum { coefficients } 
     }
 }
@@ -109,7 +110,7 @@ impl ConstantSpectrum {
 /// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
 ///  visual spectrum where the human visual system is most sensitive. 
 pub struct SampledSpectrum<'a> {
-    pub coefficients: Coefficients<SPECTRAL_SAMPLES>,
+    pub coefficients: SVector<f32, SPECTRAL_SAMPLES>,
     pub constant_spectra: &'a ConstantSpectra
 }
 
@@ -119,7 +120,7 @@ impl<'a> SampledSpectrum<'a> {
     ///     
     /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
     pub fn new(constant: f32, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
-        let coefficients = Coefficients::<SPECTRAL_SAMPLES>::new(constant);
+        let coefficients = SVector::<f32, SPECTRAL_SAMPLES>::repeat(0.0);
         SampledSpectrum { coefficients, constant_spectra } 
     }
     
@@ -156,7 +157,7 @@ impl<'a> SampledSpectrum<'a> {
         spectrum
     }
 
-    pub fn from_coefficients(coefficients: Coefficients<SPECTRAL_SAMPLES>, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
+    pub fn from_coefficients(coefficients: SVector<f32, SPECTRAL_SAMPLES>, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
         SampledSpectrum { coefficients, constant_spectra }
     }
 
@@ -227,7 +228,7 @@ impl<'a> SampledSpectrum<'a> {
                 output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_refl_to_spect_red.coefficients;
             }
         }
-        output.coefficients.clamp(0.0, f32::INFINITY);
+        output.clamp(0.0, f32::INFINITY);
         output
     }
 
@@ -264,7 +265,7 @@ impl<'a> SampledSpectrum<'a> {
                 output.coefficients += (rgb[0] - rgb[1]) * &constant_spectra.rgb_illum_to_spect_red.coefficients;
             }
         }
-        output.coefficients.clamp(0.0, f32::INFINITY);
+        output.clamp(0.0, f32::INFINITY);
         output
     }
 
@@ -303,6 +304,11 @@ impl<'a> SampledSpectrum<'a> {
     /// Gets the RGB coefficients for the SPD.
     pub fn get_rgb(&self) -> [f32; 3] {
         SampledSpectrum::xyz_to_rgb(self.get_xyz())
+    }
+
+    
+    pub fn clamp(&mut self, min: f32, max: f32) {
+        self.coefficients = self.coefficients.map(|a| bound_f32(a, min, max));
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::geometry::points::Point3;
+use crate::nalgebra::{Vector3, Point3};
 use crate::material::*;
 use crate::primitives::GeometricPrimitive;
 use crate::raytracing::{HitRecord, Hit, Ray};
@@ -9,8 +9,8 @@ use super::GeometricPrimitives;
 #[derive (Debug, Copy, Clone, Default, PartialEq)]
 
 pub struct Aabb{
-    min: Point3,
-    max: Point3
+    min: Point3<f64>,
+    max: Point3<f64>
 }
 
 #[derive(Clone)]
@@ -32,19 +32,19 @@ pub struct BvhRoot{
 }
 
 impl Aabb{
-    pub fn new(min: Point3, max: Point3) -> Aabb{
+    pub fn new(min: Point3<f64>, max: Point3<f64>) -> Aabb{
         Aabb{min, max}
     }
 
-    pub fn min(&self) -> Point3{
+    pub fn min(&self) -> Point3<f64>{
         self.min
     }
 
-    pub fn max(&self) -> Point3{
+    pub fn max(&self) -> Point3<f64>{
         self.max
     }
 
-    pub fn centroid(&self) -> Point3{
+    pub fn centroid(&self) -> Point3<f64>{
         self.min() + (self.max() - self.min()) / 2.0
     }
 
@@ -67,20 +67,20 @@ impl Aabb{
     }
 
     pub fn surrounding_box(box_0: Aabb, box_1: Aabb) -> Aabb{
-        let small = Point3::new(box_0.min().x().min(box_1.min().x()),
-                                box_0.min().y().min(box_1.min().y()),
-                                box_0.min().z().min(box_1.min().z()));
+        let small = Point3::<f64>::new(box_0.min()[0].min(box_1.min()[0]),
+                                box_0.min()[1].min(box_1.min()[1]),
+                                box_0.min()[2].min(box_1.min()[2]));
 
-        let big = Point3::new(box_0.max().x().max(box_1.max().x()),
-                              box_0.max().y().max(box_1.max().y()),
-                              box_0.max().z().max(box_1.max().z()));
+        let big = Point3::<f64>::new(box_0.max()[0].max(box_1.max()[0]),
+                              box_0.max()[1].max(box_1.max()[1]),
+                              box_0.max()[2].max(box_1.max()[2]));
 
         Aabb::new(small, big)
     }
 
     pub fn box_compare<H>(a: &H, b: &H, axis: i8) -> Ordering where H: Hit {
         match (a.bounding_box(), b.bounding_box()){
-            (Some(box_a), Some(box_b)) => box_a.min().index(axis as usize).partial_cmp(&box_b.min().index(axis as usize)).unwrap(),
+            (Some(box_a), Some(box_b)) => box_a.min()[axis as usize].partial_cmp(&box_b.min()[axis as usize]).unwrap(),
             (_, _) => panic!("One of a, b cannot be bound")
         }
     }
@@ -234,33 +234,32 @@ impl Hit for BvhNode{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vec::*;
 
     #[test]
     fn min(){
-        let min = Point3::new(0.0, -2.0, 1.0);
-        let max = Point3::new(10.0, 3.0, 4.0);
+        let min = Point3::<f64>::new(0.0, -2.0, 1.0);
+        let max = Point3::<f64>::new(10.0, 3.0, 4.0);
         let aabb = Aabb::new(min, max);
-        assert_eq!(aabb.min(), Point3::new(0.0, -2.0, 1.0));
+        assert_eq!(aabb.min(), Point3::<f64>::new(0.0, -2.0, 1.0));
     }
 
     #[test]
     fn max(){
-        let min = Point3::new(0.0, -2.0, 1.0);
-        let max = Point3::new(10.0, 3.0, 4.0);
+        let min = Point3::<f64>::new(0.0, -2.0, 1.0);
+        let max = Point3::<f64>::new(10.0, 3.0, 4.0);
         let aabb = Aabb::new(min, max);
-        assert_eq!(aabb.max(), Point3::new(10.0, 3.0, 4.0));
+        assert_eq!(aabb.max(), Point3::<f64>::new(10.0, 3.0, 4.0));
     }
 
     #[test]
     fn test_aabb_hit(){
 
-        let min = Point3::new(-10.0, -10.0, -10.0);
-        let max = Point3::new(10.0, 10.0, 10.0);
+        let min = Point3::<f64>::new(-10.0, -10.0, -10.0);
+        let max = Point3::<f64>::new(10.0, 10.0, 10.0);
         let aabb = Aabb::new(min, max);
 
         //Case 1: Hit
-        let r = Ray::new(Vec3::new(20.0, 5.0, 5.0), Vec3::new( -1.0, 0.4, -0.2));
+        let r = Ray::new(Point3::<f64>::new(20.0, 5.0, 5.0), Vector3::<f64>::new( -1.0, 0.4, -0.2));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, true);
 
@@ -269,7 +268,7 @@ mod tests {
         assert_eq!(rec, false);
 
         //Case 3: Miss (due to geometry)
-        let r = Ray::new(Vec3::new(-10.0, 10.01, 5.0), Vec3::new( 1.0, 0.0, 0.0));
+        let r = Ray::new(Point3::<f64>::new(-10.0, 10.01, 5.0), Vector3::<f64>::new( 1.0, 0.0, 0.0));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, false);
     }
@@ -277,18 +276,18 @@ mod tests {
     #[test]
     fn test_surrounding_box(){
         
-        let min = Point3::new(0.0, 0.0, 0.0);
-        let max = Point3::new(10.0, 10.0, 10.0);
+        let min = Point3::<f64>::new(0.0, 0.0, 0.0);
+        let max = Point3::<f64>::new(10.0, 10.0, 10.0);
         let aabb_a = Aabb::new(min, max);
 
-        let min = Point3::new(-1.0, 3.0, -2.0);
-        let max = Point3::new(9.0, 16.0, 10.0);
+        let min = Point3::<f64>::new(-1.0, 3.0, -2.0);
+        let max = Point3::<f64>::new(9.0, 16.0, 10.0);
         let aabb_b = Aabb::new(min, max);
 
         let sb = Aabb::surrounding_box(aabb_a, aabb_b);
 
-        assert_eq!(sb.min(), Point3::new(-1.0, 0.0, -2.0));
-        assert_eq!(sb.max(), Point3::new(10.0, 16.0, 10.0));
+        assert_eq!(sb.min(), Point3::<f64>::new(-1.0, 0.0, -2.0));
+        assert_eq!(sb.max(), Point3::<f64>::new(10.0, 16.0, 10.0));
 
 
     }
@@ -296,12 +295,12 @@ mod tests {
     #[test]
     fn test_box_compare(){
         
-        let center = Vec3::new(0.0, -10.0, 0.0);
+        let center = Point3::<f64>::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s1 = GeometricPrimitive::new_sphere(center, radius, mat);
 
-        let center = Vec3::new(-20.0, -10.0, 0.0);
+        let center = Point3::<f64>::new(-20.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s2 = GeometricPrimitive::new_sphere(center, radius, mat);
@@ -314,13 +313,13 @@ mod tests {
     fn test_bvhnode_hit(){
 
         let mut list = GeometricPrimitives::new();
-        let r = Ray::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
+        let r = Ray::new(Point3::<f64>::new(-10.0, 0.0, 0.0), Vector3::<f64>::new( 1.0, 0.0, 0.0));
         let t_min = 0.0;
         let t_max = 100.0;
 
         
         //Case 1: No intersections
-        let center = Vec3::new(0.0, -10.0, 0.0);
+        let center = Point3::<f64>::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = GeometricPrimitive::new_sphere(center, radius, mat);
@@ -333,7 +332,7 @@ mod tests {
         assert!(hit.is_none());
 
         //Case 2: Single intersection
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = GeometricPrimitive::new_sphere(center, radius, mat);
@@ -346,7 +345,7 @@ mod tests {
         assert_eq!(rec.t, 5.0); 
         
         //Case 3: Two intersections
-        let center = Vec3::new(-2.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(-2.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = GeometricPrimitive::new_sphere(center, radius, mat);
@@ -368,12 +367,12 @@ mod tests {
         let t_max = 1000.0;
 
         //Case 1: Ray misses bounding box entirely
-        let r = Ray::new(Vec3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
+        let r = Ray::new(Point3::<f64>::new(-10.0, -10.0, 0.0), Vector3::<f64>::new( 1.0, 0.0, 0.0));
         let mut list = GeometricPrimitives::new();
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         for i in 1..100{
-            let center = Vec3::new(i as f64, 0.0, 0.0);
+            let center = Point3::<f64>::new(i as f64, 0.0, 0.0);
             let s = GeometricPrimitive::new_sphere(center, radius, mat);
             list.add(s);
         }
@@ -383,12 +382,12 @@ mod tests {
         assert!(hit.1.is_none());
 
         //Case 2: Ray hits one bounding box, but misses the sphere
-        let r = Ray::new(Vec3::new(1.0, -10.0, 6.0), Vec3::new( 0.0, 1.0, 0.0));
+        let r = Ray::new(Point3::<f64>::new(1.0, -10.0, 6.0), Vector3::<f64>::new( 0.0, 1.0, 0.0));
         let mut list = GeometricPrimitives::new();
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         for i in 1..100{
-            let center = Vec3::new(i as f64, 0.0, 0.0);
+            let center = Point3::<f64>::new(i as f64, 0.0, 0.0);
             let s = GeometricPrimitive::new_sphere(center, radius, mat);
             list.add(s);
         }
@@ -399,12 +398,12 @@ mod tests {
 
 
          //Case 3: Ray hits all bounding boxes but misses the spheres
-         let r = Ray::new(Vec3::new(-10.0, 6.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
+         let r = Ray::new(Point3::<f64>::new(-10.0, 6.0, 0.0), Vector3::<f64>::new( 1.0, 0.0, 0.0));
          let mut list = GeometricPrimitives::new();
          let radius = 5.0;
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
-             let center = Vec3::new(i as f64, 0.0, 0.0);
+             let center = Point3::<f64>::new(i as f64, 0.0, 0.0);
              let s = GeometricPrimitive::new_sphere(center, radius, mat);
              list.add(s);
          }
@@ -414,12 +413,12 @@ mod tests {
          assert!(hit.1.is_none());
 
          //Case 4: Ray hits all spheres
-         let r = Ray::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
+         let r = Ray::new(Point3::<f64>::new(-10.0, 0.0, 0.0), Vector3::<f64>::new( 1.0, 0.0, 0.0));
          let mut list = GeometricPrimitives::new();
          let radius = 5.0;
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
-             let center = Vec3::new(i as f64, 0.0, 0.0);
+             let center = Point3::<f64>::new(i as f64, 0.0, 0.0);
              let s = GeometricPrimitive::new_sphere(center, radius, mat);
              list.add(s);
          }
@@ -429,12 +428,12 @@ mod tests {
          assert!(hit.1.is_some()); 
          
          //Case 5: Ray hits 10 spheres and 10 bounding boxes
-         let r = Ray::new(Vec3::new(20.0, -10.0, 4.0), Vec3::new( 0.0, 1.0, 0.0));
+         let r = Ray::new(Point3::<f64>::new(20.0, -10.0, 4.0), Vector3::<f64>::new( 0.0, 1.0, 0.0));
          let mut list = GeometricPrimitives::new();
          let radius = 5.0;
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
-             let center = Vec3::new(i as f64, 0.0, 0.0);
+             let center = Point3::<f64>::new(i as f64, 0.0, 0.0);
              let s = GeometricPrimitive::new_sphere(center, radius, mat);
              list.add(s);
          }
@@ -445,14 +444,14 @@ mod tests {
          assert!(hit.1.is_some());
 
          //Case 6: Ray hits 1 triangles
-         let r = Ray::new(Vec3::new(1.5, -10.0, 4.0), Vec3::new( 0.0, 1.0, 0.0));
+         let r = Ray::new(Point3::<f64>::new(1.5, -10.0, 4.0), Vector3::<f64>::new( 0.0, 1.0, 0.0));
          let mut list = GeometricPrimitives::new();
          let mat = Material::Lambertian(Lambertian::default());
          for i in 1..100{
-             let v1 = Vec3::new(i as f64, 0.0, 0.0);
-             let v2 = Vec3::new((i + 1) as f64, 0.0, 0.0);
-             let v3 = Vec3::new(i as f64 + 0.5, 0.0, 10.0);
-             let norm = Vec3::new(0.0, 1.0, 0.0);
+             let v1 = Point3::<f64>::new(i as f64, 0.0, 0.0);
+             let v2 = Point3::<f64>::new((i + 1) as f64, 0.0, 0.0);
+             let v3 = Point3::<f64>::new(i as f64 + 0.5, 0.0, 10.0);
+             let norm = Vector3::<f64>::new(0.0, 1.0, 0.0);
              let s = GeometricPrimitive::new_triangle([v1, v2, v3], [norm; 3], mat);
              list.add(s);
          }

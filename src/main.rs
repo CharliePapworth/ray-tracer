@@ -10,8 +10,8 @@ extern crate enum_dispatch;
 extern crate eframe;
 extern crate line_drawing;
 extern crate delegate;
+extern crate nalgebra;
 
-pub mod vec;
 pub mod camera;
 pub mod material;
 pub mod util;
@@ -24,11 +24,11 @@ pub mod primitives;
 pub mod scenes;
 pub mod raytracing;
 pub mod radiometry;
-pub mod efloat;
+pub mod sampler;
+pub mod vec;
 
 use eframe::egui::Vec2;
 
-use vec::*;
 use camera::*;
 use gui::*;
 use threads::*;
@@ -36,6 +36,7 @@ use geometry::*;
 use primitives::*;
 use scenes::*;
 use eframe::egui::*;
+use nalgebra::{Vector3};
 
 use std::f64::INFINITY;
 use std::fs::File;
@@ -63,7 +64,7 @@ fn main() {
     let max_depth=  50;
 
     //Camera
-    let v_up = Vec3::new(0.0, 1.0, 0.0);
+    let v_up: Vector3<f64> = Vector3::<f64>::new(0.0, 1.0, 0.0);
     let focus_dist = 10.0;
     let aperture = 0.0;
     let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};

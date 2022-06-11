@@ -1,23 +1,67 @@
-use crate::vec::{Vec3, Vec2};
-use crate::geometry::plane::*;
+use nalgebra::{Point3, Point2};
+use super::{plane::Plane, lines::OutCode};
 
-pub type Point3 = Vec3;
-pub type Point2 = Vec2;
+pub trait Point3ExtensionMethods {
+    fn swap(&mut self, i: usize, j: usize);
+    fn is_in_front(self, plane: Plane) -> bool;
+    fn distance_to_plane(self, plane: Plane) -> f64;
+    fn is_on_the_side_of(self, plane: Plane, other: Point3<f64>)  -> bool;
+}
 
-impl Point3 {
-    pub fn is_in_front(self, plane: Plane) -> bool {
-        let (_, _, _, d) = plane.get_coefficients();
-        plane.orientation.w.dot(self) + d <= 0.0
-    } 
+pub trait Point2ExtensionMethods {
+    fn compute_outcode(&self, min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> OutCode;
+}
 
-    pub fn distance_to_plane(self, plane: Plane) -> f64 {
-        let (_, _, _, d) = plane.get_coefficients();
-        let normal = plane.orientation.w;
-        (self.dot(normal) + d).abs() / normal.length()
+impl Point3ExtensionMethods for Point3<f64> {
+    fn swap(&mut self, i: usize, j: usize) {
+        let temp = self[j];
+        self[j] = self[i];
+        self[i] = temp;
     }
 
-    pub fn is_on_the_side_of(self, plane: Plane, other: Point3)  -> bool{
+    fn is_in_front(self, plane: Plane) -> bool {
         let (_, _, _, d) = plane.get_coefficients();
-        plane.orientation.w.dot(self) == plane.orientation.w.dot(other)
+        plane.orientation.w.dot(&self.coords) + d <= 0.0
+    } 
+
+    fn distance_to_plane(self, plane: Plane) -> f64 {
+        let (_, _, _, d) = plane.get_coefficients();
+        let normal = plane.orientation.w;
+        (self.coords.dot(&normal) + d).abs() / normal.norm()
+    }
+
+    fn is_on_the_side_of(self, plane: Plane, other: Point3<f64>)  -> bool {
+        let (_, _, _, d) = plane.get_coefficients();
+        plane.orientation.w.dot(&self.coords) == plane.orientation.w.dot(&other.coords)
+    }
+
+    
+}
+
+impl Point2ExtensionMethods for Point2<f64> {
+    fn compute_outcode(&self, min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> OutCode { 
+        let inside = 0; // 0000
+        let left = 1;   // 0001
+        let right = 2;  // 0010
+        let bottom = 4; // 0100
+        let top = 8;    // 1000
+
+        let mut code = inside; // initialised as being inside of [[clip window]]
+
+        if self[0] < min_x { // to the left of clip window
+            code |= left;
+        } 
+        else if self[0] > max_x {  // to the right of clip window
+            code |= right; 
+        }   
+            
+        if self[1] < min_y {      // below the clip window
+            code |= bottom;
+        }          
+            
+        else if self[1] > max_y { // above the clip window
+            code |= top;
+            }     
+        code
     }
 }

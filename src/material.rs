@@ -1,6 +1,10 @@
-use crate::vec::*;
-use crate::util::*;
+use nalgebra::{Vector3, Unit};
+
+use crate::image::{Color};
+use crate::vec::VecExtensionMethods;
+use crate::{util::*, sampler};
 use crate::raytracing::{HitRecord, Ray};
+use crate::sampler::*;
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Lambertian{
@@ -58,7 +62,7 @@ impl Material {
         Material::Lambertian(Lambertian::new(alb))
     }
 
-    pub fn new_metal(alb:Vec3, fuzz: f64) -> Material {
+    pub fn new_metal(alb: Vector3<f64>, fuzz: f64) -> Material {
         Material::Metal(Metal::new(alb, fuzz))
     }
 
@@ -76,7 +80,7 @@ impl Lambertian{
         Lambertian{albedo: alb}
     }
 
-    fn deterministic_scatter(&self, rec: &HitRecord, rand_unit_vec: Vec3) -> Option<(Color, Ray)>{
+    fn deterministic_scatter(&self, rec: &HitRecord, rand_unit_vec: Vector3<f64>) -> Option<(Color, Ray)>{
         let mut scatter_direction = rec.normal + rand_unit_vec;
 
         // Catch degenerate Scatter direction
@@ -92,24 +96,24 @@ impl Lambertian{
 impl Scatter for Lambertian {
     fn scatter(&self, _: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>{
 
-        let reflect_dir = Vec3::rand_unit_vec();
-        self.deterministic_scatter( rec, reflect_dir)
+        let reflect_dir = sampler::rand_unit_vec();
+        self.deterministic_scatter( rec, reflect_dir.into_inner())
 
     }
 }
 
 impl Metal {
-    pub fn new(alb:Vec3, mut fuzz: f64) -> Metal {
+    pub fn new(alb: Vector3<f64>, mut fuzz: f64) -> Metal {
         if fuzz > 1.0 {fuzz = 1.0}
         else if fuzz < 0.0 {fuzz = 0.0}
         Metal{albedo: alb, fuzz}
     }
 
-    fn deterministic_scatter(&self, r_in: &Ray, rec: &HitRecord, rand_in_unit_sphere: Vec3) -> Option<(Color, Ray)>{
-        let reflected = r_in.direction().unit_vector().reflect(rec.normal);
+    fn deterministic_scatter(&self, r_in: &Ray, rec: &HitRecord, rand_in_unit_sphere: Vector3<f64>) -> Option<(Color, Ray)>{
+        let reflected = Unit::new_normalize(r_in.direction()).reflect(&rec.normal);
         let scattered = Ray::new(rec.p, reflected + self.fuzz*rand_in_unit_sphere);
         let attenuation = self.albedo;
-        if Vec3::dot(scattered.direction(), rec.normal) > 0.0{
+        if scattered.direction().dot(&rec.normal) > 0.0{
             Some((attenuation, scattered))
         }else{
             None
@@ -119,7 +123,7 @@ impl Metal {
 
 impl Scatter for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>{
-        let fuzz_dir = Vec3::rand_in_unit_sphere();
+        let fuzz_dir = sampler::rand_in_unit_sphere();
         self.deterministic_scatter(r_in, rec, fuzz_dir)
     }
 }
@@ -142,17 +146,17 @@ impl Dielectric {
             refraction_ratio = 1.0/self.index_of_refraction;
         }
         
-        let unit_dir = r_in.direction().unit_vector();
-        let cos_theta = Vec3::dot(-unit_dir, rec.normal).min(1.0);
+        let unit_dir = r_in.direction().normalize();
+        let cos_theta = - unit_dir.dot(&rec.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta*cos_theta).sqrt();
 
         let cannot_refract = refraction_ratio*sin_theta > 1.0;
-        let direction:Vec3;
+        let direction:Vector3<f64>;
 
         if cannot_refract || Dielectric::reflectance(cos_theta, refraction_ratio) > reflectance_test{
-            direction = Vec3::reflect(unit_dir, rec.normal);
+            direction = Vector3::<f64>::reflect(&unit_dir, &rec.normal);
         } else{
-            direction = Vec3::refract(unit_dir, rec.normal, refraction_ratio);
+            direction = Vector3::<f64>::refract(&unit_dir, &rec.normal, refraction_ratio);
         }
         let scattered = Ray::new(rec.p, direction);
         Some((attenuation, scattered))
@@ -161,7 +165,7 @@ impl Dielectric {
 
 impl Scatter for Dielectric {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>{
-        let rand = rand_double(0.0, 1.0);
+        let rand = sampler::rand_double(0.0, 1.0);
         self.deterministic_scatter(r_in, rec, rand)
     }
 }
@@ -195,7 +199,7 @@ mod tests {
     use super::*;
     use crate::primitives::{GeometricPrimitive};
     use crate::raytracing::{Hit, Ray};
-    use crate::geometry::points::{Point3};
+    use crate::nalgebra::{Point3};
 
     #[test]
     fn test_lambertian_deterministic_scatter(){
@@ -204,25 +208,25 @@ mod tests {
         let albedo = Color::new(0.7, 0.6, 0.5);
         let mat = Material::new_lambertian(albedo);
         let s = GeometricPrimitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
-        let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
+        let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vector3::<f64>::new( 1.0, 1.0, 0.0));
         let hit = s.hit(&r, 0.0, 100.0);
         let (rec, _) = hit.unwrap();
         
         //Case 1: Scatter direction is non-degenerate
         let mat = Lambertian::new(albedo);
-        let scatter_result = mat.deterministic_scatter(&rec, Vec3::new(-1.0, 0.0, 0.0));
+        let scatter_result = mat.deterministic_scatter(&rec, Vector3::<f64>::new(-1.0, 0.0, 0.0));
         assert!(scatter_result.is_some());
         let (color, reflected_ray) = scatter_result.unwrap();
         assert_eq!(color, Color::new(0.7, 0.6, 0.5));
-        assert_eq!(reflected_ray, Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new( -2.0, 0.0, 0.0)));
+        assert_eq!(reflected_ray, Ray::new(Point3::new(0.0, 0.0, 0.0), Vector3::<f64>::new( -2.0, 0.0, 0.0)));
         
 
         //Case 2: Scatter direction is degenerate
-        let scatter_result = mat.deterministic_scatter(&rec, Vec3::new(1.0, 0.0, 0.0));
+        let scatter_result = mat.deterministic_scatter(&rec, Vector3::<f64>::new(1.0, 0.0, 0.0));
         assert!(scatter_result.is_some());
         let (color, reflected_ray) = scatter_result.unwrap();
         assert_eq!(color, Color::new(0.7, 0.6, 0.5));
-        assert_eq!(reflected_ray, Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new( -1.0, 0.0, 0.0)));
+        assert_eq!(reflected_ray, Ray::new(Point3::new(0.0, 0.0, 0.0), Vector3::<f64>::new( -1.0, 0.0, 0.0)));
     }
 
     #[test]
@@ -240,21 +244,21 @@ mod tests {
         let albedo = Color::new(0.7, 0.6, 0.5);
         let mat = Material::new_metal(albedo, 20.0);
         let s = GeometricPrimitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
-        let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
+        let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vector3::<f64>::new( 1.0, 1.0, 0.0));
         let hit = s.hit(&r, 0.0, 100.0);
         let (rec, _) = hit.unwrap();
         
         //Case 1: Ray reflects
         let mat = Metal::new(albedo, 20.0);
-        let scatter_result = mat.deterministic_scatter(&r, &rec, Vec3::new(0.0, 0.0, 0.0));
+        let scatter_result = mat.deterministic_scatter(&r, &rec, Vector3::<f64>::new(0.0, 0.0, 0.0));
         assert!(scatter_result.is_some());
         let (color, reflected_ray) = scatter_result.unwrap();
         assert_eq!(color, Color::new(0.7, 0.6, 0.5));
-        assert_eq!(reflected_ray, Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new( -1.0, 1.0, 0.0).unit_vector()));
+        assert_eq!(reflected_ray, Ray::new(Point3::new(0.0, 0.0, 0.0), Vector3::<f64>::new( -1.0, 1.0, 0.0).normalize()));
         
 
         //Case 2: Ray is absorbed
-        let scatter_result = mat.deterministic_scatter(&r, &rec, Vec3::new(1.0, 0.0, 0.0));
+        let scatter_result = mat.deterministic_scatter(&r, &rec, Vector3::<f64>::new(1.0, 0.0, 0.0));
         assert!(scatter_result.is_none());
     }
 
@@ -271,7 +275,7 @@ mod tests {
     fn test_diffuse_light_scatter(){
         let mat = Material::new_diffuse_light(Color::new(0.7, 0.6, 0.5));
         let s = GeometricPrimitive::new_sphere(Point3::new(1.0,0.0,0.0), 1.0, mat);
-        let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vec3::new( 1.0, 1.0, 0.0));
+        let r = Ray::new(Point3::new(-10.0, -10.0, 0.0), Vector3::<f64>::new( 1.0, 1.0, 0.0));
         let hit = s.hit(&r, 0.0, 100.0);
         let (rec, _) = hit.unwrap();
 
@@ -288,9 +292,9 @@ mod tests {
 
     #[test]
     fn test_reflectance(){
-        let unit_vec = Vec3::new(1.0, 2.0, 3.0).unit_vector();
-        let normal = Vec3::new(2.0, -1.0, 1.0);
-        let cos_theta = unit_vec.dot(normal).min(1.0);
+        let unit_vec = Vector3::<f64>::new(1.0, 2.0, 3.0).normalize();
+        let normal = Vector3::<f64>::new(2.0, -1.0, 1.0);
+        let cos_theta = unit_vec.dot(&normal).min(1.0);
         let refraction_ratio = 2.0;
         assert_eq!(Dielectric::reflectance(cos_theta,refraction_ratio), 1.0/9.0 + (8.0/9.0)*((1.0-cos_theta).powi(5)));
     }

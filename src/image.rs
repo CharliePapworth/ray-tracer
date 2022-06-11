@@ -3,12 +3,12 @@ use std::io::Write;
 use std::ops;
 use impl_ops::*;
 
-use crate::{vec::{Color}, util::bound_f64};
+use crate::{nalgebra::Vector3, util::bound_f64};
+
+
+pub type Color = Vector3<f64>;
 
 #[derive (Clone, PartialEq)]
-
-
-
 /// Wraps a color together with an alpha channel. 
 /// 
 /// An Image consists of a vector of pixels, together with some width and height information. 
@@ -35,9 +35,9 @@ impl Pixel{
 
     /// Outputs the color as an array of u8 (traditional RGB)
     pub fn to_rgb(&self) -> [u8; 3] {
-        let r = self.color.x().sqrt();
-        let g = self.color.y().sqrt();
-        let b = self.color.z().sqrt();
+        let r = self.color[0].sqrt();
+        let g = self.color[1].sqrt();
+        let b = self.color[2].sqrt();
 
         let ir = (256.0*bound_f64(r, 0.0, 0.999)) as u8;
         let ig = (256.0*bound_f64(g, 0.0, 0.999)) as u8;

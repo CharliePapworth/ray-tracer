@@ -7,14 +7,14 @@ use crate::primitives::triangle::*;
 use crate::primitives::sphere::*;
 use crate::primitives::rect::*;
 use crate::material::*;
-use crate::vec::*;
+use crate::nalgebra::{Vector3, Point3};
+use crate::image::Color;
 use crate::primitives::bvh::*;
 use crate::enum_dispatch::*;
 use crate::rasterizing::Rasterize;
 extern crate fastrand;
 
 use crate::camera::Camera;
-use crate::geometry::points::{Point3};
 use crate::raytracing::{HitRecord, Hit, Ray};
 
 use core::cmp::Ordering;
@@ -32,11 +32,11 @@ pub enum GeometricPrimitive {
 }
 
 impl GeometricPrimitive {
-    pub fn new_triangle(vertices: [Point3; 3], normals: [Vec3;3], mat: Material) -> GeometricPrimitive {
+    pub fn new_triangle(vertices: [Point3<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> GeometricPrimitive {
         GeometricPrimitive::Triangle(Triangle::new(vertices, normals, mat))
     }
 
-    pub fn new_sphere(cen: Point3, rad: f64, mat: Material) -> GeometricPrimitive {
+    pub fn new_sphere(cen: Point3<f64>, rad: f64, mat: Material) -> GeometricPrimitive {
         GeometricPrimitive::Sphere(Sphere::new(cen, rad, mat))
     }
 
@@ -54,11 +54,11 @@ pub enum Primitive {
 
 impl Primitive {
 
-    pub fn new_triangle(vertices: [Point3; 3], normals: [Vec3;3], mat: Material) -> Primitive {
+    pub fn new_triangle(vertices: [Point3<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> Primitive {
         Primitive::new_geometric_primitive(GeometricPrimitive::new_triangle(vertices, normals, mat))
     }
 
-    pub fn new_sphere(cen: Point3, rad: f64, mat: Material) -> Primitive {
+    pub fn new_sphere(cen: Point3<f64>, rad: f64, mat: Material) -> Primitive {
         Primitive::new_geometric_primitive(GeometricPrimitive::new_sphere(cen, rad, mat))
     }
 
@@ -188,17 +188,17 @@ impl GeometricPrimitives{
                         model_color = Color::new(mat[mat_id].diffuse[0] as f64, mat[mat_id].diffuse[1] as f64, mat[mat_id].diffuse[2] as f64);
                     }
                     None =>{
-                        model_color = Vec3::new(0.5, 0.5, 0.5);
+                        model_color = Vector3::<f64>::new(0.5, 0.5, 0.5);
                     }
                 }
                 for face_indices in mesh.indices.chunks(3){
-                    let mut tri_vert = [Point3::default();3];
-                    let mut tri_norm = [Vec3::default(); 3];
+                    let mut tri_vert = [Point3::<f64>::default();3];
+                    let mut tri_norm = [Vector3::<f64>::default(); 3];
                     for vertex in 0..3{
-                        tri_vert[vertex] = Point3::new(pos[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
+                        tri_vert[vertex] = Point3::<f64>::new(pos[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
                                                     pos[usize::try_from(face_indices[vertex]*3 + 1).unwrap()].into(),
                                                     pos[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
-                        tri_norm[vertex] = Vec3::new(norms[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
+                        tri_norm[vertex] = Vector3::<f64>::new(norms[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
                                                     norms[usize::try_from(face_indices[vertex]*3 + 1).unwrap()].into(),
                                                     norms[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
                     }
@@ -349,17 +349,17 @@ impl Primitives{
                         model_color = Color::new(mat[mat_id].diffuse[0] as f64, mat[mat_id].diffuse[1] as f64, mat[mat_id].diffuse[2] as f64);
                     }
                     None =>{
-                        model_color = Vec3::new(0.5, 0.5, 0.5);
+                        model_color = Vector3::<f64>::new(0.5, 0.5, 0.5);
                     }
                 }
                 for face_indices in mesh.indices.chunks(3){
-                    let mut tri_vert = [Point3::default();3];
-                    let mut tri_norm = [Vec3::default(); 3];
+                    let mut tri_vert = [Point3::<f64>::default();3];
+                    let mut tri_norm = [Vector3::<f64>::default(); 3];
                     for vertex in 0..3{
-                        tri_vert[vertex] = Point3::new(pos[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
+                        tri_vert[vertex] = Point3::<f64>::new(pos[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
                                                     pos[usize::try_from(face_indices[vertex]*3 + 1).unwrap()].into(),
                                                     pos[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
-                        tri_norm[vertex] = Vec3::new(norms[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
+                        tri_norm[vertex] = Vector3::<f64>::new(norms[usize::try_from(face_indices[vertex]*3    ).unwrap()].into(),
                                                     norms[usize::try_from(face_indices[vertex]*3 + 1).unwrap()].into(),
                                                     norms[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
                     }
@@ -420,7 +420,7 @@ mod tests {
     #[test]
      fn test_add(){
         let mut list = Primitives::new();
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
@@ -431,7 +431,7 @@ mod tests {
     #[test]
     fn test_remove(){
         let mut list = Primitives::new();
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
@@ -443,7 +443,7 @@ mod tests {
     #[test]
     fn test_clone() {
         let mut list = Primitives::new();
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
@@ -456,12 +456,12 @@ mod tests {
     #[test]
     fn test_hit(){
         let mut list = Primitives::new();
-        let r = Ray::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new( 1.0, 0.0, 0.0));
+        let r = Ray::new(Point3::<f64>::new(-10.0, 0.0, 0.0), Vector3::<f64>::new( 1.0, 0.0, 0.0));
         let t_min = 0.0;
         let t_max = 100.0;
 
         //Case 1: No intersections
-        let center = Vec3::new(0.0, -10.0, 0.0);
+        let center = Point3::<f64>::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
@@ -470,7 +470,7 @@ mod tests {
         assert!(hit.is_none());
 
         //Case 2: One intersection
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
@@ -481,7 +481,7 @@ mod tests {
         assert_eq!(rec.t, 5.0);  
         
         //Case 3: Two intersections
-        let center = Vec3::new(-2.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(-2.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
@@ -496,7 +496,7 @@ mod tests {
     fn test_sort_by(){
         let mut list = Primitives::new();
         for i in 0..101{
-            let center = Vec3::new(500.0 - 5.0*(i as f64), 0.0, 0.0);
+            let center = Point3::<f64>::new(500.0 - 5.0*(i as f64), 0.0, 0.0);
             let radius = 1.0;
             let mat = Material::Lambertian(Lambertian::default());
             let s = Primitive::new_sphere(center, radius, mat);
@@ -510,7 +510,7 @@ mod tests {
                 Primitive::GeometricPrimitive(shape) => {
                     if let GeometricPrimitive::Sphere(sphere) = shape{ 
                         let center = sphere.center();
-                        assert_eq!(sphere.center(), Vec3::new(5.0 * (i as f64), 0.0, 0.0));
+                        assert_eq!(sphere.center(), Point3::<f64>::new(5.0 * (i as f64), 0.0, 0.0));
                     } else {
                         panic!()
                     }
@@ -526,14 +526,14 @@ mod tests {
         assert!(list.get_largest_extent().is_none());
 
         //Sphere 1
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let center = Point3::<f64>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
         list.add(s);
 
         //Sphere 2
-        let center = Vec3::new(-2.0, -10.0, 3.0);
+        let center = Point3::<f64>::new(-2.0, -10.0, 3.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);

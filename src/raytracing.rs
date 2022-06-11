@@ -2,26 +2,26 @@ extern crate fastrand;
 
 use crate::camera::Camera;
 use crate::geometry::plane::Plane;
+use crate::image::Color;
 use crate::image::Pixel;
 use crate::image::RaytracedImage;
 use crate::util::rand_double;
-use crate::vec::*;
+use crate::nalgebra::{Vector3, Point3};
 use crate::primitives::bvh::*;
 use crate::material::*;
 use crate::primitives::*;
 use crate::enum_dispatch::*;
-use crate::geometry::points::{Point3};
 
 use std::f64::INFINITY;
 
 #[derive (Copy, Clone)]
 pub struct HitRecord {
     
-    pub p: Point3,
-    pub normal: Vec3,
+    pub p: Point3<f64>,
+    pub normal: Vector3<f64>,
     pub t: f64,
     pub front_face: bool,
-    pub p_err: Vec3,
+    pub p_err: Vector3<f64>,
 }
 
 
@@ -34,14 +34,14 @@ pub enum TraceResult{
 }
 
 impl HitRecord{
-    pub fn new(p: Point3, normal: Vec3, t: f64, r: Ray, p_err: Vec3) -> HitRecord{
+    pub fn new(p: Point3<f64>, normal: Vector3<f64>, t: f64, r: Ray, p_err: Vector3<f64>) -> HitRecord{
         let mut rec = HitRecord{p, normal, t, front_face: true, p_err};
         rec.set_face_normal(&r, &normal);
         rec      
     }
 
-    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3){
-        self.front_face = r.direction().dot(*outward_normal) <= 0.0;
+    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vector3<f64>){
+        self.front_face = r.direction().dot(outward_normal) <= 0.0;
         if self.front_face{
             self.normal = *outward_normal;
         } else{
@@ -49,11 +49,11 @@ impl HitRecord{
         }
     }
 
-    pub fn p(&self) -> Vec3{
+    pub fn p(&self) -> Point3<f64>{
         self.p
     }
 
-    pub fn normal(&self) -> Vec3{
+    pub fn normal(&self) -> Vector3<f64>{
         self.normal
     }
 
@@ -87,37 +87,37 @@ pub trait Hit: Send + Sync{
 
 #[derive (Copy, Clone, Default, PartialEq, Debug)]
 pub struct Ray{
-    pub orig: Point3,
-    pub dir: Vec3,
+    pub orig: Point3<f64>,
+    pub dir: Vector3<f64>,
 }
 
 pub enum RayPlaneIntersection {
     Ray(Ray),
-    Point(Point3),
+    Point(Point3<f64>),
     None
 }
 
 impl Ray{
-    pub fn new(origin: Point3, direction: Vec3) -> Ray{
+    pub fn new(origin: Point3<f64>, direction: Vector3<f64>) -> Ray{
         Ray{orig: origin, dir: direction}
     }
 
-    pub fn origin(&self) -> Point3{
+    pub fn origin(&self) -> Point3<f64>{
         self.orig
     }
 
-    pub fn direction(&self) -> Vec3{
+    pub fn direction(&self) -> Vector3<f64>{
         self.dir
     }
 
-    pub fn at(&self, t:f64) -> Vec3{
-        self.orig + self.dir*t
+    pub fn at(&self, t:f64) -> Point3<f64>{
+        self.orig + self.dir * t
     }
 
-    pub fn offset_origin(&self,  p_err: Vec3, norm: Vec3) -> Ray{
-        let d = norm.abs().dot(p_err);
+    pub fn offset_origin(&self,  p_err: Vector3<f64>, norm: Vector3<f64>) -> Ray {
+        let d = norm.abs().dot(&p_err);
         let mut offset = d * norm;
-        if self.dir.dot(norm) < 0.0{
+        if self.dir.dot(&norm) < 0.0{
             offset = -offset;
         }
         Ray::new(self.orig + offset, self.dir)
@@ -128,16 +128,16 @@ impl Ray{
         let plane_normal = plane.orientation.w;
 
         //Check if line is parallel to plane
-        if dir.dot(plane_normal) == 0.0 {
+        if dir.dot(&plane_normal) == 0.0 {
             //If so, check if the line lies in the plane.
-            if (plane.origin - self.orig).dot(plane_normal) == 0.0 {
+            if (plane.origin - self.orig).dot(&plane_normal) == 0.0 {
                 return RayPlaneIntersection::Ray(*self)
             } else {
                 return RayPlaneIntersection::None
             }
         } 
 
-        let time_of_intersection = (plane.origin - self.orig).dot(plane_normal) / (dir.dot(plane_normal));
+        let time_of_intersection = (plane.origin - self.orig).dot(&plane_normal) / (dir.dot(&plane_normal));
         let intersection_point = self.orig + time_of_intersection * dir;
         RayPlaneIntersection::Point(intersection_point)
     }
@@ -167,7 +167,7 @@ pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color 
 
     let result = world.trace(r, 0.001, INFINITY);
     match result {
-        TraceResult::Scattered((attenuation, scattered)) => attenuation.elementwise_mult(&ray_color(&scattered, background, world, depth-1)),
+        TraceResult::Scattered((attenuation, scattered)) => attenuation.component_mul(&ray_color(&scattered, background, world, depth-1)),
         TraceResult::Absorbed(emitted) => emitted,
         TraceResult::Missed => background      
     }
@@ -178,8 +178,8 @@ mod tests {
     use super::*;
     #[test]
     fn test_new(){
-        let orig = Vec3::new(0.0, 0.0, 0.0);
-        let dir = Vec3::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         assert_eq!(ray.orig, orig);
         assert_eq!(ray.dir, dir);
@@ -187,16 +187,16 @@ mod tests {
 
     #[test]
     fn test_direction(){
-        let orig = Vec3::new(0.0, 0.0, 0.0);
-        let dir = Vec3::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         assert_eq!(ray.direction(), dir);
     }
 
     #[test]
     fn test_origin(){
-        let orig = Vec3::new(0.0, 0.0, 0.0);
-        let dir = Vec3::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         assert_eq!(ray.origin(), orig);
     }
@@ -204,10 +204,10 @@ mod tests {
     
     #[test]
     fn test_at(){
-        let orig = Vec3::new(0.0, 0.0, 0.0);
-        let dir = Vec3::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         let t = 2.0;
-        assert_eq!(ray.at(t), orig+2.0*dir);
+        assert_eq!(ray.at(t), orig + 2.0 * dir);
     }
 }
