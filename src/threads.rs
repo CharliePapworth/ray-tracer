@@ -79,7 +79,6 @@ impl TrackedCompositeImage {
             self.image.raytrace.samples = 1;
         } else if self.image.raytrace.samples > 0 && id == self.id {
             self.image.raytrace += &sample;
-            self.image.raytrace.samples += 1;
         }
     }
 }
