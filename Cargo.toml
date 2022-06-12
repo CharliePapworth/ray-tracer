@@ -15,6 +15,7 @@ num_cpus = "*"
 enum_dispatch = "*"
 line_drawing = "1"
 delegate = "0.6.2"
+nalgebra = "0.31.0"
 
 
 [profile.release]
