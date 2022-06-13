@@ -1,4 +1,4 @@
-name: Deployment
+name: deployment
 
 on:
   push:
@@ -9,5 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: change-working-directory
+        run: cd ray-tracer
       - name: deploy
         run: cargo build --release --target=x86_64-pc-windows-msvc
