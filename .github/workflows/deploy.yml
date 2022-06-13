@@ -1,9 +1,8 @@
 name: deploy
 
 on:
-  push:
-    tags:
-      - v[0-9]+.*
+  push: 
+    branches: [ "dev" ]
 
 jobs:
   create-release:
