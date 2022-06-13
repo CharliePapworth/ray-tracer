@@ -1,7 +1,7 @@
-name: deploy
+name: Release
 
 on:
-  push: 
+  push:
     branches: [ "master" ]
 
 jobs:
