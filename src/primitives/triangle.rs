@@ -78,7 +78,7 @@ impl Hit for Triangle {
             t.vertices[0].swap(max_dim, 2);
             t.vertices[1].swap(max_dim, 2);
             t.vertices[2].swap(max_dim, 2);
-            rc.dir.swap((max_dim, 1), (2, 1));
+            rc.dir.swap_rows(max_dim, 2);
         }
 
         //Only shear the (x,y) coordinates to minimise computations
