@@ -47,7 +47,7 @@ use std::sync::RwLock;
 use std::sync::mpsc::*;
 use std::thread::Thread;
 
-//testing github actions
+//test 2
 fn main() {
 
     //Scene
