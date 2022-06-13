@@ -272,7 +272,7 @@ mod tests {
         let line = Line3::new(Point3::<f64>::new(1.0, 1.0, 1.0), Point3::<f64>::new(1.0, 5.0, 4.0));
         let projected_line = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin).unwrap();
         assert!((projected_line[0] - Point2::<f64>::new(11.0, 11.0)).norm() < 0.00001);
-        assert!((projected_line[1] - Point2::<f64>::new(15.0, 14.0)).norm() < 0.00001);
+        assert!((projected_line[1] - Point2::<f64>::new(14.0, 15.0)).norm() < 0.00001);
     }
 
     #[test]
