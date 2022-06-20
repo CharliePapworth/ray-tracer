@@ -23,7 +23,7 @@ pub mod rasterizing;
 pub mod primitives;
 pub mod scenes;
 pub mod raytracing;
-pub mod radiometry;
+pub mod spectra;
 pub mod sampler;
 pub mod vec;
 
@@ -47,7 +47,6 @@ use std::sync::RwLock;
 use std::sync::mpsc::*;
 use std::thread::Thread;
 
-//test 2
 fn main() {
 
     //Scene
