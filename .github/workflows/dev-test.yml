@@ -1,17 +1,17 @@
-name: test
+name: dev-test
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "master" ]
-
+    branches: 
+      - '!master'   
+      
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-    name: test
     
     runs-on: ubuntu-latest
 

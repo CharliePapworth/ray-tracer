@@ -1,9 +1,11 @@
+pub mod constants;
+
 use nalgebra::{Vector, SVector};
 
 use crate::util::{lerp, bound_f32};
 use crate::image::Color;
 
-use super::constants::*;
+use constants::*;
 use std::iter::zip;
 
 const FIRST_WAVELENGTH: f32 = 400.0;

@@ -120,7 +120,7 @@ pub fn obj_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let mut mesh = GeometricPrimitives::new(); 
     let mat = Material::new_lambertian(Color::new(0.4, 0.2, 0.1));
     let ground = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0, -1000.0, 0.0), 1000.0, mat);
-    let (models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/car.obj");
+    let (models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/obj/car.obj");
     let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
     let rect = GeometricPrimitive::new_rect(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light);
     mesh.add_obj(models, materials);
