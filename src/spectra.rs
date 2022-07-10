@@ -24,6 +24,7 @@ pub struct ConstantSpectrum {
 
 /// These are referenced by each instance of SampledSpectrum,
 /// and must therefore have a longer lifetime than every instance. Initialising them in main() is therefore recommended.
+#[derive (Clone, Default)]
 pub struct ConstantSpectra {
     x: ConstantSpectrum,
     y: ConstantSpectrum,
@@ -107,30 +108,30 @@ impl ConstantSpectrum {
     }
 }
 
-/// SampledSpectrum<'a> uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
+/// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
 /// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
 ///  visual spectrum where the human visual system is most sensitive. 
-pub struct SampledSpectrum<'a> {
+pub struct Spectrum<'a> {
     pub coefficients: SVector<f32, SPECTRAL_SAMPLES>,
     pub constant_spectra: &'a ConstantSpectra
 }
 
-impl<'a> SampledSpectrum<'a> {
+impl<'a> Spectrum<'a> {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
     ///     
     /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
-    pub fn new(constant: f32, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
+    pub fn new(constant: f32, constant_spectra: &'a ConstantSpectra) -> Spectrum<'a> {
         let coefficients = SVector::<f32, SPECTRAL_SAMPLES>::repeat(0.0);
-        SampledSpectrum { coefficients, constant_spectra } 
+        Spectrum { coefficients, constant_spectra } 
     }
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
     /// define a piecewise linear function to represent the SPD.
     /// 
     /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
-    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
-        let mut spectrum = SampledSpectrum::<'a>::new(0.0, constant_spectra);
+    pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>, constant_spectra: &'a ConstantSpectra) -> Spectrum<'a> {
+        let mut spectrum = Spectrum::<'a>::new(0.0, constant_spectra);
         if sample_values.len() == 0 || sample_wavelengths.len() == 0 {
             panic!("One of the inputted vectors has length zero.")
         }
@@ -158,8 +159,8 @@ impl<'a> SampledSpectrum<'a> {
         spectrum
     }
 
-    pub fn from_coefficients(coefficients: SVector<f32, SPECTRAL_SAMPLES>, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
-        SampledSpectrum { coefficients, constant_spectra }
+    pub fn from_coefficients(coefficients: SVector<f32, SPECTRAL_SAMPLES>, constant_spectra: &'a ConstantSpectra) -> Spectrum<'a> {
+        Spectrum { coefficients, constant_spectra }
     }
 
     /// Computes X, Y & Z coefficients. This is calculated by integrating the product of the matching curves
@@ -186,19 +187,19 @@ impl<'a> SampledSpectrum<'a> {
     ///  are smooth and such that computing the weighted sum of them with the given RGB coefficients and then converting back
     ///  to RGB give a result that is close to the original RGB coefficients. These spectra were found through a numerical 
     /// optimization procedure. 
-    pub fn from_rgb(rgb: Color, spectrum_type: SpectrumType, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a>{
+    pub fn from_rgb(rgb: Color, spectrum_type: SpectrumType, constant_spectra: &'a ConstantSpectra) -> Spectrum<'a>{
         match spectrum_type {
             SpectrumType::Reflectance => {
-                return SampledSpectrum::from_rgb_reflectance(rgb, constant_spectra);
+                return Spectrum::from_rgb_reflectance(rgb, constant_spectra);
             }
             SpectrumType::Illuminant => {
-                return SampledSpectrum::from_rgb_illuminant(rgb, constant_spectra);
+                return Spectrum::from_rgb_illuminant(rgb, constant_spectra);
             }
         }
     }
 
-    fn from_rgb_reflectance(rgb: Color, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
-        let mut output = SampledSpectrum::new(0.0, constant_spectra);
+    fn from_rgb_reflectance(rgb: Color, constant_spectra: &'a ConstantSpectra) -> Spectrum<'a> {
+        let mut output = Spectrum::new(0.0, constant_spectra);
         let rgb = [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32];
         if rgb[0] <= rgb[1] && rgb[0] <= rgb[2] {
             //Compute reflectance SampledSpectrum with rgb[0] as minimum
@@ -234,8 +235,8 @@ impl<'a> SampledSpectrum<'a> {
     }
 
 
-    fn from_rgb_illuminant(rgb: Color, constant_spectra: &'a ConstantSpectra) -> SampledSpectrum<'a> {
-        let mut output = SampledSpectrum::new(0.0, constant_spectra);
+    fn from_rgb_illuminant(rgb: Color, constant_spectra: &'a ConstantSpectra) -> Spectrum<'a> {
+        let mut output = Spectrum::new(0.0, constant_spectra);
         let rgb = [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32];
         if rgb[0] <= rgb[1] && rgb[0] <= rgb[2] {
             //Compute reflectance SampledSpectrum with rgb[0] as minimum
@@ -304,7 +305,7 @@ impl<'a> SampledSpectrum<'a> {
 
     /// Gets the RGB coefficients for the SPD.
     pub fn get_rgb(&self) -> [f32; 3] {
-        SampledSpectrum::xyz_to_rgb(self.get_xyz())
+        Spectrum::xyz_to_rgb(self.get_xyz())
     }
 
     

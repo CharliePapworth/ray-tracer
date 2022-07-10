@@ -3,6 +3,7 @@ pub mod rect;
 pub mod sphere;
 pub mod triangle;
 
+use crate::material::lambertian::Lambertian;
 use crate::primitives::triangle::*;
 use crate::primitives::sphere::*;
 use crate::primitives::rect::*;
@@ -16,6 +17,7 @@ extern crate fastrand;
 
 use crate::camera::Camera;
 use crate::raytracing::{HitRecord, Hit, Ray};
+use crate::spectra::Spectrum;
 
 use core::cmp::Ordering;
 use std::convert::TryFrom;
@@ -24,14 +26,14 @@ use std::convert::TryFrom;
 
 #[enum_dispatch(Hit)]
 #[enum_dispatch(Rasterize)]
-#[derive (Copy, Clone)]
-pub enum GeometricPrimitive {
-    Triangle(Triangle),
-    Sphere(Sphere),
-    Rect(Rect),
+#[derive (Clone)]
+pub enum GeometricPrimitive<'a> {
+    Triangle(Triangle<'a>),
+    Sphere(Sphere<'a>),
+    Rect(Rect<'a>),
 }
 
-impl GeometricPrimitive {
+impl<'a> GeometricPrimitive<'a> {
     pub fn new_triangle(vertices: [Point3<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> GeometricPrimitive {
         GeometricPrimitive::Triangle(Triangle::new(vertices, normals, mat))
     }
@@ -47,12 +49,12 @@ impl GeometricPrimitive {
 
 #[enum_dispatch(Hit)]
 #[derive (Clone)]
-pub enum Primitive {
-    GeometricPrimitive(GeometricPrimitive),
-    Bvh(BvhNode)
+pub enum Primitive<'a> {
+    GeometricPrimitive(GeometricPrimitive<'a>),
+    Bvh(BvhNode<'a>)
 }
 
-impl Primitive {
+impl<'a> Primitive<'a> {
 
     pub fn new_triangle(vertices: [Point3<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> Primitive {
         Primitive::new_geometric_primitive(GeometricPrimitive::new_triangle(vertices, normals, mat))
@@ -70,33 +72,33 @@ impl Primitive {
         Primitive::GeometricPrimitive(geometric_primitive)
     }
 
-    pub fn new_bvh(bvh: BvhNode) -> Primitive {
+    pub fn new_bvh(bvh: BvhNode<'a>) -> Primitive<'a> {
         Primitive::Bvh(bvh)
     }
 }
 
 
 #[derive (Default, Clone)]
-pub struct Primitives {
-    list: Vec<Primitive>
+pub struct Primitives<'a> {
+    list: Vec<Primitive<'a>>
 }
 
 #[derive (Default, Clone)]
-pub struct GeometricPrimitives {
-    list: Vec<GeometricPrimitive>
+pub struct GeometricPrimitives<'a> {
+    list: Vec<GeometricPrimitive<'a>>
 }
 
 
 
 
-impl GeometricPrimitives{
+impl<'a> GeometricPrimitives<'a> {
 
-    pub fn new() -> GeometricPrimitives {
+    pub fn new() -> GeometricPrimitives<'a> {
         GeometricPrimitives{list: Vec::new()}
     } 
     
 
-    pub fn add(&mut self, new_traceable: GeometricPrimitive) {
+    pub fn add(&mut self, new_traceable: GeometricPrimitive<'a>) {
         self.list.push(new_traceable);
     }
 
@@ -171,11 +173,11 @@ impl GeometricPrimitives{
         GeometricPrimitives{list: self.list.split_off(at)}
     }
 
-    pub fn to_bvh(self) -> BvhNode {
+    pub fn to_bvh(self) -> BvhNode<'a> {
         BvhNode::new(self)
     }
 
-    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>){
+    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, spectrum: Spectrum<'a>){
         for  m in models.iter(){
            //if m.name == "wheel_fr_Circle.050_MAIN"{
                 let mesh = &m.mesh;
@@ -203,14 +205,14 @@ impl GeometricPrimitives{
                                                     norms[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
                     }
 
-                    let tri = GeometricPrimitive::new_triangle(tri_vert, tri_norm, Material::Lambertian(Lambertian::new(model_color)));
+                    let tri = GeometricPrimitive::new_triangle(tri_vert, tri_norm, Material::Lambertian(Lambertian::new(spectrum)));
                     self.add(tri);
                 }
         }
     }
 }
 
-impl Hit for GeometricPrimitives{
+impl<'a> Hit for GeometricPrimitives<'a> {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         
         let mut closest_so_far = t_max;
@@ -246,21 +248,21 @@ impl Hit for GeometricPrimitives{
     }
 }
 
-impl Rasterize for GeometricPrimitives {
+impl<'a> Rasterize for GeometricPrimitives<'a> {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         self.list.outline(cam)
     }
 }
 
 
-impl Primitives{
+impl<'a> Primitives<'a> {
 
-    pub fn new() -> Primitives {
+    pub fn new() -> Primitives<'a> {
         Primitives{list: Vec::new()}
     } 
     
 
-    pub fn add(&mut self, new_traceable: Primitive) {
+    pub fn add(&mut self, new_traceable: Primitive<'a>) {
         self.list.push(new_traceable);
     }
 
@@ -371,7 +373,7 @@ impl Primitives{
     }
 }
 
-impl Hit for Primitives{
+impl<'a> Hit for Primitives<'a> {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         
         let mut closest_so_far = t_max;

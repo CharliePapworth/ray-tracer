@@ -31,6 +31,7 @@ use eframe::egui::Vec2;
 
 use camera::*;
 use gui::*;
+use spectra::ConstantSpectra;
 use threads::*;
 use geometry::*;
 use primitives::*;
@@ -48,9 +49,11 @@ use std::sync::mpsc::*;
 use std::thread::Thread;
 
 fn main() {
+    //Constants
+    let constant_spectra = ConstantSpectra::init();
 
     //Scene
-    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world();
+    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world(&constant_spectra);
     let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
     let mut primitives = Primitives::new();
     primitives.add(bvh);

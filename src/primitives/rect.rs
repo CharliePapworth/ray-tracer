@@ -15,15 +15,15 @@ pub enum RectAxes {
     YZ
 }
 
-#[derive (Copy, Clone)]
-pub struct Rect {
-    mat: Material,
+#[derive (Clone)]
+pub struct Rect<'a> {
+    mat: Material<'a>,
     axes: RectAxes,
     corners: [f64; 4],
     k: f64
 }
 
-impl Rect {
+impl<'a> Rect<'a> {
     pub fn new(axes: RectAxes, axis1_min: f64, axis1_max: f64, axis2_min: f64, axis2_max: f64, k: f64, mat: Material) -> Rect {
         Rect{axes, corners: [axis1_min, axis1_max, axis2_min, axis2_max], k, mat}
     }   
@@ -103,7 +103,7 @@ impl Rect {
     }
 }
 
-impl Hit for Rect {
+impl<'a> Hit for Rect<'a> {
     fn hit(&self, r:&Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         let indices = self.axes_indices();
         let unused = self.unused_axis_index();
@@ -132,7 +132,7 @@ impl Hit for Rect {
     }
 }
 
-impl Rasterize for Rect {
+impl<'a> Rasterize for Rect<'a> {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let lines = self.get_lines().to_vec();
         lines.outline(cam)

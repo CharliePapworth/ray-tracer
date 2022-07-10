@@ -8,14 +8,14 @@ use crate::util::*;
 use crate::rasterizing::*;
 use crate::raytracing::{HitRecord, Hit, Ray};
 
-#[derive (Copy, Clone)]
-pub struct Triangle {
+#[derive (Clone)]
+pub struct Triangle<'a> {
     vertices: [Point3::<f64>; 3],
     normals: [Vector3<f64>; 3],
-    material: Material
+    material: Material<'a>
 }
 
-impl Triangle{
+impl<'a> Triangle<'a>{
 
     pub fn new(vertices: [Point3::<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> Triangle{
         Triangle{vertices, normals, material: mat}
@@ -59,7 +59,7 @@ impl Triangle{
     }
 }
 
-impl Hit for Triangle {
+impl<'a> Hit for Triangle<'a> {
     fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)>{
 
         let mut rc = *r;
@@ -148,7 +148,7 @@ impl Hit for Triangle {
     }
 }
 
-impl Rasterize for Triangle {
+impl<'a> Rasterize for Triangle<'a> {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
 
         let line_1 = Line3::new(self.vertices[1], self.vertices[0]);
@@ -162,6 +162,8 @@ impl Rasterize for Triangle {
 
 #[cfg(test)]
 mod tests {
+    use crate::material::lambertian::Lambertian;
+
     use super::*;
 
     #[test]

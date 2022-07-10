@@ -92,11 +92,11 @@ pub struct RayTraceSettings {
 }
 
 #[derive (Clone)]
-pub struct GlobalSettings {
+pub struct GlobalSettings<'a> {
     pub raytrace_settings: RayTraceSettings,
     pub image_settings: ImageSettings,
     pub camera: Camera,
-    pub scene: SceneData,
+    pub scene: SceneData<'a>,
     pub id: i32
 }
 
@@ -113,14 +113,14 @@ pub enum Instructions {
 }
 
 
-pub struct ThreadCoordinator {
+pub struct ThreadCoordinator<'a> {
     pub gui_to_thread_txs: Vec<Sender<Instructions>>,
-    pub global_settings: Arc<RwLock<GlobalSettings>>,
+    pub global_settings: Arc<RwLock<GlobalSettings<'a>>>,
     pub local_settings: Vec<Arc<RwLock<LocalSettings>>>,
     pub image: Arc<(Mutex<TrackedCompositeImage>, Condvar)>
 }
 
-impl ThreadCoordinator {
+impl<'a> ThreadCoordinator<'a> {
 
     pub fn new(initial_settings: GlobalSettings) -> ThreadCoordinator {
         let global_settings = Arc::new(RwLock::new(initial_settings.clone()));

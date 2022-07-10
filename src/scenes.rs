@@ -1,5 +1,6 @@
 use crate::image::Color;
 use crate::primitives::{GeometricPrimitive, GeometricPrimitives, Primitives};
+use crate::spectra::{ConstantSpectra, Spectrum};
 use crate::{material::*, sampler};
 use crate::primitives::rect::*;
 use crate::util::*;
@@ -10,14 +11,14 @@ use crate::nalgebra::{Vector3, Point3};
 /// Contains all information regarding the scene. The raytracing_primitives and the rasterization_primitives contain
 /// the same primtitives, but raytracing_primitives may contain acceleration structures designed to improve
 /// raytracing performance. The background color is the ambient color of the scene.
-pub struct SceneData {
-    pub raytracing_primitives: Primitives,
-    pub rasterization_primitives: GeometricPrimitives,
+pub struct SceneData<'a> {
+    pub raytracing_primitives: Primitives<'a>,
+    pub rasterization_primitives: GeometricPrimitives<'a>,
     pub background: Color,   
 }
 
 /// Returns a world filled with spheres.
-pub fn sphere_world() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn sphere_world<'a>(constant_spectra: &'a ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.7, 0.8, 1.0);
     let look_from = Point3::<f64>::new(13.0, 2.0, 3.0);
@@ -67,7 +68,7 @@ pub fn sphere_world() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) 
 }
 
 /// Returns a scene containing a single light.
-pub fn light_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn light_test<'a>(constant_spectra: &'a ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::<f64>::new(26.0, 3.0, 6.0);
@@ -87,7 +88,7 @@ pub fn light_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
 }
 
 /// Returns a scene containing a single triangle.
-pub fn triangle_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn triangle_test<'a>(constant_spectra: &'a ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::<f64>::new(0.0, 2.0, 26.0);
@@ -111,7 +112,7 @@ pub fn triangle_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>)
 
 
 /// Returns a scene containing an object defined by a .obj file (on a spherical world).
-pub fn obj_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn obj_test<'a>(constant_spectra: &'a ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let _world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::<f64>::new(-20.0, 5.0, 20.0);
@@ -123,14 +124,14 @@ pub fn obj_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let (models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/obj/car.obj");
     let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
     let rect = GeometricPrimitive::new_rect(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light);
-    mesh.add_obj(models, materials);
+    mesh.add_obj(models, materials, Spectrum::Default());
     mesh.add(ground);
     //mesh.add(rect);
     
     (mesh, background, look_from, look_at)
 }
 
-pub fn mesh_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn mesh_test<'a>(constant_spectra: &'a ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
     let mut world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
     let look_from = Point3::<f64>::new(26.0, 10.0, 10.0);
@@ -179,7 +180,7 @@ pub fn mesh_test() -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
 
 
     let test = vec!(test_1, test_2, test_3);
-    world.add_obj(test, None);
+    world.add_obj(test, None, Spectrum::Default());
 
     (world, background, look_from, look_at)
 

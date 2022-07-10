@@ -11,14 +11,14 @@ use crate::material::*;
 use crate::camera::*;
 use crate::raytracing::{HitRecord, Hit, Ray};
 
-#[derive (Copy, Clone)]
-pub struct Sphere {
+#[derive (Clone)]
+pub struct Sphere<'a> {
     center: Point3<f64>,
     radius: f64,
-    material: Material
+    material: Material<'a>
 }
 
-impl Sphere{
+impl<'a> Sphere<'a>{
 
     ///Initialises a new sphere
     pub fn new(cen: Point3<f64>, rad: f64, mat: Material) -> Sphere{
@@ -88,7 +88,7 @@ impl Sphere{
     }
 }
 
-impl Hit for Sphere{
+impl<'a> Hit for Sphere<'a>{
     fn hit(&self, r:&Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         let oc = r.origin() - self.center;
         let a = r.direction().norm_squared();
@@ -122,7 +122,7 @@ impl Hit for Sphere{
     }
 }
 
-impl Rasterize for Sphere {
+impl<'a> Rasterize for Sphere<'a> {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let camera_plane = Plane::new(cam.orientation, cam.origin);
         
@@ -143,7 +143,7 @@ impl Rasterize for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::material::*;
+    use crate::material::{*, lambertian::Lambertian};
 
     #[test]
     fn test_new(){
