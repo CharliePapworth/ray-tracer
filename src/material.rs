@@ -1,10 +1,46 @@
 use nalgebra::{Vector3, Unit};
 
 use crate::image::{Color};
+use crate::spectra::SampledSpectrum;
 use crate::vec::VecExtensionMethods;
 use crate::{util::*, sampler};
 use crate::raytracing::{HitRecord, Ray};
 use crate::sampler::*;
+
+pub enum ReflectionModel {
+    Diffuse,
+    Glossy,
+    Specular
+}
+
+pub trait Material<'a> {
+
+    ///Returns the reflection model of the material.
+    fn reflection_model(&self) -> ReflectionModel;
+
+    ///True if the material transmits light, and false otherwise.
+    fn transmits(&self) -> bool;
+
+    ///True if the material reflects light, and false otherwise.
+    fn reflects(&self) -> bool;
+
+    ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a given direction.
+    fn scatter(outbound_direction: Vector3<f64>, inbound_direction: Vector3<f64>) -> SampledSpectrum<'a>;
+
+    ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a given direction. The direction
+    /// of the incident ray of light is chosen by the Material. This is useful in cases where the probability of choosing a
+    /// direction from which light will be reflected in the desired outbound direction is low (e.g. as would be the case for a mirror).
+    fn opinionated_scatter(outbound_direction: Vector3<f64>) -> (SampledSpectrum<'a>, Vector3<f64>);
+
+    ///The hemispherical-directional reflectance is a 2D function that gives the total reflection in a given direction due to constant
+    ///  illumination over the hemisphere, or, equivalently, total reflection over the hemisphere due to light from a given direction.
+    fn hemispherical_directional_scatter(direction: Vector3<f64>) -> SampledSpectrum<'a>;
+
+    ///The hemispherical-hemispherical reflectance of a surface, denoted by , is a spectral value that gives the fraction of incident 
+    /// light reflected by a surface when the incident light is the same from all directions. 
+    fn hemispherical_hemispherical_scatter() -> SampledSpectrum<'a>;
+}
+
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Lambertian{

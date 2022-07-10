@@ -6,6 +6,8 @@ use impl_ops::*;
 use crate::{*, geometry::{lines::OutCode}, util::rand_double};
 use crate::nalgebra::{Vector3, Point3};
 
+type Vec3 = Vector3<f64>;
+
 pub trait VecExtensionMethods {
     fn reflect(&self, normal: &Vector3<f64>) -> Vector3<f64>;
     fn refract(uv: &Vector3<f64>, n: &Vector3<f64>, etai_over_etat: f64) -> Vector3<f64>;

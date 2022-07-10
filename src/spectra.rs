@@ -22,7 +22,6 @@ pub struct ConstantSpectrum {
     pub coefficients: SVector<f32, SPECTRAL_SAMPLES>
 }
 
-
 /// These are referenced by each instance of SampledSpectrum,
 /// and must therefore have a longer lifetime than every instance. Initialising them in main() is therefore recommended.
 pub struct ConstantSpectra {

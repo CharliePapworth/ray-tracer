@@ -24,9 +24,6 @@ pub struct HitRecord {
     pub p_err: Vector3<f64>,
 }
 
-
-
-
 pub enum TraceResult{
     Missed,
     Absorbed(Color),
