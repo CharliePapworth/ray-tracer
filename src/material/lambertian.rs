@@ -6,22 +6,22 @@ use crate::{image::{Color}, raytracing::Ray, spectra::Spectrum};
 
 use super::{Scatter, ReflectionModel};
 
-#[derive( Clone)]
+#[derive(Clone, Default)]
 ///Specular materials, such as perfectly smooth surfaces, exhibit perfect specular reflection
 /// and transmission: for an incident direction, all light is scattered in
 /// a single outbound direction.
-pub struct Lambertian<'a> {
-    color: Spectrum<'a>
+pub struct Lambertian {
+    color: Spectrum
 }
 
 
-impl<'a> Lambertian<'a> {
-    pub fn new(color: Spectrum<'a>) -> Lambertian<'a> {
+impl Lambertian {
+    pub fn new(color: Spectrum) -> Lambertian {
         Lambertian {color}
     }
 }
 
-impl<'a> Scatter<'a> for Lambertian<'a> {
+impl Scatter for Lambertian {
 
     fn reflection_model(&self) -> ReflectionModel {
         ReflectionModel::Diffuse
@@ -35,19 +35,19 @@ impl<'a> Scatter<'a> for Lambertian<'a> {
         true
      }
  
-     fn scatter(&self, outbound_direction: Vector3<f64>, inbound_direction: Vector3<f64>) -> Spectrum<'a> {
+     fn scatter(&self, outbound_direction: Vector3<f64>, inbound_direction: Vector3<f64>) -> Spectrum {
         self.color * 1.0 / PI;
      }
  
-     fn opinionated_scatter(&self, outbound_direction: Vector3<f64>) -> Option<(Spectrum<'a>, Vector3<f64>)> {
+     fn opinionated_scatter(&self, outbound_direction: Vector3<f64>) -> Option<(Spectrum, Vector3<f64>)> {
         None
      }
  
-     fn hemispherical_directional_scatter(&self, direction: Vector3<f64>) -> Spectrum<'a> {
+     fn hemispherical_directional_scatter(&self, direction: Vector3<f64>) -> Spectrum {
         self.color
      }
  
-     fn hemispherical_hemispherical_scatter(&self) -> Spectrum<'a> {
+     fn hemispherical_hemispherical_scatter(&self) -> Spectrum {
         self.color
      }
 }

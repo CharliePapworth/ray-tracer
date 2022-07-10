@@ -14,20 +14,20 @@ pub struct Aabb{
 }
 
 #[derive(Clone)]
-pub enum BvhNode<'a> {
-    Branch(BvhBranch<'a>),
-    Root(BvhRoot<'a>),
+pub enum BvhNode {
+    Branch(BvhBranch),
+    Root(BvhRoot),
 }
 
 #[derive(Clone)]
-pub struct BvhBranch<'a> {
-    children: (Box<BvhNode<'a>>, Box<BvhNode<'a>>),
+pub struct BvhBranch {
+    children: (Box<BvhNode>, Box<BvhNode>),
     bb: Aabb
 }
 
 #[derive(Clone)]
-pub struct BvhRoot<'a> {
-    traceable: GeometricPrimitive<'a>,
+pub struct BvhRoot {
+    traceable: GeometricPrimitive,
     bb: Aabb
 }
 
@@ -86,8 +86,8 @@ impl Aabb{
     }
 }
 
-impl<'a> BvhBranch<'a> {
-    pub fn new(left: GeometricPrimitives<'a>, right: GeometricPrimitives<'a>, bb: Aabb) -> BvhNode<'a> {
+impl BvhBranch {
+    pub fn new(left: GeometricPrimitives, right: GeometricPrimitives, bb: Aabb) -> BvhNode {
         BvhNode::Branch(BvhBranch{children: (Box::new(BvhNode::new(left)), Box::new(BvhNode::new(right))), bb})
     }
 
@@ -104,13 +104,13 @@ impl<'a> BvhBranch<'a> {
     }
 }
 
-impl<'a> BvhRoot<'a> {
+impl BvhRoot {
     pub fn new(traceable: GeometricPrimitive, bb: Aabb) -> BvhNode{
         BvhNode::Root(BvhRoot{traceable, bb})
     }
 }
 
-impl<'a> BvhNode<'a> {
+impl BvhNode {
     pub fn new(mut objects: GeometricPrimitives) -> BvhNode{
         let object_span = objects.len();
         match object_span {
@@ -143,7 +143,7 @@ impl<'a> BvhNode<'a> {
     }
 }
 
-impl<'a> BvhBranch<'a> {
+impl BvhBranch {
     pub fn hit_debug(&self, r: &Ray, t_min: f64, t_max: f64) -> (i32, Option<(HitRecord, &Material)>) {
         if !self.bb.hit(r, t_min, t_max){
             return (0, None)
@@ -168,7 +168,7 @@ impl<'a> BvhBranch<'a> {
     }
 }
 
-impl<'a> BvhRoot<'a> {
+impl BvhRoot {
     pub fn hit_debug(&self, r: &Ray, t_min: f64, t_max: f64) -> (i32, Option<(HitRecord, &Material)>) {
         match self.traceable.hit(r, t_min, t_max) {
             Some((rec, mat)) => {
@@ -178,7 +178,7 @@ impl<'a> BvhRoot<'a> {
         }
     }
 }
-impl<'a> Hit for BvhBranch<'a> {
+impl Hit for BvhBranch {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         if !self.bb.hit(r, t_min, t_max){
             return None
@@ -206,7 +206,7 @@ impl<'a> Hit for BvhBranch<'a> {
     }
 }
 
-impl<'a> Hit for BvhRoot<'a> {
+impl Hit for BvhRoot {
     fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         self.traceable.hit(r, t_min, t_max)
     }
@@ -215,7 +215,7 @@ impl<'a> Hit for BvhRoot<'a> {
     }
 }
 
-impl<'a> Hit for BvhNode<'a>{
+impl Hit for BvhNode{
     fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         match self{
             BvhNode::Branch(x) => x.hit(r, t_min, t_max),

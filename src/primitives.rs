@@ -27,13 +27,13 @@ use std::convert::TryFrom;
 #[enum_dispatch(Hit)]
 #[enum_dispatch(Rasterize)]
 #[derive (Clone)]
-pub enum GeometricPrimitive<'a> {
-    Triangle(Triangle<'a>),
-    Sphere(Sphere<'a>),
-    Rect(Rect<'a>),
+pub enum GeometricPrimitive {
+    Triangle(Triangle),
+    Sphere(Sphere),
+    Rect(Rect),
 }
 
-impl<'a> GeometricPrimitive<'a> {
+impl GeometricPrimitive {
     pub fn new_triangle(vertices: [Point3<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> GeometricPrimitive {
         GeometricPrimitive::Triangle(Triangle::new(vertices, normals, mat))
     }
@@ -49,12 +49,12 @@ impl<'a> GeometricPrimitive<'a> {
 
 #[enum_dispatch(Hit)]
 #[derive (Clone)]
-pub enum Primitive<'a> {
-    GeometricPrimitive(GeometricPrimitive<'a>),
-    Bvh(BvhNode<'a>)
+pub enum Primitive {
+    GeometricPrimitive(GeometricPrimitive),
+    Bvh(BvhNode)
 }
 
-impl<'a> Primitive<'a> {
+impl Primitive {
 
     pub fn new_triangle(vertices: [Point3<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> Primitive {
         Primitive::new_geometric_primitive(GeometricPrimitive::new_triangle(vertices, normals, mat))
@@ -72,33 +72,33 @@ impl<'a> Primitive<'a> {
         Primitive::GeometricPrimitive(geometric_primitive)
     }
 
-    pub fn new_bvh(bvh: BvhNode<'a>) -> Primitive<'a> {
+    pub fn new_bvh(bvh: BvhNode) -> Primitive {
         Primitive::Bvh(bvh)
     }
 }
 
 
 #[derive (Default, Clone)]
-pub struct Primitives<'a> {
-    list: Vec<Primitive<'a>>
+pub struct Primitives {
+    list: Vec<Primitive>
 }
 
 #[derive (Default, Clone)]
-pub struct GeometricPrimitives<'a> {
-    list: Vec<GeometricPrimitive<'a>>
+pub struct GeometricPrimitives {
+    list: Vec<GeometricPrimitive>
 }
 
 
 
 
-impl<'a> GeometricPrimitives<'a> {
+impl GeometricPrimitives {
 
-    pub fn new() -> GeometricPrimitives<'a> {
+    pub fn new() -> GeometricPrimitives {
         GeometricPrimitives{list: Vec::new()}
     } 
     
 
-    pub fn add(&mut self, new_traceable: GeometricPrimitive<'a>) {
+    pub fn add(&mut self, new_traceable: GeometricPrimitive) {
         self.list.push(new_traceable);
     }
 
@@ -173,11 +173,11 @@ impl<'a> GeometricPrimitives<'a> {
         GeometricPrimitives{list: self.list.split_off(at)}
     }
 
-    pub fn to_bvh(self) -> BvhNode<'a> {
+    pub fn to_bvh(self) -> BvhNode {
         BvhNode::new(self)
     }
 
-    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, spectrum: Spectrum<'a>){
+    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, spectrum: Spectrum){
         for  m in models.iter(){
            //if m.name == "wheel_fr_Circle.050_MAIN"{
                 let mesh = &m.mesh;
@@ -212,7 +212,7 @@ impl<'a> GeometricPrimitives<'a> {
     }
 }
 
-impl<'a> Hit for GeometricPrimitives<'a> {
+impl Hit for GeometricPrimitives {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         
         let mut closest_so_far = t_max;
@@ -248,21 +248,21 @@ impl<'a> Hit for GeometricPrimitives<'a> {
     }
 }
 
-impl<'a> Rasterize for GeometricPrimitives<'a> {
+impl Rasterize for GeometricPrimitives {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         self.list.outline(cam)
     }
 }
 
 
-impl<'a> Primitives<'a> {
+impl Primitives {
 
-    pub fn new() -> Primitives<'a> {
+    pub fn new() -> Primitives {
         Primitives{list: Vec::new()}
     } 
     
 
-    pub fn add(&mut self, new_traceable: Primitive<'a>) {
+    pub fn add(&mut self, new_traceable: Primitive) {
         self.list.push(new_traceable);
     }
 
@@ -338,7 +338,7 @@ impl<'a> Primitives<'a> {
     }
 
 
-    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>){
+    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, model_spectrum: Spectrum){
         for  m in models.iter(){
            //if m.name == "wheel_fr_Circle.050_MAIN"{
                 let mesh = &m.mesh;
@@ -366,14 +366,14 @@ impl<'a> Primitives<'a> {
                                                     norms[usize::try_from(face_indices[vertex]*3 + 2).unwrap()].into());
                     }
 
-                    let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::new_lambertian(model_color));
+                    let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::new_lambertian(model_spectrum));
                     self.add(tri);
                 }
         }
     }
 }
 
-impl<'a> Hit for Primitives<'a> {
+impl Hit for Primitives {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         
         let mut closest_so_far = t_max;

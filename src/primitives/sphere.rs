@@ -12,13 +12,13 @@ use crate::camera::*;
 use crate::raytracing::{HitRecord, Hit, Ray};
 
 #[derive (Clone)]
-pub struct Sphere<'a> {
+pub struct Sphere {
     center: Point3<f64>,
     radius: f64,
-    material: Material<'a>
+    material: Material
 }
 
-impl<'a> Sphere<'a>{
+impl Sphere{
 
     ///Initialises a new sphere
     pub fn new(cen: Point3<f64>, rad: f64, mat: Material) -> Sphere{
@@ -88,7 +88,7 @@ impl<'a> Sphere<'a>{
     }
 }
 
-impl<'a> Hit for Sphere<'a>{
+impl Hit for Sphere{
     fn hit(&self, r:&Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         let oc = r.origin() - self.center;
         let a = r.direction().norm_squared();
@@ -122,7 +122,7 @@ impl<'a> Hit for Sphere<'a>{
     }
 }
 
-impl<'a> Rasterize for Sphere<'a> {
+impl Rasterize for Sphere {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let camera_plane = Plane::new(cam.orientation, cam.origin);
         

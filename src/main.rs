@@ -50,7 +50,7 @@ use std::thread::Thread;
 
 fn main() {
     //Constants
-    let constant_spectra = ConstantSpectra::init();
+    let constant_spectra = ConstantSpectra::new();
 
     //Scene
     let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world(&constant_spectra);

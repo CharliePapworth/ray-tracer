@@ -9,13 +9,13 @@ use crate::rasterizing::*;
 use crate::raytracing::{HitRecord, Hit, Ray};
 
 #[derive (Clone)]
-pub struct Triangle<'a> {
+pub struct Triangle {
     vertices: [Point3::<f64>; 3],
     normals: [Vector3<f64>; 3],
-    material: Material<'a>
+    material: Material
 }
 
-impl<'a> Triangle<'a>{
+impl Triangle{
 
     pub fn new(vertices: [Point3::<f64>; 3], normals: [Vector3<f64>;3], mat: Material) -> Triangle{
         Triangle{vertices, normals, material: mat}
@@ -59,7 +59,7 @@ impl<'a> Triangle<'a>{
     }
 }
 
-impl<'a> Hit for Triangle<'a> {
+impl Hit for Triangle {
     fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)>{
 
         let mut rc = *r;
@@ -148,7 +148,7 @@ impl<'a> Hit for Triangle<'a> {
     }
 }
 
-impl<'a> Rasterize for Triangle<'a> {
+impl Rasterize for Triangle {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
 
         let line_1 = Line3::new(self.vertices[1], self.vertices[0]);
@@ -171,7 +171,7 @@ mod tests {
         let v0 = Point3::<f64>::new(0.0, 0.0, 0.0);
         let v1 = Point3::<f64>::new(1.0, 2.0, 3.0);
         let v2 = Point3::<f64>::new(0.5, 2.0, 2.0);
-        let mat = Material::Lambertian(Lambertian::new(Vector3::<f64>::new(1.0, 1.0, 1.0)));
+        let mat = Material::Lambertian(Lambertian::default());
         let norm = [Vector3::<f64>::new(0.0, -1.0, -1.0).normalize(); 3];
         let mut t = Triangle::new([v0, v1, v2], norm, mat);
         let r = Ray::new(Point3::<f64>::new(0.5, -1.0, 0.5), Vector3::<f64>::new(1.0, 4.0, 1.0));
@@ -187,7 +187,7 @@ mod tests {
         let v0 = Point3::<f64>::new(0.0, 0.0, 0.0);
         let v1 = Point3::<f64>::new(1.0, 2.0, 3.0);
         let v2 = Point3::<f64>::new(0.5, 2.0, 2.0);
-        let mat = Material::Lambertian(Lambertian::new(Vector3::<f64>::new(1.0, 1.0, 1.0)));
+        let mat = Material::Lambertian(Lambertian::default());
         let norm = [Vector3::<f64>::new(0.0, -1.0, -1.0).normalize(); 3];
         let mut t = Triangle::new([v0, v1, v2], norm, mat);
         let r = Ray::new(Point3::<f64>::new(0.5, -1.0, 0.5), Vector3::<f64>::new(1.0, 4.0, 0.5));
@@ -202,7 +202,7 @@ mod tests {
     fn test_hit(){
 
         //Initialisations
-        let mat = Material::Lambertian(Lambertian::new(Vector3::<f64>::new(1.0, 1.0, 1.0)));
+        let mat = Material::Lambertian(Lambertian::default());
         let v0 = Point3::<f64>::new(-2.0, 2.0, 0.0);
         let v1 = Point3::<f64>::new(2.0, 2.0, 0.0);
         let v2 = Point3::<f64>::new(0.0, 4.0, 0.0);
@@ -258,7 +258,7 @@ mod tests {
         let v0 = Point3::<f64>::new(0.0, 0.0, 0.0);
         let v1 = Point3::<f64>::new(1.0, 0.0, 0.0);
         let v2 = Point3::<f64>::new(0.5, 2.0, 2.0);
-        let mat = Material::new_lambertian(Vector3::<f64>::new(1.0, 1.0, 1.0));
+        let mat = Material::Lambertian(Lambertian::default());
         let norm = [Vector3::<f64>::new(0.0, -1.0, -1.0).normalize(); 3];
         let t = Triangle::new([v0, v1, v2], norm, mat);
         let result = t.bounding_box();

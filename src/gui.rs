@@ -7,9 +7,9 @@ use crate::*;
 
 use self::progress_bar::CustomProgressBar;
 
-pub struct Gui<'a> {
-    pub thread_coordinator: ThreadCoordinator<'a>,
-    pub settings: GlobalSettings<'a>,
+pub struct Gui {
+    pub thread_coordinator: ThreadCoordinator,
+    pub settings: GlobalSettings,
     pub labels: Labels,
     pub camera_speed: f64,
     pub expecting_data: bool,
@@ -30,8 +30,8 @@ pub struct Renderers{
     pub rasterizer: bool
 }
 
-impl<'a> Gui<'a> {
-    pub fn new(settings: GlobalSettings<'a>, thread_coordinator: ThreadCoordinator<'a>) -> Gui<'a> {
+impl Gui {
+    pub fn new(settings: GlobalSettings, thread_coordinator: ThreadCoordinator) -> Gui {
         let camera_speed = 0.2;
 
         let image_width = settings.image_settings.image_width;
@@ -184,7 +184,7 @@ pub struct Labels{
 }
 
 
-impl<'a> eframe::App for Gui<'a> {
+impl eframe::App for Gui {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {

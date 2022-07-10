@@ -16,14 +16,14 @@ pub enum RectAxes {
 }
 
 #[derive (Clone)]
-pub struct Rect<'a> {
-    mat: Material<'a>,
+pub struct Rect {
+    mat: Material,
     axes: RectAxes,
     corners: [f64; 4],
     k: f64
 }
 
-impl<'a> Rect<'a> {
+impl Rect {
     pub fn new(axes: RectAxes, axis1_min: f64, axis1_max: f64, axis2_min: f64, axis2_max: f64, k: f64, mat: Material) -> Rect {
         Rect{axes, corners: [axis1_min, axis1_max, axis2_min, axis2_max], k, mat}
     }   
@@ -103,7 +103,7 @@ impl<'a> Rect<'a> {
     }
 }
 
-impl<'a> Hit for Rect<'a> {
+impl Hit for Rect {
     fn hit(&self, r:&Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)> {
         let indices = self.axes_indices();
         let unused = self.unused_axis_index();
@@ -132,7 +132,7 @@ impl<'a> Hit for Rect<'a> {
     }
 }
 
-impl<'a> Rasterize for Rect<'a> {
+impl Rasterize for Rect {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>{
         let lines = self.get_lines().to_vec();
         lines.outline(cam)
@@ -140,6 +140,8 @@ impl<'a> Rasterize for Rect<'a> {
 }
 
 mod tests {
+    use crate::{spectra::Spectrum, material::lambertian::Lambertian};
+
     use super::*;
 
     #[test]
@@ -150,7 +152,7 @@ mod tests {
     fn test_hit(){
 
         //XY
-        let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
+        let diff_light = Material::new_lambertian(Spectrum::default());
         let rect = Box::new(Rect::new(RectAxes::XY, 3.0, 5.0, 1.0, 3.0, 0.0, diff_light));
 
         //Case 1: Collision
@@ -231,7 +233,7 @@ mod tests {
     #[test]
     fn test_bounding_box(){
         //XY
-        let diff_light = Material::new_diffuse_light(Color::new(4.0,4.0,4.0));
+        let diff_light = Material::Lambertian(Lambertian::default());
         let rect = Box::new(Rect::new(RectAxes::XY, -5.0, -3.0, 1.0, 3.0, 0.0, diff_light));
         let bb = rect.bounding_box();
         assert!(bb.is_some());
