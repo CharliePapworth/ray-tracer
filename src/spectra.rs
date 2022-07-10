@@ -7,6 +7,7 @@ use crate::image::Color;
 
 use constants::*;
 use std::iter::zip;
+use std::ops::{Mul, Div};
 
 const FIRST_WAVELENGTH: f32 = 400.0;
 const LAST_WAVELENGTH: f32 = 700.0;
@@ -212,11 +213,33 @@ impl Default for Spectrum {
     fn default() -> Self { Spectrum::new(0.0) }
 }
 
+impl Mul<f32> for Spectrum {
+    type Output = Spectrum;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Spectrum::from_coefficients(self.coefficients * rhs)
+    }
+}
+
+impl Div<f32> for Spectrum {
+    type Output = Spectrum;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Spectrum::from_coefficients(self.coefficients / rhs)
+    }
+}
+
+impl Mul<&Spectrum> for f32 {
+    type Output = Spectrum;
+
+    fn mul(self, rhs: &Spectrum) -> Self::Output {
+        Spectrum::from_coefficients(rhs.coefficients * self)
+    }
+}
+
 impl Spectrum {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
-    ///     
-    /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
     fn new(constant: f32) -> Spectrum {
         let coefficients = SVector::<f32, SPECTRAL_SAMPLES>::repeat(0.0);
         Spectrum { coefficients } 
@@ -224,8 +247,6 @@ impl Spectrum {
     
     /// Takes arrays of SPD sample values at given wavelengths lambda and uses them to 
     /// define a piecewise linear function to represent the SPD.
-    /// 
-    /// A reference to the matching curves, calculated by MatchingCurve::init_xyz, must be passed into the constructor.
     pub fn from_sampled(sample_values: Vec<f32>, sample_wavelengths: Vec<f32>) -> Spectrum {
         let mut spectrum = Spectrum::new(0.0);
         if sample_values.len() == 0 || sample_wavelengths.len() == 0 {

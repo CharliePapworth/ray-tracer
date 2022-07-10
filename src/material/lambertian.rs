@@ -1,4 +1,4 @@
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 
 use nalgebra::{Unit, Vector3};
 
@@ -36,7 +36,7 @@ impl Scatter for Lambertian {
      }
  
      fn scatter(&self, outbound_direction: Vector3<f64>, inbound_direction: Vector3<f64>) -> Spectrum {
-        self.color * 1.0 / PI;
+        self.color * 1.0f32 / PI
      }
  
      fn opinionated_scatter(&self, outbound_direction: Vector3<f64>) -> Option<(Spectrum, Vector3<f64>)> {
