@@ -26,6 +26,7 @@ pub mod raytracing;
 pub mod spectrum;
 pub mod sampler;
 pub mod vec;
+pub mod light;
 
 use eframe::egui::Vec2;
 
