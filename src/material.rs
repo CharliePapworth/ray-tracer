@@ -3,7 +3,7 @@ pub mod lambertian;
 use nalgebra::{Vector3, Unit};
 
 use crate::image::{Color};
-use crate::spectra::Spectrum;
+use crate::spectrum::Spectrum;
 use crate::vec::VecExtensionMethods;
 use crate::{util::*, sampler};
 use crate::raytracing::{HitRecord, Ray};
@@ -48,6 +48,7 @@ pub trait Scatter: Clone {
 
 
 #[derive(Clone)]
+///Encompassess all material types. Achieves polymorphism via static dispatch.
 pub enum Material{
     Lambertian(Lambertian),
 }

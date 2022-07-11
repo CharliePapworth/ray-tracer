@@ -1,3 +1,83 @@
+use crate::util::lerp;
+
+use super::{Spectrum, SPECTRAL_SAMPLES, FIRST_WAVELENGTH, LAST_WAVELENGTH, average_samples};
+
+/// These are referenced by each instance of SampledSpectrum,
+/// and must therefore have a longer lifetime than every instance. Initialising them in main() is therefore recommended.
+pub struct ConstantSpectra {
+    pub x: Spectrum,
+    pub y: Spectrum,
+    pub z: Spectrum,
+    pub rgb_refl_to_spect_white: Spectrum,
+    pub rgb_refl_to_spect_cyan: Spectrum,
+    pub rgb_refl_to_spect_magenta: Spectrum,
+    pub rgb_refl_to_spect_yellow: Spectrum,
+    pub rgb_refl_to_spect_red: Spectrum,
+    pub rgb_refl_to_spect_green: Spectrum,
+    pub rgb_refl_to_spect_blue: Spectrum,
+    pub rgb_illum_to_spect_white: Spectrum,
+    pub rgb_illum_to_spect_cyan: Spectrum,
+    pub rgb_illum_to_spect_magenta: Spectrum,
+    pub rgb_illum_to_spect_yellow: Spectrum,
+    pub rgb_illum_to_spect_red: Spectrum,
+    pub rgb_illum_to_spect_green: Spectrum,
+    pub rgb_illum_to_spect_blue: Spectrum,
+}
+
+impl ConstantSpectra {
+
+    pub fn new() -> ConstantSpectra {
+        let spectral_samples_f32 = SPECTRAL_SAMPLES as f32;
+        let mut x = Spectrum::new(0.0);
+        let mut y = Spectrum::new(0.0);
+        let mut z = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_white = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_cyan = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_magenta = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_yellow = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_red = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_green = Spectrum::new(0.0);
+        let mut rgb_refl_to_spect_blue = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_white = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_cyan = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_magenta = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_yellow = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_red = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_green = Spectrum::new(0.0);
+        let mut rgb_illum_to_spect_blue = Spectrum::new(0.0);
+
+        for i in 0..N_SPECTRAL_SAMPLES {
+            let i_f32 = i as f32;
+            let next_i_f32 = (i + 1) as f32;
+            let from_wavelength = lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, i_f32 / spectral_samples_f32);
+            let to_wavelength =  lerp(FIRST_WAVELENGTH, LAST_WAVELENGTH, next_i_f32 / spectral_samples_f32);
+
+            x.coefficients[i] = average_samples(&CIE_X.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+            y.coefficients[i] = average_samples(&CIE_Y.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+            z.coefficients[i] = average_samples(&CIE_Z.to_vec(), &CIE_LAMBDA.to_vec(), from_wavelength, to_wavelength);
+
+            rgb_refl_to_spect_white.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_WHITE.to_vec(), from_wavelength, to_wavelength);
+            rgb_refl_to_spect_cyan.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_CYAN.to_vec(), from_wavelength, to_wavelength);
+            rgb_refl_to_spect_magenta.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_MAGENTA.to_vec(), from_wavelength, to_wavelength);
+            rgb_refl_to_spect_yellow.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_YELLOW.to_vec(), from_wavelength, to_wavelength);
+            rgb_refl_to_spect_red.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_RED.to_vec(), from_wavelength, to_wavelength);
+            rgb_refl_to_spect_green.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_GREEN.to_vec(), from_wavelength, to_wavelength);
+            rgb_refl_to_spect_blue.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_REFL2_SPECT_BLUE.to_vec(), from_wavelength, to_wavelength);
+        
+            rgb_illum_to_spect_white.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_WHITE.to_vec(), from_wavelength, to_wavelength);
+            rgb_illum_to_spect_cyan.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_CYAN.to_vec(), from_wavelength, to_wavelength);
+            rgb_illum_to_spect_magenta.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_MAGENTA.to_vec(), from_wavelength, to_wavelength);
+            rgb_illum_to_spect_yellow.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_YELLOW.to_vec(), from_wavelength, to_wavelength);
+            rgb_illum_to_spect_red.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_RED.to_vec(), from_wavelength, to_wavelength);
+            rgb_illum_to_spect_green.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_GREEN.to_vec(), from_wavelength, to_wavelength);
+            rgb_illum_to_spect_blue.coefficients[i] = average_samples(&RGB_2_SPECT_LAMBDA.to_vec(), &RGB_ILLUM2_SPECT_BLUE.to_vec(), from_wavelength, to_wavelength);
+        }    
+
+        ConstantSpectra { x, y, z, rgb_refl_to_spect_white, rgb_refl_to_spect_cyan, rgb_refl_to_spect_magenta, rgb_refl_to_spect_yellow, rgb_refl_to_spect_red, rgb_refl_to_spect_green, rgb_refl_to_spect_blue, rgb_illum_to_spect_white, rgb_illum_to_spect_cyan, rgb_illum_to_spect_magenta, rgb_illum_to_spect_yellow, rgb_illum_to_spect_red, rgb_illum_to_spect_green, rgb_illum_to_spect_blue }
+    }
+}
+
+
 pub const N_CIE_SAMPLES: usize = 471;
 pub const N_SPECTRAL_SAMPLES: usize = 60;
 pub const SAMPLED_LAMBDA_START: usize = 400;

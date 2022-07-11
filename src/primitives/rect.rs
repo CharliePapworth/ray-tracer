@@ -140,7 +140,7 @@ impl Rasterize for Rect {
 }
 
 mod tests {
-    use crate::{spectra::Spectrum, material::lambertian::Lambertian};
+    use crate::{spectrum::Spectrum, material::lambertian::Lambertian};
 
     use super::*;
 

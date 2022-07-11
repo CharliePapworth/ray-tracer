@@ -1,7 +1,7 @@
 use crate::image::Color;
 use crate::material::lambertian::Lambertian;
 use crate::primitives::{GeometricPrimitive, GeometricPrimitives, Primitives};
-use crate::spectra::{ConstantSpectra, Spectrum};
+use crate::spectrum::{Spectrum, constant_spectra::ConstantSpectra};
 use crate::{material::*, sampler};
 use crate::primitives::rect::*;
 use crate::util::*;

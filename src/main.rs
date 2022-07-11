@@ -23,7 +23,7 @@ pub mod rasterizing;
 pub mod primitives;
 pub mod scenes;
 pub mod raytracing;
-pub mod spectra;
+pub mod spectrum;
 pub mod sampler;
 pub mod vec;
 
@@ -31,7 +31,7 @@ use eframe::egui::Vec2;
 
 use camera::*;
 use gui::*;
-use spectra::ConstantSpectra;
+use spectrum::constant_spectra::ConstantSpectra;
 use threads::*;
 use geometry::*;
 use primitives::*;

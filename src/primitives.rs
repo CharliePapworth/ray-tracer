@@ -17,7 +17,7 @@ extern crate fastrand;
 
 use crate::camera::Camera;
 use crate::raytracing::{HitRecord, Hit, Ray};
-use crate::spectra::Spectrum;
+use crate::spectrum::Spectrum;
 
 use core::cmp::Ordering;
 use std::convert::TryFrom;

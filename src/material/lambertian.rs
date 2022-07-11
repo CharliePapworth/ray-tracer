@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use nalgebra::{Unit, Vector3};
 
-use crate::{image::{Color}, raytracing::Ray, spectra::Spectrum};
+use crate::{image::{Color}, raytracing::Ray, spectrum::Spectrum};
 
 use super::{Scatter, ReflectionModel};
 
