@@ -1,7 +1,24 @@
-use nalgebra::Unit;
+use nalgebra::{Vector3, Unit, Point2};
 
-use crate::nalgebra::{Vector3};
 
+pub trait Sample {
+    fn get_1d(&self, min_inc: f32, max_exc: f32) -> f32;
+    fn get_2d(&self, min_inc: f32, max_exc: f32) -> Point2<f32>;
+}
+pub struct Sampler {
+
+}
+
+impl Sample for Sampler {
+    fn get_1d(&self, min_inc: f32, max_exc: f32) -> f32 {
+        fastrand::f32()*(max_exc - min_inc) + min_inc
+    }
+
+    fn get_2d(&self, min_inc: f32, max_exc: f32) -> Point2<f32> {
+        let multiple = (max_exc - min_inc) + min_inc;
+        Point2::<f32>::new(fastrand::f32() * multiple, fastrand::f32() * multiple)
+    }
+}
 //Generates random numbers between [min_inc, max_exc)
 pub fn rand_double(min_inc: f64, max_exc: f64) -> f64{
     fastrand::f64()*(max_exc - min_inc) + min_inc
