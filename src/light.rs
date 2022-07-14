@@ -1,48 +1,66 @@
-use nalgebra::Point3;
+use enum_dispatch::enum_dispatch;
+use nalgebra::{Vector3, Point3};
 
-use crate::spectrum::Spectrum;
+use crate::{spectrum::Spectrum, raytracing::{HitRecord, Hit}};
+
+#[enum_dispatch(Light)]
+#[enum_dispatch(Clone)]
+pub enum Light {
+    PointLight(PointLight)
+}
 
 pub struct EmissionData {
-    probability_density: f32,
-    radiance: Spectrum,
-    origin: Point3<f32>,
-    intersection_point: Point3<f32>
+    pub probability_density: f32,
+    pub radiance: Spectrum,
+    pub origin: Point3<f32>,
+    pub direction: Vector3<f32>,
+    pub time: f32,
 }
 
 impl EmissionData {
-    pub fn new(probability_density: f32, spectrum: Spectrum, origin: Point3<f32>, intersection_point: Point3<f32>) -> EmissionData {
-        EmissionData { probability_density, radiance: spectrum, origin, intersection_point}
+    pub fn new(probability_density: f32, spectrum: Spectrum, origin: Point3<f32>, direction: Vector3<f32>, time: f32) -> EmissionData {
+        EmissionData { probability_density, radiance: spectrum, origin, direction, time }
     }
 }
 
-pub enum Emission {
-    SinglePoint(EmissionData),
-    SingleDirection(EmissionData),
-    AreaLight(EmissionData),
-    InfiniteLight(EmissionData)
-}
 
-pub trait Light {
-    fn emit(&self, point_in_scene: Point3<f32>) -> Emission;
+/// Interface for lights in the scene.
+#[enum_dispatch]
+pub trait Emit {
+    /// Samples a point on the light source’s surface and computes the
+    /// radiance arriving at a given point in the scene (as provided by the hit record) 
+    /// due to illumination from the light.
+    fn emit(&self, record: HitRecord) -> EmissionData;
     fn power(&self) -> Spectrum;
+
+    /// Returns true if the light is a delta distribution and false otherwise. A light is a delta
+    /// distribution if...
+    fn is_delta_distribution(&self) -> bool;
 }
 
+#[derive(Clone, Copy)]
 pub struct PointLight {
     spectrum: Spectrum,
     position: Point3<f32>
 }
 
-impl Light for PointLight {
-    fn emit(&self, point_in_scene: Point3<f32>) -> Emission {
+impl Emit for PointLight {
+    fn emit(&self, record: HitRecord) -> EmissionData {
+        let point_in_scene = record.point_in_scene.cast::<f32>();
         let origin = self.position;
         let radiance = self.spectrum / (point_in_scene - self.position).norm_squared();
         let probability_density = 1.0;
         let origin = self.position;
-        let emission_data = EmissionData::new(probability_density, radiance, origin, point_in_scene);
-        Emission::SinglePoint(emission_data)
+        let direction = (origin - point_in_scene).normalize();
+        let time = record.time + (origin - point_in_scene).norm();
+        EmissionData::new(probability_density, radiance, origin, direction, time)
     }
 
     fn power(&self) -> Spectrum {
         todo!()
+    }
+
+    fn is_delta_distribution(&self) -> bool {
+        true
     }
 }

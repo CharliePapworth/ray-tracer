@@ -27,6 +27,7 @@ pub mod spectrum;
 pub mod sampler;
 pub mod vec;
 pub mod light;
+pub mod integrator;
 
 use eframe::egui::Vec2;
 
@@ -40,7 +41,7 @@ use scenes::*;
 use eframe::egui::*;
 use nalgebra::{Vector3};
 
-use std::f64::INFINITY;
+use std::f32::INFINITY;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -62,12 +63,12 @@ fn main() {
     //Image
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
-    let image_height=  ((image_width as f64)/aspect_ratio) as usize;
+    let image_height=  ((image_width as f32)/aspect_ratio) as usize;
     let samples_per_pixel = 1000;
     let max_depth=  50;
 
     //Camera
-    let v_up: Vector3<f64> = Vector3::<f64>::new(0.0, 1.0, 0.0);
+    let v_up: Vector3<f32> = Vector3::<f32>::new(0.0, 1.0, 0.0);
     let focus_dist = 10.0;
     let aperture = 0.0;
     let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
@@ -76,7 +77,7 @@ fn main() {
     //Package data
     let image_settings = ImageSettings { image_width, image_height };
     let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
-    let scene = SceneData { raytracing_primitives: primitives, rasterization_primitives: geometric_primitives, background };
+    let scene = Scene { raytracing_primitives: primitives, rasterization_primitives: geometric_primitives, background };
     let settings = GlobalSettings { raytrace_settings, image_settings, camera, scene, id: 1 };
 
     //Threading

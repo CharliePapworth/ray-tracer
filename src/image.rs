@@ -3,10 +3,10 @@ use std::io::Write;
 use std::ops;
 use impl_ops::*;
 
-use crate::{nalgebra::Vector3, util::bound_f64};
+use crate::{nalgebra::Vector3, util::bound_f32};
 
 
-pub type Color = Vector3<f64>;
+pub type Color = Vector3<f32>;
 
 #[derive (Clone, PartialEq)]
 /// Wraps a color together with an alpha channel. 
@@ -14,7 +14,7 @@ pub type Color = Vector3<f64>;
 /// An Image consists of a vector of pixels, together with some width and height information. 
 pub struct Pixel {
     pub color: Color,
-    pub alpha: f64,
+    pub alpha: f32,
 }
 
 impl Pixel{
@@ -29,7 +29,7 @@ impl Pixel{
     /// transparency of the pixel. A value of `0` indicates that the pixel is completely transparent,
     /// whereas a value of `1` indicates the the pixel is compeltely opaque. This information is used 
     /// when composing multiple images together.
-    pub fn new(color: Color, alpha: f64) -> Pixel {
+    pub fn new(color: Color, alpha: f32) -> Pixel {
         Pixel { color, alpha }
     }
 
@@ -39,9 +39,9 @@ impl Pixel{
         let g = self.color[1].sqrt();
         let b = self.color[2].sqrt();
 
-        let ir = (256.0*bound_f64(r, 0.0, 0.999)) as u8;
-        let ig = (256.0*bound_f64(g, 0.0, 0.999)) as u8;
-        let ib = (256.0*bound_f64(b, 0.0, 0.999)) as u8;
+        let ir = (256.0*bound_f32(r, 0.0, 0.999)) as u8;
+        let ig = (256.0*bound_f32(g, 0.0, 0.999)) as u8;
+        let ib = (256.0*bound_f32(b, 0.0, 0.999)) as u8;
 
         [ir, ig, ib]
     }
@@ -146,7 +146,7 @@ impl RaytracedImage {
     pub fn to_image(&self) -> Image{
         let samples = self.samples;
         let mut image = self.image.clone();
-        let scale = 1.0 / (samples as f64);
+        let scale = 1.0 / (samples as f32);
         for pixel in &mut image.pixels {
             pixel.color[0] *= scale;
             pixel.color[1] *= scale;

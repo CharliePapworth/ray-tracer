@@ -1,10 +1,12 @@
 use crate::image::Color;
 use crate::material::lambertian::Lambertian;
 use crate::primitives::{GeometricPrimitive, GeometricPrimitives, Primitives};
+use crate::raytracing::{HitRecord, Hit, Ray};
 use crate::spectrum::{Spectrum, constant_spectra::ConstantSpectra};
 use crate::{material::*, sampler};
 use crate::primitives::rect::*;
 use crate::util::*;
+use crate::light::*;
 use crate::nalgebra::{Vector3, Point3};
 
 #[derive (Clone)]
@@ -12,27 +14,34 @@ use crate::nalgebra::{Vector3, Point3};
 /// Contains all information regarding the scene. The raytracing_primitives and the rasterization_primitives contain
 /// the same primtitives, but raytracing_primitives may contain acceleration structures designed to improve
 /// raytracing performance. The background color is the ambient color of the scene.
-pub struct SceneData {
+pub struct Scene {
     pub raytracing_primitives: Primitives,
+    pub lights: Vec<Light>,
     pub rasterization_primitives: GeometricPrimitives,
     pub background: Color,   
 }
 
+impl Scene {
+    pub fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>{
+        self.raytracing_primitives.hit(&r, t_min, t_max)
+    }
+}
+
 /// Returns a world filled with spheres.
-pub fn sphere_world(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn sphere_world(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f32>, Point3<f32>) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.7, 0.8, 1.0);
-    let look_from = Point3::<f64>::new(13.0, 2.0, 3.0);
-    let look_at = Point3::<f64>::new(0.0, 0.0, 0.0);
+    let look_from = Point3::<f32>::new(13.0, 2.0, 3.0);
+    let look_at = Point3::<f32>::new(0.0, 0.0, 0.0);
 
     let mat_ground = Material::new_lambertian(Spectrum::default());
-    let ground = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0,-1000.0,0.0), 1000.0, mat_ground);
+    let ground = GeometricPrimitive::new_sphere(Point3::<f32>::new(0.0,-1000.0,0.0), 1000.0, mat_ground);
     world.add(ground);
 
     for a in -11..12{
         for b in -11..12{
             let choose_mat = rand_double(0.0, 1.0);
-            let center = Point3::<f64>::new(a as f64 + 0.9*rand_double(0.0, 1.0), 0.2, b as f64 + 0.9*rand_double(0.0, 1.0));
+            let center = Point3::<f32>::new(a as f32 + 0.9*rand_double(0.0, 1.0), 0.2, b as f32 + 0.9*rand_double(0.0, 1.0));
 
             if choose_mat < 0.6{
                 let albedo = sampler::rand(0.0, 1.0).component_mul(&sampler::rand(0.0, 1.0));
@@ -56,9 +65,9 @@ pub fn sphere_world(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives,
     let mat_left = Material::new_lambertian(Spectrum::default());
     let mat_right = Material::new_lambertian(Spectrum::default());
 
-    let sphere_center = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0,1.0,0.0), 1.0, mat_center);
-    let sphere_left = GeometricPrimitive::new_sphere(Point3::<f64>::new(-4.0,1.0,0.0), 1.0, mat_left);
-    let sphere_right = GeometricPrimitive::new_sphere(Point3::<f64>::new(4.0,1.0,0.0), 1.0, mat_right);
+    let sphere_center = GeometricPrimitive::new_sphere(Point3::<f32>::new(0.0,1.0,0.0), 1.0, mat_center);
+    let sphere_left = GeometricPrimitive::new_sphere(Point3::<f32>::new(-4.0,1.0,0.0), 1.0, mat_left);
+    let sphere_right = GeometricPrimitive::new_sphere(Point3::<f32>::new(4.0,1.0,0.0), 1.0, mat_right);
     
     world.add(sphere_center);
     world.add(sphere_left);
@@ -69,15 +78,15 @@ pub fn sphere_world(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives,
 }
 
 /// Returns a scene containing a single light.
-pub fn light_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn light_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f32>, Point3<f32>) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
-    let look_from = Point3::<f64>::new(26.0, 3.0, 6.0);
-    let look_at = Point3::<f64>::new(0.0, 2.0, 0.0);
+    let look_from = Point3::<f32>::new(26.0, 3.0, 6.0);
+    let look_at = Point3::<f32>::new(0.0, 2.0, 0.0);
 
     let mat = Material::new_lambertian(Spectrum::default());
-    let ground = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0, -1000.0, 0.0), 1000.0, mat);
-    let sphere = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0, 2.0, 0.0), 2.0, Material::new_lambertian(Spectrum::default())); 
+    let ground = GeometricPrimitive::new_sphere(Point3::<f32>::new(0.0, -1000.0, 0.0), 1000.0, mat);
+    let sphere = GeometricPrimitive::new_sphere(Point3::<f32>::new(0.0, 2.0, 0.0), 2.0, Material::new_lambertian(Spectrum::default())); 
 
     let diff_light = Material::new_lambertian(Spectrum::default());
     let _rect = Box::new(Rect::new(RectAxes::XY, -1.0, 2.0, 1.0, 3.0, 4.0, diff_light));
@@ -89,20 +98,20 @@ pub fn light_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, C
 }
 
 /// Returns a scene containing a single triangle.
-pub fn triangle_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn triangle_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f32>, Point3<f32>) {
     let mut world = GeometricPrimitives::new();
     let background = Color::new(0.9, 0.9, 0.9);
-    let look_from = Point3::<f64>::new(0.0, 2.0, 26.0);
-    let look_at = Point3::<f64>::new(0.0, 0.0, 0.0);
+    let look_from = Point3::<f32>::new(0.0, 2.0, 26.0);
+    let look_at = Point3::<f32>::new(0.0, 0.0, 0.0);
 
     let mat = Material::new_lambertian(Spectrum::default());
-    let _ground = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0, -1000.0, 0.0), 1000.0, mat);
+    let _ground = GeometricPrimitive::new_sphere(Point3::<f32>::new(0.0, -1000.0, 0.0), 1000.0, mat);
  
     let mat = Material::new_lambertian(Spectrum::default());
-    let v0 = Point3::<f64>::new(-2.0, 0.1, 0.0);
-    let v1 = Point3::<f64>::new(2.0, 0.1, 0.0);
-    let v2 = Point3::<f64>::new(0.0, 2.1, 0.0);
-    let norms = [Vector3::<f64>::new(0.0, 0.0, 1.0); 3];
+    let v0 = Point3::<f32>::new(-2.0, 0.1, 0.0);
+    let v1 = Point3::<f32>::new(2.0, 0.1, 0.0);
+    let v2 = Point3::<f32>::new(0.0, 2.1, 0.0);
+    let norms = [Vector3::<f32>::new(0.0, 0.0, 1.0); 3];
     let tri = GeometricPrimitive::new_triangle([v0, v1, v2], norms, mat);
     //world.add(ground);
     world.add(tri);
@@ -113,15 +122,15 @@ pub fn triangle_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives
 
 
 /// Returns a scene containing an object defined by a .obj file (on a spherical world).
-pub fn obj_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn obj_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f32>, Point3<f32>) {
     let _world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
-    let look_from = Point3::<f64>::new(-20.0, 5.0, 20.0);
-    let look_at = Point3::<f64>::new(0.0, 0.0, 0.0);
+    let look_from = Point3::<f32>::new(-20.0, 5.0, 20.0);
+    let look_at = Point3::<f32>::new(0.0, 0.0, 0.0);
 
     let mut mesh = GeometricPrimitives::new(); 
     let mat = Material::new_lambertian(Spectrum::default());
-    let ground = GeometricPrimitive::new_sphere(Point3::<f64>::new(0.0, -1000.0, 0.0), 1000.0, mat);
+    let ground = GeometricPrimitive::new_sphere(Point3::<f32>::new(0.0, -1000.0, 0.0), 1000.0, mat);
     let (models, materials) = import_obj("C:/Users/Charlie/Ray_Tracer/ray-tracer/obj/car.obj");
     let diff_light = Material::new_lambertian(Spectrum::default());
     let rect = GeometricPrimitive::new_rect(RectAxes::XY, -4.0, -2.0, 1.0, 8.0, 4.0, diff_light);
@@ -132,11 +141,11 @@ pub fn obj_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Col
     (mesh, background, look_from, look_at)
 }
 
-pub fn mesh_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f64>, Point3<f64>) {
+pub fn mesh_test(constant_spectra: &ConstantSpectra) -> (GeometricPrimitives, Color, Point3<f32>, Point3<f32>) {
     let mut world = GeometricPrimitives::new(); 
     let background = Color::new(0.9, 0.9, 0.9);
-    let look_from = Point3::<f64>::new(26.0, 10.0, 10.0);
-    let look_at = Point3::<f64>::new(0.0, 0.0, 0.0);
+    let look_from = Point3::<f32>::new(26.0, 10.0, 10.0);
+    let look_at = Point3::<f32>::new(0.0, 0.0, 0.0);
 
     let mut mesh_1 = tobj::Mesh::default();
     let mut mesh_2 = tobj::Mesh::default();

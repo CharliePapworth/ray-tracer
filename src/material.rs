@@ -30,16 +30,19 @@ pub trait Scatter: Clone {
     fn reflects(&self) -> bool;
 
     ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a given direction.
-    fn scatter(&self, outbound_direction: Vector3<f64>, inbound_direction: Vector3<f64>) -> Spectrum;
+    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum;
 
-    ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a given direction. The direction
+    ///Returns the probability that light is reflected in the outbound direction after arriving at the inbound direction;
+    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32;
+
+    ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a samppled direction. The direction
     /// of the incident ray of light is chosen by the Material. This is useful in cases where the probability of choosing a
     /// direction from which light will be reflected in the desired outbound direction is low (e.g. as would be the case for a mirror).
-    fn opinionated_scatter(&self, outbound_direction: Vector3<f64>) -> Option<(Spectrum, Vector3<f64>)>;
+    fn sample_scatter(&self, outbound_direction: Vector3<f32>) -> (Spectrum, Vector3<f32>);
 
     ///The hemispherical-directional reflectance is a 2D function that gives the total reflection in a given direction due to constant
     ///  illumination over the hemisphere, or, equivalently, total reflection over the hemisphere due to light from a given direction.
-    fn hemispherical_directional_scatter(&self, direction: Vector3<f64>) -> Spectrum;
+    fn hemispherical_directional_scatter(&self, direction: Vector3<f32>) -> Spectrum;
 
     ///The hemispherical-hemispherical reflectance of a surface is a spectral value that gives the fraction of incident 
     /// light reflected by a surface when the incident light is the same from all directions. 
@@ -47,7 +50,7 @@ pub trait Scatter: Clone {
 }
 
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 ///Encompassess all material types. Achieves polymorphism via static dispatch.
 pub enum Material{
     Lambertian(Lambertian),
@@ -66,19 +69,23 @@ impl Scatter for Material {
         todo!()
     }
 
-    fn scatter(&self, outbound_direction: Vector3<f64>, inbound_direction: Vector3<f64>) -> Spectrum {
+    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum {
         todo!()
     }
 
-    fn opinionated_scatter(&self, outbound_direction: Vector3<f64>) -> Option<(Spectrum, Vector3<f64>)> {
+    fn sample_scatter(&self, outbound_direction: Vector3<f32>) -> (Spectrum, Vector3<f32>) {
         todo!()
     }
 
-    fn hemispherical_directional_scatter(&self, direction: Vector3<f64>) -> Spectrum {
+    fn hemispherical_directional_scatter(&self, direction: Vector3<f32>) -> Spectrum {
         todo!()
     }
 
     fn hemispherical_hemispherical_scatter(&self) -> Spectrum {
+        todo!()
+    }
+
+    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32 {
         todo!()
     }
 }

@@ -12,16 +12,19 @@ use crate::material::*;
 use crate::primitives::*;
 use crate::enum_dispatch::*;
 
-use std::f64::INFINITY;
+use std::f32::INFINITY;
 
 #[derive (Copy, Clone)]
 pub struct HitRecord {
     
-    pub p: Point3<f64>,
-    pub normal: Vector3<f64>,
-    pub t: f64,
+    pub point_in_scene: Point3<f32>,
+    pub surface_normal: Vector3<f32>,
+    pub surface_material: Material,
+    pub outbound_ray_direction: Vector3<f32>,
+    pub time: f32,
     pub front_face: bool,
-    pub p_err: Vector3<f64>,
+    /// Gives a conservative bound on the error in the position of the ray-surface intersection
+    pub error_bound: Vector3<f32>,
 }
 
 pub enum TraceResult{
@@ -31,31 +34,31 @@ pub enum TraceResult{
 }
 
 impl HitRecord{
-    pub fn new(p: Point3<f64>, normal: Vector3<f64>, t: f64, r: Ray, p_err: Vector3<f64>) -> HitRecord{
-        let mut rec = HitRecord{p, normal, t, front_face: true, p_err};
-        rec.set_face_normal(&r, &normal);
+    pub fn new(point_in_scene: Point3<f32>, surface_normal: Vector3<f32>, surface_material: Material, outbound_ray_direction: Vector3<f32>, time: f32, r: Ray, error_bound: Vector3<f32>) -> HitRecord{
+        let mut rec = HitRecord{point_in_scene, surface_normal, surface_material, outbound_ray_direction, time, front_face: true, error_bound};
+        rec.set_face_normal(&r, &surface_normal);
         rec      
     }
 
-    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vector3<f64>){
+    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vector3<f32>){
         self.front_face = r.direction().dot(outward_normal) <= 0.0;
         if self.front_face{
-            self.normal = *outward_normal;
+            self.surface_normal = *outward_normal;
         } else{
-            self.normal = -*outward_normal;
+            self.surface_normal = -*outward_normal;
         }
     }
 
-    pub fn p(&self) -> Point3<f64>{
-        self.p
+    pub fn p(&self) -> Point3<f32>{
+        self.point_in_scene
     }
 
-    pub fn normal(&self) -> Vector3<f64>{
-        self.normal
+    pub fn normal(&self) -> Vector3<f32>{
+        self.surface_normal
     }
 
-    pub fn t(&self) -> f64{
-        self.t
+    pub fn t(&self) -> f32{
+        self.time
     }
 
     pub fn front_face(&self) -> bool{
@@ -66,11 +69,12 @@ impl HitRecord{
 
 #[enum_dispatch]
 pub trait Hit: Send + Sync{
-    fn hit(&self ,r: &Ray, t_min: f64, t_max: f64) -> Option<(HitRecord, &Material)>;
+    fn hit(&self ,r: &Ray, t_min: f32, t_max: f32) -> Option<(HitRecord)>;
     fn bounding_box(&self) -> Option<Aabb>;
 
-    fn trace(&self, r: &Ray, t_min: f64, t_max: f64) -> TraceResult{
-        if let Some((hit_rec, mat)) = self.hit(r, t_min, t_max) {
+    fn trace(&self, r: &Ray, t_min: f32, t_max: f32) -> TraceResult{
+        if let Some(hit_rec) = self.hit(r, t_min, t_max) {
+            let mat = hit_rec.surface_material;
             if let Some((attenuation, scattered)) = mat.scatter(r, &hit_rec){
                 TraceResult::Scattered((mat.emit() + attenuation, scattered))
             } else{
@@ -84,34 +88,34 @@ pub trait Hit: Send + Sync{
 
 #[derive (Copy, Clone, Default, PartialEq, Debug)]
 pub struct Ray{
-    pub orig: Point3<f64>,
-    pub dir: Vector3<f64>,
+    pub orig: Point3<f32>,
+    pub dir: Vector3<f32>,
 }
 
 pub enum RayPlaneIntersection {
     Ray(Ray),
-    Point(Point3<f64>),
+    Point(Point3<f32>),
     None
 }
 
 impl Ray{
-    pub fn new(origin: Point3<f64>, direction: Vector3<f64>) -> Ray{
+    pub fn new(origin: Point3<f32>, direction: Vector3<f32>) -> Ray{
         Ray{orig: origin, dir: direction}
     }
 
-    pub fn origin(&self) -> Point3<f64>{
+    pub fn origin(&self) -> Point3<f32>{
         self.orig
     }
 
-    pub fn direction(&self) -> Vector3<f64>{
+    pub fn direction(&self) -> Vector3<f32>{
         self.dir
     }
 
-    pub fn at(&self, t:f64) -> Point3<f64>{
+    pub fn at(&self, t:f32) -> Point3<f32>{
         self.orig + self.dir * t
     }
 
-    pub fn offset_origin(&self,  p_err: Vector3<f64>, norm: Vector3<f64>) -> Ray {
+    pub fn offset_origin(&self,  p_err: Vector3<f32>, norm: Vector3<f32>) -> Ray {
         let d = norm.abs().dot(&p_err);
         let mut offset = d * norm;
         if self.dir.dot(&norm) < 0.0{
@@ -146,8 +150,8 @@ pub fn raytrace_pixel(mut image: RaytracedImage, cam: Camera, background: Color,
     let i = pixel_position.0;
     let j = pixel_position.1;
 
-    let u = (rand_double(0.0, 1.0) + i as f64)/(image_width as f64 - 1.0);
-    let v = (rand_double(0.0, 1.0) + (image_height - j) as f64)/((image_height - 1) as f64);
+    let u = (rand_double(0.0, 1.0) + i as f32)/(image_width as f32 - 1.0);
+    let v = (rand_double(0.0, 1.0) + (image_height - j) as f32)/((image_height - 1) as f32);
     let r = cam.get_ray(u,v);
     let pixel_index = (j*image_width + i) as usize;
     image.image.pixels[pixel_index] = Pixel::new(ray_color(&r, background, primitives, max_depth), 1.0);
@@ -175,8 +179,8 @@ mod tests {
     use super::*;
     #[test]
     fn test_new(){
-        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         assert_eq!(ray.orig, orig);
         assert_eq!(ray.dir, dir);
@@ -184,16 +188,16 @@ mod tests {
 
     #[test]
     fn test_direction(){
-        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         assert_eq!(ray.direction(), dir);
     }
 
     #[test]
     fn test_origin(){
-        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         assert_eq!(ray.origin(), orig);
     }
@@ -201,8 +205,8 @@ mod tests {
     
     #[test]
     fn test_at(){
-        let orig = Point3::<f64>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f64>::new(1.0, 2.0, 3.0);
+        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
+        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
         let ray = Ray::new(orig, dir);
         let t = 2.0;
         assert_eq!(ray.at(t), orig + 2.0 * dir);

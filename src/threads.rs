@@ -3,7 +3,7 @@ use crate::camera::Camera;
 use crate::image::CompositeImage;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
-use crate::scenes::SceneData;
+use crate::scenes::Scene;
 
 use std::sync::Arc;
 use std::sync::Condvar;
@@ -96,7 +96,7 @@ pub struct GlobalSettings {
     pub raytrace_settings: RayTraceSettings,
     pub image_settings: ImageSettings,
     pub camera: Camera,
-    pub scene: SceneData,
+    pub scene: Scene,
     pub id: i32
 }
 

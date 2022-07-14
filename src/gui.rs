@@ -11,13 +11,13 @@ pub struct Gui {
     pub thread_coordinator: ThreadCoordinator,
     pub settings: GlobalSettings,
     pub labels: Labels,
-    pub camera_speed: f64,
+    pub camera_speed: f32,
     pub expecting_data: bool,
     pub windows: Windows,
     pub renderers: Renderers,
     pub image_output: PrimaryImageType,
     pub outline: bool,
-    pub click_vector: Vector3<f64>,
+    pub click_vector: Vector3<f32>,
     pub dragging: bool
 }
 
@@ -44,7 +44,7 @@ impl Gui {
         let expecting_data = true;
         let image_output = PrimaryImageType::Raytrace;
         let outline = false;
-        let click_vector: Vector3::<f64> = Vector3::<f64>::default();
+        let click_vector: Vector3::<f32> = Vector3::<f32>::default();
         let dragging = false;
 
         Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
@@ -118,8 +118,8 @@ impl Gui {
         if response.interact(Sense::drag()).dragged() {
             let cam = self.settings.camera;
             let egui_pointer_pos = ctx.pointer_interact_pos().unwrap();
-            let pointer_position: Point2<f64> = Point2::<f64>::new(egui_pointer_pos[0] as f64, (self.settings.image_settings.image_width as f64) - (egui_pointer_pos[1] as f64));
-            let pointer_position_3d: Point3<f64> = cam.lower_left_corner + pointer_position[0] * cam.horizontal.norm() * cam.orientation.u.into_inner() / (self.settings.image_settings.image_width as f64) + pointer_position[1] * cam.orientation.v.into_inner() * cam.vertical.norm() / (self.settings.image_settings.image_height as f64);
+            let pointer_position: Point2<f32> = Point2::<f32>::new(egui_pointer_pos[0] as f32, (self.settings.image_settings.image_width as f32) - (egui_pointer_pos[1] as f32));
+            let pointer_position_3d: Point3<f32> = cam.lower_left_corner + pointer_position[0] * cam.horizontal.norm() * cam.orientation.u.into_inner() / (self.settings.image_settings.image_width as f32) + pointer_position[1] * cam.orientation.v.into_inner() * cam.vertical.norm() / (self.settings.image_settings.image_height as f32);
             let click_vector = pointer_position_3d - cam.origin;
             if self.dragging && click_vector != self.click_vector{
                 let rotation_axis = Unit::new_normalize(click_vector.cross(&self.click_vector));

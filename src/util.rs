@@ -1,20 +1,14 @@
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 
-const MACHINE_EPISOLON:f64= (std::f32::EPSILON * 0.5) as f64;
+const MACHINE_EPISOLON:f32= (std::f32::EPSILON * 0.5) as f32;
 
-pub fn deg_to_rad(deg:f64) -> f64{
+pub fn deg_to_rad(deg:f32) -> f32{
     deg*PI/180.0
 }
 
 //Generates random numbers between [min_inc, max_exc)
-pub fn rand_double(min_inc: f64, max_exc: f64) -> f64{
-    fastrand::f64()*(max_exc - min_inc) + min_inc
-}
-
-pub fn bound_f64(x: f64, min: f64, max:f64) -> f64{
-    if x < min{return min}
-    if x > max{return max}
-    x
+pub fn rand_double(min_inc: f32, max_exc: f32) -> f32{
+    fastrand::f32()*(max_exc - min_inc) + min_inc
 }
 
 pub fn bound_f32(x: f32, min: f32, max:f32) -> f32{
@@ -22,6 +16,7 @@ pub fn bound_f32(x: f32, min: f32, max:f32) -> f32{
     if x > max{return max}
     x
 }
+
 
 /// Linearly interpolates between the start and the end. The interpolation time must be between 
 /// 0 and 1.
@@ -63,21 +58,21 @@ pub fn import_obj(file_name: &str) -> (Vec<tobj::Model>, Option<Vec<tobj::Materi
 }
 
 
-pub fn gamma(n: i64) -> f64{
-    let n = n as f64;
+pub fn gamma(n: i64) -> f32{
+    let n = n as f32;
     (n * MACHINE_EPISOLON)/(1.0 - n * MACHINE_EPISOLON)
 }
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
+    use std::f32::consts::PI;
     use super::*;
 
     #[test]
     fn test_bound(){
         let x = 10.0;
-        let max_x = bound_f64(x, 5.0, 7.0);
-        let min_x = bound_f64(x, 11.0, 14.0);
+        let max_x = bound_f32(x, 5.0, 7.0);
+        let min_x = bound_f32(x, 11.0, 14.0);
         assert_eq!(max_x, 7.0);
         assert_eq!(min_x, 11.0);
     }

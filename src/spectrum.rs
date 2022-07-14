@@ -24,7 +24,7 @@ pub enum SpectrumType {
 /// SampledSpectrum uses the Coefficients infrastructure to represent an SPD with uniformly spaced samples
 /// between a starting and an ending wavelength. The wavelength range covers from 400 nm to 700 nm—the range of the
 ///  visual spectrum where the human visual system is most sensitive. 
-#[derive (Clone)]
+#[derive (Copy, Clone)]
 pub struct Spectrum {
     pub coefficients: SVector<f32, SPECTRAL_SAMPLES>
 }
@@ -60,7 +60,7 @@ impl Mul<&Spectrum> for f32 {
 impl Spectrum {
 
     /// Initialises a SampledSpectrum with coefficients of a constant value.
-    fn new(constant: f32) -> Spectrum {
+    pub fn new(constant: f32) -> Spectrum {
         let coefficients = SVector::<f32, SPECTRAL_SAMPLES>::repeat(0.0);
         Spectrum { coefficients } 
     }
@@ -158,6 +158,10 @@ impl Spectrum {
     
     pub fn clamp(&mut self, min: f32, max: f32) {
         self.coefficients = self.coefficients.map(|a| bound_f32(a, min, max));
+    }
+
+    pub fn is_black(&mut self) -> bool {
+        !self.coefficients.iter().any(|x| *x != 0.0f32)
     }
 }
 
