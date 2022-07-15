@@ -1,6 +1,6 @@
 use nalgebra::Point3;
 
-use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::Scatter};
+use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}};
 
 pub trait Integrator {
     fn render(scene: &Scene);
@@ -50,10 +50,30 @@ impl<S> DirectLightingIntegrator<S> where S: Sample {
 
 
     fn sample_material_contribution<L>(light: L, scene: Scene, record: HitRecord) -> Spectrum where L: Emit {
-        let (mut scattered_radiance, inbound_direction) = record.surface_material.sample_scatter(record.outbound_ray_direction);
-        let probability = record.surface_material.scatter_probability(inbound_direction, record.outbound_ray_direction);
-        scattered_radiance *= inbound_direction.dot(&record.surface_normal).abs();
-        
+        // let (mut scattered_radiance, inbound_direction) = record.surface_material.sample_scatter(record.outbound_ray_direction);
+        // let mat = record.surface_material;
+        // let material_scatter_probability = mat.scatter_probability(inbound_direction, record.outbound_ray_direction);
+        // scattered_radiance *= inbound_direction.dot(&record.surface_normal).abs();
+        // if mat.reflection_model() != ReflectionModel::Specular {
+        //     //Account for light contributions along sampled direction 
+        //     let light_scatter_probability = light.emission_probability(record, inbound_direction);
+        //     if light_scatter_probability == 0.0 {
+        //         return Spectrum::new(0.0);
+        //     } else {
+        //         let weight = DirectLightingIntegrator::<S>::power_heuristic(1, material_scatter_probability, 1, light_scatter_probability);
+        //         //Given a direction sampled by the material, we need to find out if the ray along that direction intersects this particular light source               
+        //         let ray = record.spawn_ray(inbound_direction);
+        //         if let Some(light_intersection) = scene.hit(ray, 0.0, std::f32::MAX) {
+                    
+        //         } else {
+        //             scattered_radiance = Spectrum::new(0.0);
+        //         }
+
+        //     }
+        // }
+
+        //     todo!()
+        Spectrum::new(0.0)
     }
 
     fn trace_ray<L>(light: L, scene: Scene, record: HitRecord) -> Spectrum where L: Emit {

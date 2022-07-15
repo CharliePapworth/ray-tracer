@@ -36,6 +36,10 @@ pub trait Emit {
     /// Returns true if the light is a delta distribution and false otherwise. A light is a delta
     /// distribution if...
     fn is_delta_distribution(&self) -> bool;
+
+    /// Returns the likelihood of the light emitting in a given direction
+    fn emission_probability(&self, record: HitRecord, direction: Vector3<f32>) -> f32;
+
 }
 
 #[derive(Clone, Copy)]
@@ -62,5 +66,9 @@ impl Emit for PointLight {
 
     fn is_delta_distribution(&self) -> bool {
         true
+    }
+
+    fn emission_probability(&self, direction: Vector3<f32>) -> f32 {
+        todo!()
     }
 }

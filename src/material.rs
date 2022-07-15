@@ -11,6 +11,7 @@ use crate::sampler::*;
 
 use self::lambertian::Lambertian;
 
+#[derive(Copy, Clone, PartialEq)]
 pub enum ReflectionModel {
     Diffuse,
     Glossy,

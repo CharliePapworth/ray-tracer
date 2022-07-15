@@ -27,6 +27,7 @@ pub struct HitRecord {
     pub error_bound: Vector3<f32>,
 }
 
+
 pub enum TraceResult{
     Missed,
     Absorbed(Color),
@@ -49,20 +50,11 @@ impl HitRecord{
         }
     }
 
-    pub fn p(&self) -> Point3<f32>{
-        self.point_in_scene
-    }
-
-    pub fn normal(&self) -> Vector3<f32>{
-        self.surface_normal
-    }
-
-    pub fn t(&self) -> f32{
-        self.time
-    }
-
-    pub fn front_face(&self) -> bool{
-        self.front_face
+    /// Spawns a ray from the intersection point in a given direction, accounting for error bounds in the 
+    /// intersection.
+    pub fn spawn_ray(&self, direction: Vector3<f32>) -> Ray {
+        let offset = Ray::offset_origin(self.error_bound, self.surface_normal, direction);
+        Ray::new(self.point_in_scene + offset, direction)
     }
 }
 
@@ -115,13 +107,15 @@ impl Ray{
         self.orig + self.dir * t
     }
 
-    pub fn offset_origin(&self,  p_err: Vector3<f32>, norm: Vector3<f32>) -> Ray {
-        let d = norm.abs().dot(&p_err);
+    /// Calculates the offset in the origin of the ray based on the error-bound of the intersection point, the surface normal
+    /// and the direction of the ray.
+    pub fn offset_origin(error_bound: Vector3<f32>, norm: Vector3<f32>, direction: Vector3<f32>) -> Vector3<f32> {
+        let d = norm.abs().dot(&error_bound);
         let mut offset = d * norm;
-        if self.dir.dot(&norm) < 0.0{
+        if direction.dot(&norm) < 0.0{
             offset = -offset;
         }
-        Ray::new(self.orig + offset, self.dir)
+        offset
     }
 
     pub fn plane_intersection(&self, plane: Plane) -> RayPlaneIntersection {

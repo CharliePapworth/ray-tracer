@@ -170,30 +170,30 @@ mod tests {
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();
-        assert_eq!(rec.t(), 5.0);
-        assert_eq!(rec.normal(), Vector3::<f32>::new(-1.0, 0.0, 0.0));
-        assert_eq!(rec.p(), Point3::<f32>::new(-5.0, 0.0, 0.0));
-        assert_eq!(rec.front_face(), true);
+        assert_eq!(rec.time, 5.0);
+        assert_eq!(rec.surface_normal, Vector3::<f32>::new(-1.0, 0.0, 0.0));
+        assert_eq!(rec.point_in_scene, Point3::<f32>::new(-5.0, 0.0, 0.0));
+        assert_eq!(rec.front_face, true);
 
         //Case 2: Intersection from inside of sphere
         let r = Ray::new(Point3::<f32>::new(1.0, 0.0, 0.0), Vector3::<f32>::new( -2.0, 0.0, 0.0));
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();
-        assert_eq!(rec.t(), 3.0);
-        assert_eq!(rec.normal(), Vector3::<f32>::new(1.0, 0.0, 0.0));
-        assert_eq!(rec.p(), Point3::<f32>::new(-5.0, 0.0, 0.0));
-        assert_eq!(rec.front_face(), false);
+        assert_eq!(rec.time, 3.0);
+        assert_eq!(rec.surface_normal, Vector3::<f32>::new(1.0, 0.0, 0.0));
+        assert_eq!(rec.point_in_scene, Point3::<f32>::new(-5.0, 0.0, 0.0));
+        assert_eq!(rec.front_face, false);
 
         //Case 3: Intersection tangent to sphere
         let r = Ray::new(Point3::<f32>::new(-5.0, 5.0, 0.0), Vector3::<f32>::new( 0.0, -1.0, 0.0));
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();
-        assert_eq!(rec.t(), 5.0);
-        assert_eq!(rec.normal(), Vector3::<f32>::new(-1.0, 0.0, 0.0));
-        assert_eq!(rec.p(), Point3::<f32>::new(-5.0, 0.0, 0.0));
-        assert_eq!(rec.front_face(), true);
+        assert_eq!(rec.time, 5.0);
+        assert_eq!(rec.surface_normal, Vector3::<f32>::new(-1.0, 0.0, 0.0));
+        assert_eq!(rec.point_in_scene, Point3::<f32>::new(-5.0, 0.0, 0.0));
+        assert_eq!(rec.front_face, true);
 
         //Case 4: Intersection of inverted sphere (negative radius)
         let s = Sphere::new(center, -radius, mat);
@@ -201,10 +201,10 @@ mod tests {
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();
-        assert_eq!(rec.t(), 5.0);
-        assert_eq!(rec.normal(), Vector3::<f32>::new(0.0, -1.0, 0.0));
-        assert_eq!(rec.p(), Point3::<f32>::new(0.0, -5.0, 0.0));
-        assert_eq!(rec.front_face(), false);
+        assert_eq!(rec.time, 5.0);
+        assert_eq!(rec.surface_normal, Vector3::<f32>::new(0.0, -1.0, 0.0));
+        assert_eq!(rec.point_in_scene, Point3::<f32>::new(0.0, -5.0, 0.0));
+        assert_eq!(rec.front_face, false);
     }
 
     #[test]
