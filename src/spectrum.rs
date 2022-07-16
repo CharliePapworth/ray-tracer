@@ -1,4 +1,5 @@
 pub mod constant_spectra;
+pub mod spectrum_factory;
 
 use nalgebra::{Vector, SVector, Const};
 
@@ -54,6 +55,14 @@ impl Mul<&Spectrum> for f32 {
 
     fn mul(self, rhs: &Spectrum) -> Self::Output {
         Spectrum::from_coefficients(rhs.coefficients * self)
+    }
+}
+
+impl Mul<&Spectrum> for &Spectrum {
+    type Output = Spectrum;
+
+    fn mul(self, rhs: &Spectrum) -> Self::Output {
+        Spectrum::from_coefficients(rhs.coefficients.component_mul(&self.coefficients))
     }
 }
 

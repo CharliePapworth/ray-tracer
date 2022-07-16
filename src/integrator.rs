@@ -1,13 +1,15 @@
 use nalgebra::Point3;
 
-use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}};
+use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}, threads::ThreadCoordinator};
 
-pub trait Integrator {
+pub trait Integrate {
     fn render(scene: &Scene);
+    fn update(scene: &Scene);
 }
 
 struct DirectLightingIntegrator<S> where S: Sample {
         max_depth: f32,
+        thread_coordinator: ThreadCoordinator,
         sampler: S
 }
 
@@ -40,10 +42,10 @@ impl<S> DirectLightingIntegrator<S> where S: Sample {
         //Add contribution to reflected radiance
         match(scattered_radiance.is_black(), light.is_delta_distribution()) {
             (true, _) => return scattered_radiance,
-            (false, false) => return scattered_radiance * emission.radiance / emission.probability_density,
+            (false, false) => return &scattered_radiance * &emission.radiance / emission.probability_density,
             (false, true) => {
                 let weight = DirectLightingIntegrator::<S>::power_heuristic(1, emission.probability_density, 1, probability_density);
-                return scattered_radiance * emission.radiance / emission.probability_density;
+                return &scattered_radiance * &emission.radiance / emission.probability_density;
             }
         }
     }
@@ -86,8 +88,8 @@ impl<S> DirectLightingIntegrator<S> where S: Sample {
     }
 }
 
-impl<S> Integrator for DirectLightingIntegrator<S> where S: Sample {
+impl<S> Integrate for DirectLightingIntegrator<S> where S: Sample {
     fn render(scene: &Scene) {
-        todo!()
+        //self.thread_coordinator.run(|)
     }
 }

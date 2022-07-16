@@ -4,7 +4,7 @@ use nalgebra::{Vector3, Point3};
 use crate::{spectrum::Spectrum, raytracing::{HitRecord, Hit}};
 
 #[enum_dispatch(Light)]
-#[enum_dispatch(Clone)]
+#[derive(Clone, Copy)]
 pub enum Light {
     PointLight(PointLight)
 }
@@ -48,6 +48,12 @@ pub struct PointLight {
     position: Point3<f32>
 }
 
+impl PointLight {
+    pub fn new(spectrum: Spectrum, position: Point3<f32>) -> PointLight{
+        PointLight {spectrum, position }
+    }
+}
+
 impl Emit for PointLight {
     fn emit(&self, record: HitRecord) -> EmissionData {
         let point_in_scene = record.point_in_scene.cast::<f32>();
@@ -68,7 +74,7 @@ impl Emit for PointLight {
         true
     }
 
-    fn emission_probability(&self, direction: Vector3<f32>) -> f32 {
+    fn emission_probability(&self, record: HitRecord, direction: Vector3<f32>) -> f32 {
         todo!()
     }
 }

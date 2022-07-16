@@ -26,7 +26,7 @@ impl<W> Rasterize for Vec<W> where W: Rasterize {
     }
 }
 
-pub fn rasterize(mut image: Raster, cam: Camera, background: Color, geometric_primitives: &GeometricPrimitives)  -> Raster {
+pub fn rasterize(mut image: Raster, cam: Camera, geometric_primitives: &GeometricPrimitives)  -> Raster {
     
     let image_width = image.image.image_width;
     let image_height = image.image.image_height;

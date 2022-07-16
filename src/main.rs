@@ -11,6 +11,7 @@ extern crate eframe;
 extern crate line_drawing;
 extern crate delegate;
 extern crate nalgebra;
+extern crate crossbeam;
 
 pub mod camera;
 pub mod material;
@@ -28,6 +29,8 @@ pub mod sampler;
 pub mod vec;
 pub mod light;
 pub mod integrator;
+pub mod film;
+pub mod filter;
 
 use eframe::egui::Vec2;
 
@@ -51,34 +54,28 @@ use std::sync::mpsc::*;
 use std::thread::Thread;
 
 fn main() {
-    //Constants
-    let constant_spectra = ConstantSpectra::new();
-
-    //Scene
-    let (geometric_primitives, background, look_from, look_at) = scenes::sphere_world(&constant_spectra);
-    let bvh = Primitive::new_bvh(geometric_primitives.clone().to_bvh());
-    let mut primitives = Primitives::new();
-    primitives.add(bvh);
 
     //Image
     let aspect_ratio = 3.0/2.0;
     let image_width = 800;
     let image_height=  ((image_width as f32)/aspect_ratio) as usize;
+
+
+    //Scene
+    let scene = scenes::point_light_test(image_width, aspect_ratio);
+
+
+    //Integrator
     let samples_per_pixel = 1000;
     let max_depth=  50;
 
     //Camera
-    let v_up: Vector3<f32> = Vector3::<f32>::new(0.0, 1.0, 0.0);
-    let focus_dist = 10.0;
-    let aperture = 0.0;
-    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
-    let camera = Camera::new(camera_settings);
+
     
     //Package data
     let image_settings = ImageSettings { image_width, image_height };
-    let raytrace_settings = RayTraceSettings { max_depth, samples_per_pixel };
-    let scene = Scene { raytracing_primitives: primitives, rasterization_primitives: geometric_primitives, background };
-    let settings = GlobalSettings { raytrace_settings, image_settings, camera, scene, id: 1 };
+    let raytrace_settings = Settings { max_depth, samples_per_pixel };
+    let settings = ThreadData { settings: raytrace_settings, image_settings, camera: scene.camera, scene, id: 1 };
 
     //Threading
     let mut thread_coordinator = ThreadCoordinator::new(settings.clone());

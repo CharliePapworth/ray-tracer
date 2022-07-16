@@ -17,6 +17,7 @@ pub struct Camera {
     pub orientation: Orientation,
     pub lens_radius: f32,
     pub resoloution: (usize, usize),
+    pub film: Film,
     
     // These settings are used for calculation purposes only
     v_up: Unit<Vector3<f32>>,

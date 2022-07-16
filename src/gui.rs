@@ -2,14 +2,14 @@ pub mod progress_bar;
 
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
-use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, threads::{ThreadCoordinator, GlobalSettings}};
+use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, threads::{ThreadCoordinator, ThreadData}};
 use crate::*;
 
 use self::progress_bar::CustomProgressBar;
 
 pub struct Gui {
     pub thread_coordinator: ThreadCoordinator,
-    pub settings: GlobalSettings,
+    pub settings: ThreadData,
     pub labels: Labels,
     pub camera_speed: f32,
     pub expecting_data: bool,
@@ -31,12 +31,12 @@ pub struct Renderers{
 }
 
 impl Gui {
-    pub fn new(settings: GlobalSettings, thread_coordinator: ThreadCoordinator) -> Gui {
+    pub fn new(settings: ThreadData, thread_coordinator: ThreadCoordinator) -> Gui {
         let camera_speed = 0.2;
 
         let image_width = settings.image_settings.image_width;
         let image_height = settings.image_settings.image_height;
-        let samples_per_pixel = settings.raytrace_settings.samples_per_pixel;
+        let samples_per_pixel = settings.settings.samples_per_pixel;
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
         let windows = Windows { settings: false };
@@ -105,7 +105,7 @@ impl Gui {
                             self.thread_coordinator.update_samples(num);
                         }
                         Err(_) => {
-                        self.labels.samples = self.settings.raytrace_settings.samples_per_pixel.to_string();
+                        self.labels.samples = self.settings.settings.samples_per_pixel.to_string();
                         }
                     }
                 }
@@ -231,7 +231,7 @@ impl eframe::App for Gui {
         self.capture_mouse_input(ctx, central_panel_response); 
         
         let completed_samples = self.thread_coordinator.get_progress() as f32;
-        let requested_samples = self.settings.raytrace_settings.samples_per_pixel as f32;
+        let requested_samples = self.settings.settings.samples_per_pixel as f32;
         let progress = completed_samples / requested_samples;
         let bottom_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), stroke: Stroke::new(1.0, Color32::GRAY), fill: Color32::WHITE, ..Default::default()};
         egui::TopBottomPanel::new(TopBottomSide::Bottom, "bottom_panel").frame(bottom_frame).show(ctx, |ui| {
