@@ -2,7 +2,7 @@ pub mod progress_bar;
 
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
-use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, threads::{ThreadCoordinator, ThreadData}};
+use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, thread_coordinator::{ThreadCoordinator, ThreadData}};
 use crate::*;
 
 use self::progress_bar::CustomProgressBar;

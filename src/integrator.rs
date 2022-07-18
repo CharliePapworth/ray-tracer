@@ -1,6 +1,6 @@
 use nalgebra::Point3;
 
-use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}, threads::ThreadCoordinator};
+use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}, thread_coordinator::ThreadCoordinator};
 
 pub trait Integrate {
     fn render(scene: &Scene);

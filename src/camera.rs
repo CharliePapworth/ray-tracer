@@ -2,11 +2,13 @@ use core::f32;
 
 use nalgebra::{Translation3, Unit, Transform3};
 
+use crate::film::Film;
 use crate::sampler;
 use crate::util::deg_to_rad;
 use crate::nalgebra::{Vector3, Point3, Rotation3};
 use crate::raytracing::Ray;
-#[derive (Copy, Clone)]
+
+#[derive (Clone)]
 pub struct Camera {
 
     // These settings affect the camera output
