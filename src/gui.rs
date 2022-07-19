@@ -2,13 +2,13 @@ pub mod progress_bar;
 
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
-use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, thread_coordinator::{ThreadCoordinator, ThreadData}};
+use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, multithreaded_integrator::{MultithreadedIntegrator, ThreadData}};
 use crate::*;
 
 use self::progress_bar::CustomProgressBar;
 
 pub struct Gui {
-    pub thread_coordinator: ThreadCoordinator,
+    pub thread_coordinator: MultithreadedIntegrator,
     pub settings: ThreadData,
     pub labels: Labels,
     pub camera_speed: f32,
@@ -31,7 +31,7 @@ pub struct Renderers{
 }
 
 impl Gui {
-    pub fn new(settings: ThreadData, thread_coordinator: ThreadCoordinator) -> Gui {
+    pub fn new(settings: ThreadData, thread_coordinator: MultithreadedIntegrator) -> Gui {
         let camera_speed = 0.2;
 
         let image_width = settings.image_settings.image_width;

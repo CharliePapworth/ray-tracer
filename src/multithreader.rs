@@ -4,6 +4,7 @@ use crate::film::FilmPixel;
 use crate::image::CompositeImage;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
+use crate::integrator::IntegrateTile;
 use crate::scenes::Scene;
 use crate::film::FilmTile;
 
@@ -37,42 +38,44 @@ pub enum Instructions {
     Terminate
 }
 
-pub struct ThreadCoordinator {
+/// A wrapper around other integrators which multithreads them. Additionally implements Update, which 
+/// allows the gui to call it for incremental progress updates.
+pub struct Multithreader {
     pub threads: Vec<Thread>,
     pub coordinator_to_thread_txs: Vec<Sender<Instructions>>,
     pub thread_data: Arc<RwLock<ThreadData>>,
-    pub film_tiles_in_progress: ArrayQueue<Arc<Mutex<FilmTile>>>,
-    pub film_tiles_finished: ArrayQueue<Arc<Mutex<FilmTile>>>,
-    pub film_tiles: Vec<Arc<Mutex<FilmTile>>>
+    pub film_tiles_in_progress: Arc<ArrayQueue<Arc<Mutex<FilmTile>>>>,
+    pub film_tiles_finished: Arc<ArrayQueue<Arc<Mutex<FilmTile>>>>,
+    pub film_tiles: Vec<Arc<Mutex<FilmTile>>>,
+    pub function: Box<dyn Fn(ThreadData, &mut FilmTile) -> FilmPixel + Send + Sync + 'static>
 }
 
-impl ThreadCoordinator {
+impl Multithreader {
 
-    pub fn new(initial_settings: ThreadData, film_tiles: Vec<Arc<Mutex<FilmTile>>>) -> ThreadCoordinator {
+    pub fn new(initial_settings: ThreadData, film_tiles: Vec<Arc<Mutex<FilmTile>>>, function: Box<dyn Fn(ThreadData, &mut FilmTile) -> FilmPixel + Send + Sync + 'static>) -> Multithreader {
         let thread_data = Arc::new(RwLock::new(initial_settings.clone()));
         let gui_to_thread_txs = vec![];
 
-        let image_width = initial_settings.scene.camera.film.resoloution.0;
-        let image_height = initial_settings.scene.camera.film.resoloution.1;
-        let film_tiles_in_progress = ArrayQueue::<Arc<Mutex<FilmTile>>>::new(film_tiles.len()); 
-        let film_tiles_finished = ArrayQueue::<Arc<Mutex<FilmTile>>>::new(film_tiles.len()); 
+        let film_tiles_in_progress = Arc::new(ArrayQueue::<Arc<Mutex<FilmTile>>>::new(film_tiles.len())); 
+        let film_tiles_finished = Arc::new(ArrayQueue::<Arc<Mutex<FilmTile>>>::new(film_tiles.len())); 
         let condvar = Condvar::new();
         let threads = vec![];
         for tile in film_tiles {
             film_tiles_in_progress.push(tile);
         }
-        ThreadCoordinator {threads, coordinator_to_thread_txs: gui_to_thread_txs, thread_data, film_tiles_in_progress, film_tiles_finished, film_tiles }
+        Multithreader {threads, coordinator_to_thread_txs: gui_to_thread_txs, thread_data, film_tiles_in_progress, film_tiles_finished, film_tiles, function}
     }
 
-    pub fn spin_up(&mut self, num_threads: usize, function: Box<dyn Fn(ThreadData, (usize, usize)) -> FilmPixel + Send + Sync + 'static>) {
+    pub fn spin_up(&mut self, num_threads: usize, function: Box<dyn Fn(ThreadData, &mut FilmTile) -> FilmPixel + Send + Sync + 'static>) {
         
         let shareable_function = Arc::new(function);
         for i in 0..num_threads {
             let (gui_to_thread_tx, coordinator_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
             let thread_data = Arc::clone(&self.thread_data);
+            let film_tiles_in_progress = Arc::clone(&self.film_tiles_in_progress);
+            let film_tiles_finished = Arc::clone(&self.film_tiles_finished);
             self.coordinator_to_thread_txs.push(gui_to_thread_tx);
-            thread::spawn(|| run_thread(thread_data, self.film_tiles_in_progress, self.film_tiles_finished, coordinator_to_thread_rx, shareable_function.clone()));
-            //self.threads.push(*thread_handle.thread());
+            thread::spawn(|| run_thread(thread_data, film_tiles_in_progress, film_tiles_finished, coordinator_to_thread_rx, Arc::clone(&shareable_function)));
         }
     }
 
@@ -126,9 +129,19 @@ impl ThreadCoordinator {
     }
 
     pub fn is_done(&self) -> bool {
-        let settings = self.thread_data.read().unwrap();
-        let image = self.image.0.lock().unwrap();
-        image.image.raytrace.samples >= settings.settings.samples_per_pixel && image.rasterization_samples >= 1 && image.id == settings.id
+        let desired_samples: i32;
+        {
+            let thread_data = self.thread_data.read().unwrap();
+            let desired_samples = thread_data.settings.samples_per_pixel;
+        }
+        
+        for tile_mutex in self.film_tiles {
+            let tile = tile_mutex.lock().unwrap();
+            if tile.samples < desired_samples {
+                return false
+            }
+        }
+        true
     }
 
     pub fn output_image(&self) -> CompositeImage {
@@ -138,7 +151,7 @@ impl ThreadCoordinator {
 }
 
 
- pub fn run_thread(thread_data: Arc<RwLock<ThreadData>>, film_tiles_in_progress: ArrayQueue<Arc<Mutex<FilmTile>>>, film_tiles_finished: ArrayQueue<Arc<Mutex<FilmTile>>>, coordinator_to_thread_rx: Receiver<Instructions>, function: Arc<Box<dyn Fn(ThreadData, (usize, usize)) -> FilmPixel + Send + Sync + 'static>>) {
+ pub fn run_thread(thread_data: Arc<RwLock<ThreadData>>, film_tiles_in_progress: Arc<ArrayQueue<Arc<Mutex<FilmTile>>>>, film_tiles_finished: Arc<ArrayQueue<Arc<Mutex<FilmTile>>>>, coordinator_to_thread_rx: Receiver<Instructions>, function: Arc<Box<dyn Fn(ThreadData, &mut FilmTile) -> FilmPixel + Send + Sync + 'static>>) {
 
     let mut terminated = false;
 

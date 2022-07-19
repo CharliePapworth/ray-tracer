@@ -17,7 +17,7 @@ pub mod camera;
 pub mod material;
 pub mod util;
 pub mod gui;
-pub mod thread_coordinator;
+pub mod multithreader;
 pub mod geometry;
 pub mod image;
 pub mod rasterizing;
@@ -37,7 +37,7 @@ use eframe::egui::Vec2;
 use camera::*;
 use gui::*;
 use spectrum::constant_spectra::ConstantSpectra;
-use thread_coordinator::*;
+use multithreader::*;
 use geometry::*;
 use primitives::*;
 use scenes::*;
@@ -78,7 +78,7 @@ fn main() {
     let settings = ThreadData { settings: raytrace_settings, image_settings, camera: scene.camera, scene, id: 1 };
 
     //Threading
-    let mut thread_coordinator = ThreadCoordinator::new(settings.clone());
+    let mut thread_coordinator = Multithreader::new(settings.clone());
     thread_coordinator.spin_up(3);
 
     //Gui
