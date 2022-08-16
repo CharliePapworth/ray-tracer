@@ -2,15 +2,14 @@ use crate::{spectrum::Spectrum, filter::BoxFilter, image::Color};
 
 #[derive (Clone, Default)]
 pub struct Film {
-    pub filter: BoxFilter,
     pub resoloution: (usize, usize),
     pub pixels: Vec<FilmPixel>
 }
 
 impl Film {
-    pub fn new(filter: BoxFilter, resoloution: (usize, usize)) -> Film {
+    pub fn new(resoloution: (usize, usize)) -> Film {
         let pixels = vec!(FilmPixel::default(); resoloution.0 * resoloution.1);
-        Film { filter, resoloution, pixels }
+        Film { resoloution, pixels }
     }
 
     /// Returns the index of a pixel in pixels for a given row and column.
@@ -94,6 +93,11 @@ impl FilmTile {
         let number_of_pixels = (top_right.0 - bottom_left.0) * (top_right.1 - bottom_left.1);
         let film_pixels = vec![FilmPixel::default(); number_of_pixels];
         FilmTile { bottom_left, top_right, samples, pixels: film_pixels, id }
+    }
+
+    pub fn clear(&mut self) {
+        self.samples = 0;
+        self.pixels = vec![FilmPixel::default(); self.pixels.len()];
     }
 }
 

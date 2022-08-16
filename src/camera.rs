@@ -3,6 +3,7 @@ use core::f32;
 use nalgebra::{Translation3, Unit, Transform3};
 
 use crate::film::Film;
+use crate::filter::BoxFilter;
 use crate::sampler;
 use crate::util::deg_to_rad;
 use crate::nalgebra::{Vector3, Point3, Rotation3};
@@ -18,7 +19,8 @@ pub struct Camera {
     pub lower_left_corner: Point3<f32>,
     pub orientation: Orientation,
     pub lens_radius: f32,
-    pub film: Film,
+    pub resoloution: (usize, usize),
+    pub filter: BoxFilter,
     
     // These settings are used for calculation purposes only
     v_up: Unit<Vector3<f32>>,
@@ -29,7 +31,7 @@ pub struct Camera {
 }
 
 
-#[derive (Clone, Default)]
+#[derive (Copy, Clone, Default)]
 pub struct CameraSettings {
     pub look_from: Point3<f32>,
     pub look_at: Point3<f32>,
@@ -38,7 +40,9 @@ pub struct CameraSettings {
     pub aspect_ratio:f32, 
     pub aperture: f32, 
     pub focus_dist: f32,
-    pub film: Film,
+    pub image_height: usize,
+    pub image_width: usize,
+    pub filter: BoxFilter
 }
 
 
@@ -68,12 +72,11 @@ impl Camera {
         let horizontal: Vector3<f32> = settings.focus_dist * viewport_width * u.into_inner();
         let vertical: Vector3<f32> = settings.focus_dist * viewport_height * v.into_inner();
         let lower_left_corner: Point3<f32> = origin - horizontal / 2.0 - vertical / 2.0 - settings.focus_dist * w.into_inner();
-
-
+        let resoloution = (settings.image_width, settings.image_height);
+        let filter = settings.filter;
 
         let lens_radius = settings.aperture/2.0;
-        let film = settings.film;
-        Camera { origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, v_up, focus_dist, viewport_width, viewport_height, v_fov, film }
+        Camera { origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution, v_up, focus_dist, viewport_width, viewport_height, v_fov, filter }
     }
 
     pub fn get_ray(&self, s: f32, t:f32) -> Ray {
