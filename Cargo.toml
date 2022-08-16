@@ -16,6 +16,7 @@ enum_dispatch = "0.3.8"
 line_drawing = "1"
 delegate = "0.6.2"
 nalgebra = "0.31.0"
+crossbeam = "0.8.2"
 
 
 [profile.release]

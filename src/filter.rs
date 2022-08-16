@@ -1,6 +1,6 @@
 use nalgebra::Point2;
 
-#[derive (Clone)]
+#[derive (Clone, Default)]
 pub struct BoxFilter {
     /// The radius of the filter in the x and y directions.
     pub radius: (f32, f32)

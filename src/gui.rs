@@ -2,13 +2,13 @@ pub mod progress_bar;
 
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
 
-use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, multithreaded_integrator::{MultithreadedIntegrator, ThreadData}};
+use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, multithreader::{Multithreader, ThreadData}};
 use crate::*;
 
 use self::progress_bar::CustomProgressBar;
 
 pub struct Gui {
-    pub thread_coordinator: MultithreadedIntegrator,
+    pub integrator: Integrator,
     pub settings: ThreadData,
     pub labels: Labels,
     pub camera_speed: f32,
@@ -31,7 +31,7 @@ pub struct Renderers{
 }
 
 impl Gui {
-    pub fn new(settings: ThreadData, thread_coordinator: MultithreadedIntegrator) -> Gui {
+    pub fn new(settings: ThreadData, thread_coordinator: Multithreader) -> Gui {
         let camera_speed = 0.2;
 
         let image_width = settings.image_settings.image_width;
@@ -47,11 +47,11 @@ impl Gui {
         let click_vector: Vector3::<f32> = Vector3::<f32>::default();
         let dragging = false;
 
-        Gui { thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
+        Gui { integrator: thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
     }
 
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
-        let image = self.thread_coordinator.output_image();
+        let image = self.integrator.output_image();
         let rgbas = image.output(self.image_output, self.outline).output_rgba();
         let raw_image = ColorImage::from_rgba_unmultiplied([image.image_width, image.image_height], &rgbas);
         let texture_handle = egui::Context::load_texture(&ctx, "output_image", raw_image);
@@ -68,7 +68,7 @@ impl Gui {
                     match self.labels.width.parse::<usize>(){
                         Ok(num) => {
                             self.settings.image_settings.image_width = num;
-                            self.thread_coordinator.update_settings(self.settings.clone());
+                            self.integrator.update_settings(self.settings.clone());
                         }
                         Err(_) => {
                             self.labels.width = self.settings.image_settings.image_width.to_string();
@@ -81,7 +81,7 @@ impl Gui {
                     match self.labels.height.parse::<usize>(){
                         Ok(num) => {
                             self.settings.image_settings.image_height = num;
-                            self.thread_coordinator.update_settings(self.settings.clone());
+                            self.integrator.update_settings(self.settings.clone());
                         }
                         Err(_) => {
                             self.labels.height = self.settings.image_settings.image_height.to_string();
@@ -102,7 +102,7 @@ impl Gui {
                 if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                     match self.labels.samples.parse::<usize>(){
                         Ok(num) => {
-                            self.thread_coordinator.update_samples(num);
+                            self.integrator.update_samples(num);
                         }
                         Err(_) => {
                         self.labels.samples = self.settings.settings.samples_per_pixel.to_string();
@@ -126,7 +126,7 @@ impl Gui {
                 let angle =  click_vector.angle(&self.click_vector);
                 let rotation = Rotation3::from_axis_angle(&rotation_axis, angle);
                 self.settings.camera.rotate(rotation_axis, angle);
-                self.thread_coordinator.update_settings(self.settings.clone());
+                self.integrator.update_settings(self.settings.clone());
                 self.click_vector = rotation.transform_vector(&click_vector);
             } else {
                 self.dragging = true;
@@ -170,7 +170,7 @@ impl Gui {
 
         if up != 0.0 || right != 0.0 || forward != 0.0 {
             self.settings.camera.translate(forward, right, up);
-            self.thread_coordinator.update_settings(self.settings.clone());
+            self.integrator.update_settings(self.settings.clone());
         }
     }
 }
@@ -196,7 +196,7 @@ impl eframe::App for Gui {
                 ui.menu_button("File", |ui| {                    
                     if ui.button("Save Image").clicked() {
                         let path = "results.ppm";
-                        self.thread_coordinator.output_image().output(PrimaryImageType::Raytrace, true).save(path);
+                        self.integrator.output_image().output(PrimaryImageType::Raytrace, true).save(path);
                     }
                 });
 
@@ -230,7 +230,7 @@ impl eframe::App for Gui {
         let central_panel_response = central_panel.show(ctx, |ui| {self.show_image(ctx, ui)}).response;
         self.capture_mouse_input(ctx, central_panel_response); 
         
-        let completed_samples = self.thread_coordinator.get_progress() as f32;
+        let completed_samples = self.integrator.get_progress() as f32;
         let requested_samples = self.settings.settings.samples_per_pixel as f32;
         let progress = completed_samples / requested_samples;
         let bottom_frame = egui::Frame{inner_margin: Margin::symmetric(5.0, 5.0), stroke: Stroke::new(1.0, Color32::GRAY), fill: Color32::WHITE, ..Default::default()};
@@ -239,7 +239,7 @@ impl eframe::App for Gui {
         });
 
         
-        if !self.thread_coordinator.is_done() {
+        if !self.integrator.is_done() {
             ctx.request_repaint();
         } 
     }

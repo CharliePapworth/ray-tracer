@@ -22,7 +22,7 @@ use crossbeam::queue::ArrayQueue;
 #[derive (Copy, Clone)]
 pub struct Settings {
     pub max_depth: i32,
-    pub samples_per_pixel: usize
+    pub samples_per_pixel: i32
 }
 
 #[derive (Clone)]
@@ -111,7 +111,7 @@ impl Multithreader {
         //image.raytracing_samples = 0;
     }
 
-    pub fn update_samples(&mut self, samples: usize) {
+    pub fn update_samples(&mut self, samples: i32) {
         let settings = self.thread_data.read().unwrap().clone();
         if samples < settings.settings.samples_per_pixel {
             self.refresh_image();
@@ -145,6 +145,9 @@ impl Multithreader {
     }
 
     pub fn output_image(&self) -> CompositeImage {
+        for tile in self.film_tiles {
+            
+        }
         let image = self.image.0.lock().unwrap();
         image.image.clone()
     }

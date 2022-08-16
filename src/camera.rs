@@ -18,7 +18,6 @@ pub struct Camera {
     pub lower_left_corner: Point3<f32>,
     pub orientation: Orientation,
     pub lens_radius: f32,
-    pub resoloution: (usize, usize),
     pub film: Film,
     
     // These settings are used for calculation purposes only
@@ -30,7 +29,7 @@ pub struct Camera {
 }
 
 
-#[derive (Copy, Clone, Default)]
+#[derive (Clone, Default)]
 pub struct CameraSettings {
     pub look_from: Point3<f32>,
     pub look_at: Point3<f32>,
@@ -39,8 +38,7 @@ pub struct CameraSettings {
     pub aspect_ratio:f32, 
     pub aperture: f32, 
     pub focus_dist: f32,
-    pub image_height: usize,
-    pub image_width: usize,
+    pub film: Film,
 }
 
 
@@ -71,10 +69,11 @@ impl Camera {
         let vertical: Vector3<f32> = settings.focus_dist * viewport_height * v.into_inner();
         let lower_left_corner: Point3<f32> = origin - horizontal / 2.0 - vertical / 2.0 - settings.focus_dist * w.into_inner();
 
-        let resoloution = (settings.image_width, settings.image_height);
+
 
         let lens_radius = settings.aperture/2.0;
-        Camera{origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, resoloution, v_up, focus_dist, viewport_width, viewport_height, v_fov}
+        let film = settings.film;
+        Camera { origin, horizontal, vertical, lower_left_corner, orientation, lens_radius, v_up, focus_dist, viewport_width, viewport_height, v_fov, film }
     }
 
     pub fn get_ray(&self, s: f32, t:f32) -> Ray {

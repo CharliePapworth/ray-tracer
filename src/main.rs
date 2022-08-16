@@ -73,9 +73,8 @@ fn main() {
 
     
     //Package data
-    let image_settings = ImageSettings { image_width, image_height };
     let raytrace_settings = Settings { max_depth, samples_per_pixel };
-    let settings = ThreadData { settings: raytrace_settings, image_settings, camera: scene.camera, scene, id: 1 };
+    let settings = ThreadData { settings: raytrace_settings, scene, id: 1 };
 
     //Threading
     let mut thread_coordinator = Multithreader::new(settings.clone());

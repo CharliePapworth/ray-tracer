@@ -1,4 +1,6 @@
 use crate::camera::{CameraSettings, Camera};
+use crate::film::Film;
+use crate::filter::BoxFilter;
 use crate::image::Color;
 use crate::material::lambertian::Lambertian;
 use crate::primitives::sphere::Sphere;
@@ -58,7 +60,9 @@ pub fn point_light_test(image_width: usize, aspect_ratio: f32) -> Scene {
     let v_up: Vector3<f32> = Vector3::<f32>::new(0.0, 1.0, 0.0);
     let focus_dist = 10.0;
     let aperture = 0.0;
-    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, image_height, image_width};
+    let filter = BoxFilter::new((1.0, 1.0));
+    let film = Film::new(filter, (image_width, image_height));
+    let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov: 20.0, aspect_ratio, aperture, focus_dist, film };
     let camera = Camera::new(camera_settings);
     
 
