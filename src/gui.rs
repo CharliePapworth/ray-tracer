@@ -1,8 +1,8 @@
 pub mod progress_bar;
 
 use eframe::{egui::{self, Sense, panel::TopBottomSide, style::Margin, Ui, Context}, epaint::{ColorImage, Color32}};
-
-use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, multithreader::{Multithreader, ThreadData}};
+use crate::integrator::Integrate;
+use crate::{nalgebra::{Vector2, Vector3, Point2, Point3, Rotation3, Unit}, image::PrimaryImageType, multithreader::{Multithreader, ThreadData}, integrator::Integrator};
 use crate::*;
 
 use self::progress_bar::CustomProgressBar;
@@ -31,11 +31,11 @@ pub struct Renderers{
 }
 
 impl Gui {
-    pub fn new(settings: ThreadData, thread_coordinator: Multithreader) -> Gui {
+    pub fn new(settings: ThreadData, integrator: Integrator) -> Gui {
         let camera_speed = 0.2;
 
-        let image_width = settings.image_settings.image_width;
-        let image_height = settings.image_settings.image_height;
+        let image_width = settings.scene.camera.resoloution.0;
+        let image_height = settings.scene.camera.resoloution.1;
         let samples_per_pixel = settings.settings.samples_per_pixel;
 
         let labels = Labels{width: image_width.to_string(), height: image_height.to_string(), samples: samples_per_pixel.to_string(), camera_speed: camera_speed.to_string()};
@@ -47,7 +47,7 @@ impl Gui {
         let click_vector: Vector3::<f32> = Vector3::<f32>::default();
         let dragging = false;
 
-        Gui { integrator: thread_coordinator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
+        Gui { integrator, settings, labels, camera_speed, expecting_data, windows, renderers, image_output, outline, click_vector, dragging }
     }
 
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {

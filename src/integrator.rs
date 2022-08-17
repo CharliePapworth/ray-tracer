@@ -1,14 +1,22 @@
+use enum_dispatch::enum_dispatch;
+
+use crate::{scenes::Scene, threader::multithreader::Settings, film::Film};
+
+use self::direct_lighting_integrator::DirectLightingIntegrator;
+
 pub mod direct_lighting_integrator;
-use std::sync::mpsc::Receiver;
-
-use nalgebra::Point3;
-
-use crate::{scenes::Scene, film::FilmTile, multithreader::Instructions};
 
 
-pub trait IntegrateTile {
-    /// Renders the scene within the confines of the film tile. Accepts a callback function,
-    /// which allows the process to be interrupted.
-    fn render(scene: &Scene, tile: &mut FilmTile, receiver: Receiver<Instructions>) -> Option<Instructions>;
+#[enum_dispatch(Integrate)]
+pub enum Integrator {
+    DirectLightingIntegrator(DirectLightingIntegrator),
+}
+
+#[enum_dispatch]
+pub trait Integrate {
+    fn start(&self, num_threads: usize);
+    fn change_scene(&self, new_scene: Scene);
+    fn change_settings(&self, new_settings: Settings);
+    fn output_image(&self) -> Film;
 }
 

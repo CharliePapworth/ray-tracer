@@ -5,9 +5,9 @@ use crate::film::FilmPixel;
 use crate::image::CompositeImage;
 use crate::image::Raster;
 use crate::image::RaytracedImage;
-use crate::integrator::IntegrateTile;
 use crate::scenes::Scene;
 use crate::film::FilmTile;
+use crate::threader::Coordinate;
 
 use std::sync::Arc;
 use std::sync::Barrier;
@@ -55,7 +55,7 @@ pub struct Multithreader {
 
 impl Multithreader {
 
-    pub fn new(initial_settings: ThreadData, film_tiles: Vec<FilmTile>, function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>) -> Multithreader {
+    pub fn new(initial_settings: ThreadData, num_threads: usize, film_tiles: Vec<FilmTile>, function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>) -> Multithreader {
         let resoloution = initial_settings.scene.camera.resoloution;
         let film = Arc::new(Mutex::new(Film::new(resoloution)));
         let thread_data = Arc::new(RwLock::new(initial_settings.clone()));
@@ -70,19 +70,6 @@ impl Multithreader {
         Multithreader { threads, coordinator_to_thread_txs: gui_to_thread_txs, thread_data, film_tiles_in_progress, film_tiles_finished, film, function }
     }
 
-    pub fn spin_up(&mut self, num_threads: usize, function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>) {
-        
-        let shareable_function = Arc::new(function);
-        for i in 0..num_threads {
-            let (gui_to_thread_tx, multithreader_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
-            let thread_data = Arc::clone(&self.thread_data);
-            let film_tiles_in_progress = Arc::clone(&self.film_tiles_in_progress);
-            let film_tiles_finished = Arc::clone(&self.film_tiles_finished);
-            let film = self.film;
-            self.coordinator_to_thread_txs.push(gui_to_thread_tx);
-            thread::spawn(|| run_thread(thread_data, film, film_tiles_in_progress, film_tiles_finished, multithreader_to_thread_rx, Arc::clone(&shareable_function)));
-        }
-    }
 
     /// Returns the number of raytracing samples completed.
     pub fn get_progress(&self) -> i32 {
@@ -126,10 +113,7 @@ impl Multithreader {
         todo!()
     }
 
-    pub fn output_image(&self) -> Film {
-        let image = self.film.lock().unwrap();
-        image.clone()
-    }
+
 }
 
 
@@ -186,4 +170,26 @@ pub fn raytrace<F>(settings: ThreadData, gui_to_thread_rx: &Receiver<Instruction
         }
     }
     None
+}
+
+impl Coordinate for Multithreader {
+
+    fn start_threads(&mut self, num_threads: usize, function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>) {
+        
+        let shareable_function = Arc::new(function);
+        for i in 0..num_threads {
+            let (gui_to_thread_tx, multithreader_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
+            let thread_data = Arc::clone(&self.thread_data);
+            let film_tiles_in_progress = Arc::clone(&self.film_tiles_in_progress);
+            let film_tiles_finished = Arc::clone(&self.film_tiles_finished);
+            let film = self.film;
+            self.coordinator_to_thread_txs.push(gui_to_thread_tx);
+            thread::spawn(|| run_thread(thread_data, film, film_tiles_in_progress, film_tiles_finished, multithreader_to_thread_rx, Arc::clone(&shareable_function)));
+        }
+    }
+
+    fn output_image(&self) -> Film {
+        let image = self.film.lock().unwrap();
+        image.clone()
+    }
 }

@@ -60,22 +60,9 @@ impl HitRecord{
 
 
 #[enum_dispatch]
-pub trait Hit: Send + Sync{
+pub trait Hit: Send + Sync {
     fn hit(&self ,r: &Ray, t_min: f32, t_max: f32) -> Option<(HitRecord)>;
     fn bounding_box(&self) -> Option<Aabb>;
-
-    fn trace(&self, r: &Ray, t_min: f32, t_max: f32) -> TraceResult{
-        if let Some(hit_rec) = self.hit(r, t_min, t_max) {
-            let mat = hit_rec.surface_material;
-            if let Some((attenuation, scattered)) = mat.scatter(r, &hit_rec){
-                TraceResult::Scattered((mat.emit() + attenuation, scattered))
-            } else{
-                TraceResult::Absorbed(mat.emit())
-            }
-        } else{
-            TraceResult::Missed
-        }
-    }
 }
 
 #[derive (Copy, Clone, Default, PartialEq, Debug)]
@@ -138,35 +125,6 @@ impl Ray{
     }
 }
 
-pub fn raytrace_pixel(mut image: RaytracedImage, cam: Camera, background: Color, primitives: &Primitives, max_depth: i32, pixel_position: (usize, usize))  -> RaytracedImage {
-    let image_width = image.image.image_width;
-    let image_height = image.image.image_height;
-    let i = pixel_position.0;
-    let j = pixel_position.1;
-
-    let u = (rand_double(0.0, 1.0) + i as f32)/(image_width as f32 - 1.0);
-    let v = (rand_double(0.0, 1.0) + (image_height - j) as f32)/((image_height - 1) as f32);
-    let r = cam.get_ray(u,v);
-    let pixel_index = (j*image_width + i) as usize;
-    image.image.pixels[pixel_index] = Pixel::new(ray_color(&r, background, primitives, max_depth), 1.0);
-    
-    image
-}
-
-pub fn ray_color<T>(r: &Ray, background: Color, world: &T, depth: i32) -> Color where T: Hit {
-
-    //If we've exceeded the ray bounce limit, no more light is gathered.
-    if depth <= 0{
-        return Color::new(0.0,0.0,0.0)
-    }
-
-    let result = world.trace(r, 0.001, INFINITY);
-    match result {
-        TraceResult::Scattered((attenuation, scattered)) => attenuation.component_mul(&ray_color(&scattered, background, world, depth-1)),
-        TraceResult::Absorbed(emitted) => emitted,
-        TraceResult::Missed => background      
-    }
-}
 
 #[cfg(test)]
 mod tests {

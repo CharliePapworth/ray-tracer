@@ -17,7 +17,6 @@ pub mod camera;
 pub mod material;
 pub mod util;
 pub mod gui;
-pub mod multithreader;
 pub mod geometry;
 pub mod image;
 pub mod rasterizing;
@@ -28,16 +27,17 @@ pub mod spectrum;
 pub mod sampler;
 pub mod vec;
 pub mod light;
-pub mod integrator;
+pub mod threader;
 pub mod film;
 pub mod filter;
+pub mod integrator;
 
 use eframe::egui::Vec2;
 
 use camera::*;
 use gui::*;
 use spectrum::constant_spectra::ConstantSpectra;
-use multithreader::*;
+use threader::*;
 use geometry::*;
 use primitives::*;
 use scenes::*;
