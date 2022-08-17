@@ -3,7 +3,7 @@ use nalgebra::{Vector3, Point3};
 
 use crate::{spectrum::Spectrum, raytracing::{HitRecord, Hit}};
 
-#[enum_dispatch(Light)]
+#[enum_dispatch(Emit)]
 #[derive(Clone, Copy)]
 pub enum Light {
     PointLight(PointLight)

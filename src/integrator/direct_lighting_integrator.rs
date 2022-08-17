@@ -1,19 +1,20 @@
 use std::ops::Mul;
+use std::sync::mpsc::Receiver;
 
-use crate::{scenes::Scene, sampler::Sample, spectrum::Spectrum, light::Emit, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}, integrator::multithreader::Multithreader, film::FilmTile};
+use crate::{scenes::Scene, sampler::Sampler, spectrum::Spectrum, light::{Emit, Light}, raytracing::{HitRecord, Ray}, material::{Scatter, ReflectionModel}, multithreader::Multithreader, film::FilmTile, multithreader::Instructions};
 
 use super::IntegrateTile;
 
-struct DirectLightingIntegrator<S> where S: Sample {
+struct DirectLightingIntegrator {
     max_depth: f32,
-    sampler: S,
+    sampler: Sampler,
     threader: Multithreader
 }
 
-impl<S> DirectLightingIntegrator<S> where S: Sample {
+impl DirectLightingIntegrator {
 
-    pub fn new(max_depth: f32, sampler: S) -> DirectLightingIntegrator<S> {
-
+    pub fn new(max_depth: f32, sampler: Sampler, threader: Multithreader) -> DirectLightingIntegrator {
+        DirectLightingIntegrator { max_depth, sampler, threader }
     }
 
 fn power_heuristic(light_weight: i32, light_probability_density: f32, material_weight: i32, material_probability_density: f32) -> f32 {
@@ -22,7 +23,7 @@ fn power_heuristic(light_weight: i32, light_probability_density: f32, material_w
     (light_value * light_value) / (light_value * light_value + material_value * material_value)
 }
 
-fn sample_light_contribution<L>(light: L, scene: Scene, record: HitRecord) -> Spectrum where L: Emit {
+fn sample_light_contribution(light: Light, scene: Scene, record: HitRecord) -> Spectrum {
     let emission = light.emit(record);
     let mut scattered_radiance: Spectrum;
     let probability_density: f32;
@@ -45,7 +46,7 @@ fn sample_light_contribution<L>(light: L, scene: Scene, record: HitRecord) -> Sp
         (true, _) => return scattered_radiance,
         (false, false) => return &scattered_radiance * &emission.radiance / emission.probability_density,
         (false, true) => {
-            let weight = DirectLightingIntegrator::<S>::power_heuristic(1, emission.probability_density, 1, probability_density);
+            let weight = DirectLightingIntegrator::power_heuristic(1, emission.probability_density, 1, probability_density);
             return &scattered_radiance * &emission.radiance / emission.probability_density;
         }
     }
@@ -79,9 +80,9 @@ fn sample_material_contribution<L>(light: L, scene: Scene, record: HitRecord) ->
     Spectrum::new(0.0)
 }
 
-fn trace_ray<L>(light: L, scene: Scene, record: HitRecord) -> Spectrum where L: Emit {
+fn trace_ray(light: Light, scene: Scene, record: HitRecord) -> Spectrum {
     //No point sampling the material
-    let light_contribution = DirectLightingIntegrator::<S>::sample_light_contribution(light, scene, record);
+    let light_contribution = DirectLightingIntegrator::sample_light_contribution(light, scene, record);
     if light.is_delta_distribution() {
 
     }
@@ -89,8 +90,8 @@ fn trace_ray<L>(light: L, scene: Scene, record: HitRecord) -> Spectrum where L: 
 }
 }
 
-impl<S> IntegrateTile for DirectLightingIntegrator<S> where S: Sample {
-    fn render<C>(scene: &Scene, tile: &mut FilmTile, interrupt_callback: C) where C: Fn() -> bool {
-    //self.thread_coordinator.run(|)
+impl IntegrateTile for DirectLightingIntegrator {
+    fn render(scene: &Scene, tile: &mut FilmTile, receiver: Receiver<Instructions>) -> Option<Instructions> {
+        todo!();
     }
 }

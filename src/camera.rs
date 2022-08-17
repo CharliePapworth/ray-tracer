@@ -3,7 +3,7 @@ use core::f32;
 use nalgebra::{Translation3, Unit, Transform3};
 
 use crate::film::Film;
-use crate::filter::BoxFilter;
+use crate::filter::Filter;
 use crate::sampler;
 use crate::util::deg_to_rad;
 use crate::nalgebra::{Vector3, Point3, Rotation3};
@@ -20,7 +20,7 @@ pub struct Camera {
     pub orientation: Orientation,
     pub lens_radius: f32,
     pub resoloution: (usize, usize),
-    pub filter: BoxFilter,
+    pub filter: Filter,
     
     // These settings are used for calculation purposes only
     v_up: Unit<Vector3<f32>>,
@@ -31,7 +31,7 @@ pub struct Camera {
 }
 
 
-#[derive (Copy, Clone, Default)]
+#[derive (Copy, Clone)]
 pub struct CameraSettings {
     pub look_from: Point3<f32>,
     pub look_at: Point3<f32>,
@@ -42,7 +42,7 @@ pub struct CameraSettings {
     pub focus_dist: f32,
     pub image_height: usize,
     pub image_width: usize,
-    pub filter: BoxFilter
+    pub filter: Filter
 }
 
 

@@ -1,4 +1,4 @@
-use crate::{spectrum::Spectrum, filter::BoxFilter, image::Color};
+use crate::{spectrum::Spectrum, filter::Filter, image::Color};
 
 #[derive (Clone, Default)]
 pub struct Film {
