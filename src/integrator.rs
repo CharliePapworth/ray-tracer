@@ -1,11 +1,10 @@
 use enum_dispatch::enum_dispatch;
 
-use crate::{scenes::Scene, threader::multithreader::Settings, film::Film};
+use crate::{film::Film, scenes::Scene, threader::multithreader::Settings};
 
 use self::direct_lighting_integrator::DirectLightingIntegrator;
 
 pub mod direct_lighting_integrator;
-
 
 #[enum_dispatch(Integrate)]
 pub enum Integrator {
@@ -19,4 +18,3 @@ pub trait Integrate {
     fn change_settings(&self, new_settings: Settings);
     fn output_image(&self) -> Film;
 }
-

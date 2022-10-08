@@ -1,12 +1,15 @@
 use enum_dispatch::enum_dispatch;
-use nalgebra::{Vector3, Point3};
+use nalgebra::{Point3, Vector3};
 
-use crate::{spectrum::Spectrum, raytracing::{HitRecord, Hit}};
+use crate::{
+    raytracing::{Hit, HitRecord},
+    spectrum::Spectrum,
+};
 
 #[enum_dispatch(Emit)]
 #[derive(Clone, Copy)]
 pub enum Light {
-    PointLight(PointLight)
+    PointLight(PointLight),
 }
 
 pub struct EmissionData {
@@ -18,17 +21,28 @@ pub struct EmissionData {
 }
 
 impl EmissionData {
-    pub fn new(probability_density: f32, spectrum: Spectrum, origin: Point3<f32>, direction: Vector3<f32>, time: f32) -> EmissionData {
-        EmissionData { probability_density, radiance: spectrum, origin, direction, time }
+    pub fn new(
+        probability_density: f32,
+        spectrum: Spectrum,
+        origin: Point3<f32>,
+        direction: Vector3<f32>,
+        time: f32,
+    ) -> EmissionData {
+        EmissionData {
+            probability_density,
+            radiance: spectrum,
+            origin,
+            direction,
+            time,
+        }
     }
 }
-
 
 /// Interface for lights in the scene.
 #[enum_dispatch]
 pub trait Emit {
     /// Samples a point on the light source’s surface and computes the
-    /// radiance arriving at a given point in the scene (as provided by the hit record) 
+    /// radiance arriving at a given point in the scene (as provided by the hit record)
     /// due to illumination from the light.
     fn emit(&self, record: HitRecord) -> EmissionData;
     fn power(&self) -> Spectrum;
@@ -39,18 +53,17 @@ pub trait Emit {
 
     /// Returns the likelihood of the light emitting in a given direction
     fn emission_probability(&self, record: HitRecord, direction: Vector3<f32>) -> f32;
-
 }
 
 #[derive(Clone, Copy)]
 pub struct PointLight {
     spectrum: Spectrum,
-    position: Point3<f32>
+    position: Point3<f32>,
 }
 
 impl PointLight {
-    pub fn new(spectrum: Spectrum, position: Point3<f32>) -> PointLight{
-        PointLight {spectrum, position }
+    pub fn new(spectrum: Spectrum, position: Point3<f32>) -> PointLight {
+        PointLight { spectrum, position }
     }
 }
 

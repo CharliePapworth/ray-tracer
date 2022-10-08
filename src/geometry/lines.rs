@@ -1,27 +1,28 @@
-
-use crate::raytracing::{Ray, RayPlaneIntersection};
 use crate::geometry::plane::*;
+use crate::raytracing::{Ray, RayPlaneIntersection};
 use line_drawing::Bresenham;
 use std::ops::{Index, IndexMut};
 
-use crate::vec::*;
-use crate::nalgebra::{Vector2, Point2, Vector3, Point3};
-use crate::camera::*;
-use crate::rasterizing::*;
 use super::points::*;
+use crate::camera::*;
+use crate::nalgebra::{Point2, Point3, Vector2, Vector3};
+use crate::rasterizing::*;
+use crate::vec::*;
 
 pub type OutCode = i8;
 
-#[derive (PartialEq, Debug, Copy, Clone, Default)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 
 /// Represents a 2-dimensional line of finite length. The line is defined by a start point and an end point.
 pub struct Line2 {
-    pub points: [Point2<f32>; 2]
+    pub points: [Point2<f32>; 2],
 }
 
 impl Line2 {
     pub fn new(start: Point2<f32>, end: Point2<f32>) -> Line2 {
-        Line2 {points: [start, end]}
+        Line2 {
+            points: [start, end],
+        }
     }
 
     /// Returns the start point of the line.
@@ -43,15 +44,14 @@ impl Line2 {
     pub fn scale(&self, scale: f32) -> Line2 {
         Line2::new(self.points[0] * scale, self.points[1] * scale)
     }
-        
-    // Cohen–Sutherland clipping algorithm clips a line from against a rectangle with 
+
+    // Cohen–Sutherland clipping algorithm clips a line from against a rectangle with
     // diagonal from (min_x, min_y) to (max_x, max_y).
     pub fn clip(&self, min_x: f32, max_x: f32, min_y: f32, max_y: f32) -> Option<Line2> {
-
-        let left = 1;   // 0001
-        let right = 2;  // 0010
+        let left = 1; // 0001
+        let right = 2; // 0010
         let bottom = 4; // 0100
-        let top = 8;    // 1000
+        let top = 8; // 1000
 
         let mut point_0 = self[0];
         let mut point_1 = self[1];
@@ -77,8 +77,7 @@ impl Line2 {
                 let outcode_out: OutCode;
                 if outcode_1 > outcode_0 {
                     outcode_out = outcode_1;
-                }
-                else {
+                } else {
                     outcode_out = outcode_0;
                 }
 
@@ -89,17 +88,29 @@ impl Line2 {
                 //   y = y0 + slope * (xm - x0), where xm is min_x or max_x
                 // No need to worry about divide-by-zero because, in each case, the
                 // outcode bit being tested guarantees the denominator is non-zero
-                if (outcode_out & top) != 0 {           // point is above the clip window
-                    x = point_0[0] + (point_1[0] - point_0[0]) * (max_y - point_0[1]) / (point_1[1] - point_0[1]);
+                if (outcode_out & top) != 0 {
+                    // point is above the clip window
+                    x = point_0[0]
+                        + (point_1[0] - point_0[0]) * (max_y - point_0[1])
+                            / (point_1[1] - point_0[1]);
                     y = max_y;
-                } else if (outcode_out & bottom) != 0 { // point is below the clip window
-                    x = point_0[0] + (point_1[0] - self[0][0]) * (min_y - point_0[1]) / (point_1[1] - point_0[1]);
+                } else if (outcode_out & bottom) != 0 {
+                    // point is below the clip window
+                    x = point_0[0]
+                        + (point_1[0] - self[0][0]) * (min_y - point_0[1])
+                            / (point_1[1] - point_0[1]);
                     y = min_y;
-                } else if (outcode_out & right) != 0 {  // point is to the right of clip window
-                    y = point_0[1] + (point_1[1] - point_0[1]) * (max_x - self[0][0]) / (point_1[0] - self[0][0]);
+                } else if (outcode_out & right) != 0 {
+                    // point is to the right of clip window
+                    y = point_0[1]
+                        + (point_1[1] - point_0[1]) * (max_x - self[0][0])
+                            / (point_1[0] - self[0][0]);
                     x = max_x;
-                } else if (outcode_out & left) != 0 {   // point is to the left of clip window
-                    y = point_0[1] + (point_1[1] - point_0[1]) * (min_x - self[0][0]) / (point_1[0] - self[0][0]);
+                } else if (outcode_out & left) != 0 {
+                    // point is to the left of clip window
+                    y = point_0[1]
+                        + (point_1[1] - point_0[1]) * (min_x - self[0][0])
+                            / (point_1[0] - self[0][0]);
                     x = min_x;
                 }
 
@@ -117,11 +128,19 @@ impl Line2 {
             }
         }
     }
-    
+
     pub fn bresenham(&self) -> Vec<[usize; 2]> {
-        let line_start = (self.start()[0].round() as isize, self.start()[1].round() as isize);
-        let line_end = (self.end()[0].round() as isize, self.end()[1].round() as isize);
-        Bresenham::new(line_start, line_end).map(|(x,y)|[x as usize, y as usize]).collect()
+        let line_start = (
+            self.start()[0].round() as isize,
+            self.start()[1].round() as isize,
+        );
+        let line_end = (
+            self.end()[0].round() as isize,
+            self.end()[1].round() as isize,
+        );
+        Bresenham::new(line_start, line_end)
+            .map(|(x, y)| [x as usize, y as usize])
+            .collect()
     }
 }
 
@@ -138,24 +157,26 @@ impl IndexMut<usize> for Line2 {
     }
 }
 
-#[derive (PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 
 pub enum LinePlaneIntersection {
     Line(Line3),
     Point(Point3<f32>),
-    None
+    None,
 }
 
-#[derive (PartialEq, Debug, Copy, Clone, Default)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 
 /// Represents a 3-dimensional line of finite length. The line is defined by a start point and an end point.
-pub struct Line3{
-    pub points: [Point3<f32>; 2]
+pub struct Line3 {
+    pub points: [Point3<f32>; 2],
 }
 
-impl Line3{
+impl Line3 {
     pub fn new(start: Point3<f32>, end: Point3<f32>) -> Line3 {
-        Line3 {points: [start, end]}
+        Line3 {
+            points: [start, end],
+        }
     }
 
     /// Returns the length of the line.
@@ -182,42 +203,47 @@ impl Line3{
         if dir.dot(&plane_normal) == 0.0 {
             //If so, check if the line lies in the plane.
             if (plane.origin - self[0]).dot(&plane_normal) == 0.0 {
-                return LinePlaneIntersection::Line(*self)
+                return LinePlaneIntersection::Line(*self);
             } else {
-                return LinePlaneIntersection::None
+                return LinePlaneIntersection::None;
             }
-        } 
+        }
 
         //Check if the intersection point lies within the bounds of the line
-        let time_of_intersection = (plane.origin - self[0]).dot(&plane_normal) / (dir.dot(&plane_normal));
-        if time_of_intersection < 0.0 || time_of_intersection > self.length()  {
-            return LinePlaneIntersection::None
+        let time_of_intersection =
+            (plane.origin - self[0]).dot(&plane_normal) / (dir.dot(&plane_normal));
+        if time_of_intersection < 0.0 || time_of_intersection > self.length() {
+            return LinePlaneIntersection::None;
         }
         let intersection_point = self[0] + time_of_intersection * dir;
         LinePlaneIntersection::Point(intersection_point)
     }
 
     pub fn project(&self, plane: Plane, camera_origin: Point3<f32>) -> Option<Line2> {
-        
         let mut points: [Point2<f32>; 2] = Default::default();
         let visible_line = self.clone();
 
         //Check if the line lies behind the camera
         let dividing_plane = Plane::new(plane.orientation, camera_origin);
-        if !visible_line[0].is_in_front(dividing_plane) || !visible_line[1].is_in_front(dividing_plane) {
-            return None
+        if !visible_line[0].is_in_front(dividing_plane)
+            || !visible_line[1].is_in_front(dividing_plane)
+        {
+            return None;
         }
-        
+
         //Project the remaining line onto the viewing plane
-        for i in 0..2 as usize{
+        for i in 0..2 as usize {
             let ray = Ray::new(camera_origin, self.points[i] - camera_origin);
             if let RayPlaneIntersection::Point(projection_3d) = ray.plane_intersection(plane) {
                 let relative_point = projection_3d - plane.origin;
-                points[i] = Point2::<f32>::new(relative_point.dot(&plane.orientation.u), relative_point.dot(&plane.orientation.v));
-            } 
-        }        
+                points[i] = Point2::<f32>::new(
+                    relative_point.dot(&plane.orientation.u),
+                    relative_point.dot(&plane.orientation.v),
+                );
+            }
+        }
 
-    Some(Line2::new(points[0], points[1]))
+        Some(Line2::new(points[0], points[1]))
     }
 }
 
@@ -234,11 +260,18 @@ impl IndexMut<usize> for Line3 {
 }
 
 impl Rasterize for Line3 {
-    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>
-    {
-        if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
-            let scale = cam.resoloution.1 as f32/ cam.vertical.norm() as f32;
-            if let Some(clipped_line) = projected_line.clip(0.0, cam.horizontal.norm() - 1.0 / scale, 0.0, cam.vertical.norm() - 1.0 / scale) {
+    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
+        if let Some(projected_line) = self.project(
+            Plane::new(cam.orientation, cam.lower_left_corner),
+            cam.origin,
+        ) {
+            let scale = cam.resoloution.1 as f32 / cam.vertical.norm() as f32;
+            if let Some(clipped_line) = projected_line.clip(
+                0.0,
+                cam.horizontal.norm() - 1.0 / scale,
+                0.0,
+                cam.vertical.norm() - 1.0 / scale,
+            ) {
                 return Some(clipped_line.scale(scale).bresenham());
             }
         }
@@ -252,10 +285,8 @@ mod tests {
     use core::f32;
     use std::f32::consts::PI;
 
-
     #[test]
     fn test_project() {
-
         //Case 1: Axis-aligned camera
         let v_up = Vector3::<f32>::new(0.0, 1.0, 0.0);
         let look_from = Point3::<f32>::new(0.0, 0.0, 0.0);
@@ -266,11 +297,29 @@ mod tests {
         let aspect_ratio = 1.0;
         let image_height = 100;
         let image_width = 100;
-        let camera_settings = CameraSettings { look_from, look_at, v_up, v_fov, aspect_ratio, aperture, focus_dist, image_height, image_width };
+        let camera_settings = CameraSettings {
+            look_from,
+            look_at,
+            v_up,
+            v_fov,
+            aspect_ratio,
+            aperture,
+            focus_dist,
+            image_height,
+            image_width,
+        };
         let cam = Camera::new(camera_settings);
-        
-        let line = Line3::new(Point3::<f32>::new(1.0, 1.0, 1.0), Point3::<f32>::new(1.0, 5.0, 4.0));
-        let projected_line = line.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin).unwrap();
+
+        let line = Line3::new(
+            Point3::<f32>::new(1.0, 1.0, 1.0),
+            Point3::<f32>::new(1.0, 5.0, 4.0),
+        );
+        let projected_line = line
+            .project(
+                Plane::new(cam.orientation, cam.lower_left_corner),
+                cam.origin,
+            )
+            .unwrap();
         assert!((projected_line[0] - Point2::<f32>::new(11.0, 11.0)).norm() < 0.00001);
         assert!((projected_line[1] - Point2::<f32>::new(14.0, 15.0)).norm() < 0.00001);
     }
@@ -279,7 +328,7 @@ mod tests {
     fn test_bresenham() {
         let line = Line2::new(Point2::<f32>::new(0.0, 0.0), Point2::<f32>::new(10.0, 0.0));
         let pixels = line.bresenham();
-        
+
         assert_eq!(pixels.len(), 11);
         for i in 0..11 as usize {
             assert_eq!(pixels[i], [i, 0]);
@@ -288,42 +337,39 @@ mod tests {
 
     #[test]
     fn test_clip() {
-
         //Case 1: Bottom left corner
         let start = Point2::<f32>::new(-1.0, -1.0);
         let end = Point2::<f32>::new(5.0, 5.0);
         let line = Line2::new(start, end);
-        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        let clipped_line = line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
         assert_eq!(clipped_line.points[0], Point2::<f32>::new(0.0, 0.0));
 
-        
         //Case 2: Left-hand side
         let start = Point2::<f32>::new(-1.0, 5.0);
         let end = Point2::<f32>::new(5.0, 5.0);
         let line = Line2::new(start, end);
-        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        let clipped_line = line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
         assert_eq!(clipped_line.points[0], Point2::<f32>::new(0.0, 5.0));
 
-                
         //Case 3: Top
         let start = Point2::<f32>::new(5.0, 15.0);
         let end = Point2::<f32>::new(5.0, 5.0);
         let line = Line2::new(start, end);
-        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        let clipped_line = line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
         assert_eq!(clipped_line.points[0], Point2::<f32>::new(5.0, 10.0));
 
         //Case 4: right-hand side
         let start = Point2::<f32>::new(15.0, 5.0);
         let end = Point2::<f32>::new(5.0, 5.0);
         let line = Line2::new(start, end);
-        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        let clipped_line = line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
         assert_eq!(clipped_line.points[0], Point2::<f32>::new(10.0, 5.0));
 
         //Case 5: Bottom
         let start = Point2::<f32>::new(5.0, -5.0);
         let end = Point2::<f32>::new(5.0, 5.0);
         let line = Line2::new(start, end);
-        let clipped_line =line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
+        let clipped_line = line.clip(0.0, 10.0, 0.0, 10.0).unwrap();
         assert_eq!(clipped_line.points[0], Point2::<f32>::new(5.0, 0.0));
     }
 }

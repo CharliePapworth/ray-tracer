@@ -5,9 +5,9 @@ use nalgebra::Point2;
 use self::box_filter::BoxFilter;
 
 #[enum_dispatch(Filters)]
-#[derive (Copy, Clone)]
+#[derive(Copy, Clone)]
 pub enum Filter {
-    BoxFilter(BoxFilter)
+    BoxFilter(BoxFilter),
 }
 
 #[enum_dispatch]

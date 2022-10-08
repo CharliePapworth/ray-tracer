@@ -1,15 +1,18 @@
-use enum_dispatch::enum_dispatch;
 use crate::camera::Camera;
-use crate::image::{Raster, Pixel};
-use crate::primitives::{GeometricPrimitives};
 use crate::image::Color;
+use crate::image::{Pixel, Raster};
+use crate::primitives::GeometricPrimitives;
+use enum_dispatch::enum_dispatch;
 
-#[enum_dispatch] 
-pub trait Rasterize: Send + Sync{
+#[enum_dispatch]
+pub trait Rasterize: Send + Sync {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>>;
 }
 
-impl<W> Rasterize for Vec<W> where W: Rasterize {
+impl<W> Rasterize for Vec<W>
+where
+    W: Rasterize,
+{
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
         let mut pixels: Vec<[usize; 2]> = Default::default();
         for object in self {
@@ -26,11 +29,14 @@ impl<W> Rasterize for Vec<W> where W: Rasterize {
     }
 }
 
-pub fn rasterize(mut image: Raster, cam: Camera, geometric_primitives: &GeometricPrimitives)  -> Raster {
-    
+pub fn rasterize(
+    mut image: Raster,
+    cam: Camera,
+    geometric_primitives: &GeometricPrimitives,
+) -> Raster {
     let image_width = image.image.image_width;
     let image_height = image.image.image_height;
-    
+
     if let Some(pixels) = geometric_primitives.outline(&cam) {
         for pixel in pixels {
             let pixel_index = (image_height - pixel[1] - 1) * image_width + pixel[0];

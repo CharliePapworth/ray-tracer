@@ -1,15 +1,18 @@
-use crate::{spectrum::Spectrum, filter::Filter, image::Color};
+use crate::{filter::Filter, image::Color, spectrum::Spectrum};
 
-#[derive (Clone, Default)]
+#[derive(Clone, Default)]
 pub struct Film {
     pub resoloution: (usize, usize),
-    pub pixels: Vec<FilmPixel>
+    pub pixels: Vec<FilmPixel>,
 }
 
 impl Film {
     pub fn new(resoloution: (usize, usize)) -> Film {
-        let pixels = vec!(FilmPixel::default(); resoloution.0 * resoloution.1);
-        Film { resoloution, pixels }
+        let pixels = vec![FilmPixel::default(); resoloution.0 * resoloution.1];
+        Film {
+            resoloution,
+            pixels,
+        }
     }
 
     /// Returns the index of a pixel in pixels for a given row and column.
@@ -35,7 +38,7 @@ impl Film {
                     row_pixels = pixels_per_final_row;
                 }
 
-                if j < columns - 1{
+                if j < columns - 1 {
                     column_pixels = pixels_per_standard_column;
                 } else {
                     column_pixels = pixels_per_final_column;
@@ -43,7 +46,7 @@ impl Film {
 
                 let bottom_left = (i * row_pixels, j * column_pixels);
                 let top_right = ((i + 1) * row_pixels, (j + 1) * column_pixels);
-                let tile = FilmTile::new(bottom_left, top_right, 0, 0); 
+                let tile = FilmTile::new(bottom_left, top_right, 0, 0);
                 tiles.push(tile);
             }
         }
@@ -66,7 +69,7 @@ impl Film {
                 let film_index = self.get_index(row, column);
                 self.pixels[film_index] = tile.pixels[tile_index];
                 tile_index += 1;
-            } 
+            }
         }
     }
 }
@@ -89,10 +92,21 @@ pub struct FilmTile {
 }
 
 impl FilmTile {
-    pub fn new(bottom_left: (usize, usize), top_right: (usize, usize), samples: i32, id: i32) -> FilmTile {
+    pub fn new(
+        bottom_left: (usize, usize),
+        top_right: (usize, usize),
+        samples: i32,
+        id: i32,
+    ) -> FilmTile {
         let number_of_pixels = (top_right.0 - bottom_left.0) * (top_right.1 - bottom_left.1);
         let film_pixels = vec![FilmPixel::default(); number_of_pixels];
-        FilmTile { bottom_left, top_right, samples, pixels: film_pixels, id }
+        FilmTile {
+            bottom_left,
+            top_right,
+            samples,
+            pixels: film_pixels,
+            id,
+        }
     }
 
     pub fn clear(&mut self) {
@@ -106,5 +120,5 @@ impl FilmTile {
 pub struct FilmPixel {
     pub contribution: Color,
     pub weight: usize,
-    pub id: i32
+    pub id: i32,
 }

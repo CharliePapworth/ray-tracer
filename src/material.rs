@@ -1,13 +1,13 @@
 pub mod lambertian;
 
-use nalgebra::{Vector3, Unit};
+use nalgebra::{Unit, Vector3};
 
-use crate::image::{Color};
-use crate::spectrum::Spectrum;
-use crate::vec::VecExtensionMethods;
-use crate::{util::*, sampler};
+use crate::image::Color;
 use crate::raytracing::{HitRecord, Ray};
 use crate::sampler::*;
+use crate::spectrum::Spectrum;
+use crate::vec::VecExtensionMethods;
+use crate::{sampler, util::*};
 
 use self::lambertian::Lambertian;
 
@@ -15,12 +15,11 @@ use self::lambertian::Lambertian;
 pub enum ReflectionModel {
     Diffuse,
     Glossy,
-    Specular
+    Specular,
 }
 
 ///Implemented by materials. Encapsulates the interaction between light and a given material.
 pub trait Scatter: Clone {
-
     ///Returns the reflection model of the material.
     fn reflection_model(&self) -> ReflectionModel;
 
@@ -31,10 +30,18 @@ pub trait Scatter: Clone {
     fn reflects(&self) -> bool;
 
     ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a given direction.
-    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum;
+    fn scatter(
+        &self,
+        outbound_direction: Vector3<f32>,
+        inbound_direction: Vector3<f32>,
+    ) -> Spectrum;
 
     ///Returns the probability that light is reflected in the outbound direction after arriving at the inbound direction;
-    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32;
+    fn scatter_probability(
+        &self,
+        outbound_direction: Vector3<f32>,
+        inbound_direction: Vector3<f32>,
+    ) -> f32;
 
     ///Returns the radiance (given by a spectrum) reflected from an incident ray of light along a samppled direction. The direction
     /// of the incident ray of light is chosen by the Material. This is useful in cases where the probability of choosing a
@@ -45,15 +52,14 @@ pub trait Scatter: Clone {
     ///  illumination over the hemisphere, or, equivalently, total reflection over the hemisphere due to light from a given direction.
     fn hemispherical_directional_scatter(&self, direction: Vector3<f32>) -> Spectrum;
 
-    ///The hemispherical-hemispherical reflectance of a surface is a spectral value that gives the fraction of incident 
-    /// light reflected by a surface when the incident light is the same from all directions. 
+    ///The hemispherical-hemispherical reflectance of a surface is a spectral value that gives the fraction of incident
+    /// light reflected by a surface when the incident light is the same from all directions.
     fn hemispherical_hemispherical_scatter(&self) -> Spectrum;
 }
 
-
 #[derive(Copy, Clone)]
 ///Encompassess all material types. Achieves polymorphism via static dispatch.
-pub enum Material{
+pub enum Material {
     Lambertian(Lambertian),
 }
 
@@ -70,7 +76,11 @@ impl Scatter for Material {
         todo!()
     }
 
-    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum {
+    fn scatter(
+        &self,
+        outbound_direction: Vector3<f32>,
+        inbound_direction: Vector3<f32>,
+    ) -> Spectrum {
         todo!()
     }
 
@@ -86,7 +96,11 @@ impl Scatter for Material {
         todo!()
     }
 
-    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32 {
+    fn scatter_probability(
+        &self,
+        outbound_direction: Vector3<f32>,
+        inbound_direction: Vector3<f32>,
+    ) -> f32 {
         todo!()
     }
 }
@@ -97,13 +111,10 @@ impl Material {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::primitives::{GeometricPrimitive};
+    use crate::nalgebra::Point3;
+    use crate::primitives::GeometricPrimitive;
     use crate::raytracing::{Hit, Ray};
-    use crate::nalgebra::{Point3};
-
-    
 }
