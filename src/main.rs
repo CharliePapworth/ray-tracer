@@ -1,11 +1,11 @@
 #![windows_subsystem = "windows"]
 
-extern crate impl_ops;
 extern crate crossbeam;
 extern crate delegate;
 extern crate eframe;
 extern crate enum_dispatch;
 extern crate fastrand;
+extern crate impl_ops;
 extern crate line_drawing;
 extern crate nalgebra;
 extern crate num_cpus;
