@@ -1,4 +1,4 @@
-use crate::nalgebra::{Point3, Vector3};
+use crate::nalgebra::{Point3};
 use crate::primitives::GeometricPrimitive;
 use crate::raytracing::{Hit, HitRecord, Ray};
 use std::cmp::Ordering;
@@ -218,9 +218,9 @@ impl Hit for BvhNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::material::lambertian::Lambertian;
-
+    use nalgebra::{Vector3};
     use super::*;
+    use crate::{material::{lambertian::Lambertian, Material}};
 
     #[test]
     fn min() {
