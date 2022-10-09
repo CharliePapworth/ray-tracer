@@ -4,31 +4,35 @@ use crate::image::Color;
 
 #[derive(Clone, Default)]
 pub struct Film {
-    pub resoloution: (usize, usize),
+    //The number of pixels in the horizontal direction.
+    pub image_width: usize,
+    //The number of pixels in the vertical direction.
+    pub image_height: usize,
     pub pixels: Vec<FilmPixel>,
 }
 
 impl Film {
-    pub fn new(resoloution: (usize, usize)) -> Film {
-        let pixels = vec![FilmPixel::default(); resoloution.0 * resoloution.1];
+    pub fn new(image_width: usize, image_height: usize) -> Film {
+        let pixels = vec![FilmPixel::default(); image_width * image_height];
         Film {
-            resoloution,
+            image_width,
+            image_height,
             pixels,
         }
     }
 
     /// Returns the index of a pixel in pixels for a given row and column.
     pub fn get_index(&self, row: usize, column: usize) -> usize {
-        row * self.resoloution.1 + column * self.resoloution.0
+        row * self.image_height + column * self.image_width
     }
 
     pub fn get_tiles(&self, columns: usize, rows: usize) -> Vec<FilmTile> {
         let tiles = vec![];
 
-        let pixels_per_standard_row = self.resoloution.1 / rows;
-        let pixels_per_final_row = self.resoloution.1 % rows;
-        let pixels_per_standard_column = self.resoloution.0 / columns;
-        let pixels_per_final_column = self.resoloution.0 % columns;
+        let pixels_per_standard_row = self.image_height / rows;
+        let pixels_per_final_row = self.image_height % rows;
+        let pixels_per_standard_column = self.image_width / columns;
+        let pixels_per_final_column = self.image_width % columns;
 
         for i in 0..rows {
             for j in 0..columns {
