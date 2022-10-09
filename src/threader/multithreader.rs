@@ -1,25 +1,16 @@
-use crate::camera::Camera;
 use crate::film::Film;
-use crate::film::FilmPixel;
 use crate::film::FilmTile;
-use crate::image::CompositeImage;
-use crate::image::Raster;
-use crate::image::RaytracedImage;
 use crate::scenes::Scene;
 use crate::threader::Coordinate;
 use crate::*;
 
 use crossbeam::queue::ArrayQueue;
-use crossbeam::*;
 use std::sync::mpsc::*;
 use std::sync::Arc;
-use std::sync::Barrier;
-use std::sync::Condvar;
 use std::sync::Mutex;
 use std::sync::RwLock;
 use std::thread;
 use std::thread::park;
-use std::thread::JoinHandle;
 
 #[derive(Copy, Clone)]
 pub struct Settings {
@@ -204,8 +195,8 @@ where
     let image_width = settings.scene.camera.resoloution.0;
 
     let cam = settings.scene.camera;
-    for j in tile.bottom_left.1..tile.top_right.1 {
-        for i in tile.bottom_left.1..tile.top_right.1 {
+    for j in tile.bottom_left.y..tile.top_right.y {
+        for i in tile.bottom_left.x..tile.top_right.x {
             if let Ok(instructions) = gui_to_thread_rx.try_recv() {
                 return Some(instructions);
             }
