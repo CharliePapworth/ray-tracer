@@ -1,12 +1,7 @@
-use std::ops::Mul;
-use std::sync::mpsc::Receiver;
-
 use crate::{
-    film::{Film, FilmTile},
+    film::Film,
     light::{Emit, Light},
-    material::{ReflectionModel, Scatter},
-    multithreader::Instructions,
-    multithreader::Multithreader,
+    material::Scatter,
     raytracing::{HitRecord, Ray},
     sampler::Sampler,
     scenes::Scene,

@@ -1,5 +1,5 @@
 use crate::camera::Orientation;
-use crate::nalgebra::{Point3, Vector3};
+use crate::nalgebra::Point3;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 /// Represents an infinite, 3-dimensional plane. The plane is defined by two basis vectors and a normal (given by its orientation),

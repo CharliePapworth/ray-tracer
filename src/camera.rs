@@ -1,8 +1,7 @@
 use core::f32;
 
-use nalgebra::{Transform3, Translation3, Unit};
+use nalgebra::Unit;
 
-use crate::film::Film;
 use crate::filter::Filter;
 use crate::nalgebra::{Point3, Rotation3, Vector3};
 use crate::raytracing::Ray;

@@ -1,18 +1,12 @@
 extern crate fastrand;
 
-use crate::camera::Camera;
 use crate::enum_dispatch::*;
 use crate::geometry::plane::Plane;
 use crate::image::Color;
-use crate::image::Pixel;
-use crate::image::RaytracedImage;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::primitives::bvh::*;
 use crate::primitives::*;
-use crate::util::rand_double;
-
-use std::f32::INFINITY;
 
 #[derive(Copy, Clone)]
 pub struct HitRecord {

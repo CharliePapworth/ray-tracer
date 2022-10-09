@@ -5,9 +5,8 @@ use std::ops::{Index, IndexMut};
 
 use super::points::*;
 use crate::camera::*;
-use crate::nalgebra::{Point2, Point3, Vector2, Vector3};
+use crate::nalgebra::{Point2, Point3, Vector3};
 use crate::rasterizing::*;
-use crate::vec::*;
 
 pub type OutCode = i8;
 

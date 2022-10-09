@@ -1,4 +1,3 @@
-use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::primitives::GeometricPrimitive;
 use crate::raytracing::{Hit, HitRecord, Ray};

@@ -1,13 +1,11 @@
 pub mod constant_spectra;
 pub mod spectrum_factory;
 
-use nalgebra::{Const, SVector, Vector};
+use nalgebra::{SVector};
 
-use crate::image::Color;
 use crate::util::{bound_f32, lerp};
 
 use constant_spectra::*;
-use std::iter::zip;
 use std::ops::{Div, Mul};
 
 const FIRST_WAVELENGTH: f32 = 400.0;

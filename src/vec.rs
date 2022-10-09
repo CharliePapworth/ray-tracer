@@ -1,10 +1,4 @@
-use core::cmp::Ordering;
-use impl_ops::*;
-use std::ops;
-use std::ops::{Index, IndexMut};
-
 use crate::nalgebra::{Point3, Vector3};
-use crate::{geometry::lines::OutCode, util::rand_double, *};
 
 type Vec3 = Vector3<f64>;
 

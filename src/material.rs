@@ -1,15 +1,8 @@
 pub mod lambertian;
 
-use nalgebra::{Unit, Vector3};
-
-use crate::image::Color;
-use crate::raytracing::{HitRecord, Ray};
-use crate::sampler::*;
-use crate::spectrum::Spectrum;
-use crate::vec::VecExtensionMethods;
-use crate::{sampler, util::*};
-
 use self::lambertian::Lambertian;
+use crate::spectrum::Spectrum;
+use nalgebra::Vector3;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum ReflectionModel {
@@ -112,9 +105,4 @@ impl Material {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::nalgebra::Point3;
-    use crate::primitives::GeometricPrimitive;
-    use crate::raytracing::{Hit, Ray};
-}
+mod tests {}

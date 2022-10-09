@@ -1,6 +1,6 @@
 use nalgebra::Point2;
 
-use crate::{filter::Filter, image::Color, spectrum::Spectrum};
+use crate::image::Color;
 
 #[derive(Clone, Default)]
 pub struct Film {

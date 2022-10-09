@@ -2,7 +2,6 @@ pub mod multithreader;
 use std::sync::mpsc::Receiver;
 
 use enum_dispatch::enum_dispatch;
-use nalgebra::Point3;
 
 use crate::{
     film::{Film, FilmTile},

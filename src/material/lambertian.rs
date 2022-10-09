@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
-use nalgebra::{Unit, Vector3};
+use nalgebra::Vector3;
 
-use crate::{image::Color, raytracing::Ray, spectrum::Spectrum};
+use crate::spectrum::Spectrum;
 
 use super::{ReflectionModel, Scatter};
 

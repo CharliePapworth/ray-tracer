@@ -1,10 +1,7 @@
 use enum_dispatch::enum_dispatch;
 use nalgebra::{Point3, Vector3};
 
-use crate::{
-    raytracing::{Hit, HitRecord},
-    spectrum::Spectrum,
-};
+use crate::{raytracing::HitRecord, spectrum::Spectrum};
 
 #[enum_dispatch(Emit)]
 #[derive(Clone, Copy)]
