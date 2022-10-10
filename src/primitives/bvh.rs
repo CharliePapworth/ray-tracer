@@ -1,4 +1,4 @@
-use crate::nalgebra::{Point3};
+use crate::nalgebra::Point3;
 use crate::primitives::GeometricPrimitive;
 use crate::raytracing::{Hit, HitRecord, Ray};
 use std::cmp::Ordering;
@@ -86,9 +86,7 @@ impl Aabb {
         H: Hit,
     {
         match (a.bounding_box(), b.bounding_box()) {
-            (Some(box_a), Some(box_b)) => box_a.min()[axis as usize]
-                .partial_cmp(&box_b.min()[axis as usize])
-                .unwrap(),
+            (Some(box_a), Some(box_b)) => box_a.min()[axis as usize].partial_cmp(&box_b.min()[axis as usize]).unwrap(),
             (_, _) => panic!("One of a, b cannot be bound"),
         }
     }
@@ -134,9 +132,7 @@ impl BvhNode {
             }
 
             _ => {
-                let axis = objects
-                    .get_largest_extent()
-                    .expect("The TraceableList is empty") as i8;
+                let axis = objects.get_largest_extent().expect("The TraceableList is empty") as i8;
                 objects.sort_by(|a, b| Aabb::box_compare(a, b, axis));
                 let mid = object_span / 2;
                 let right_objs = objects.split_off(mid);
@@ -218,9 +214,9 @@ impl Hit for BvhNode {
 
 #[cfg(test)]
 mod tests {
-    use nalgebra::{Vector3};
     use super::*;
-    use crate::{material::{lambertian::Lambertian, Material}};
+    use crate::material::{lambertian::Lambertian, Material};
+    use nalgebra::Vector3;
 
     #[test]
     fn min() {
@@ -245,10 +241,7 @@ mod tests {
         let aabb = Aabb::new(min, max);
 
         //Case 1: Hit
-        let r = Ray::new(
-            Point3::<f32>::new(20.0, 5.0, 5.0),
-            Vector3::<f32>::new(-1.0, 0.4, -0.2),
-        );
+        let r = Ray::new(Point3::<f32>::new(20.0, 5.0, 5.0), Vector3::<f32>::new(-1.0, 0.4, -0.2));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, true);
 
@@ -257,10 +250,7 @@ mod tests {
         assert_eq!(rec, false);
 
         //Case 3: Miss (due to geometry)
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 10.01, 5.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 10.01, 5.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, false);
     }
@@ -300,10 +290,7 @@ mod tests {
     #[test]
     fn test_bvhnode_hit() {
         let mut list = GeometricPrimitives::new();
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 0.0, 0.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let t_min = 0.0;
         let t_max = 100.0;
 

@@ -32,8 +32,9 @@ pub enum Instructions {
     Terminate,
 }
 
-/// A wrapper around other integrators which multithreads them. Additionally implements Update, which
-/// allows the gui to call it for incremental progress updates.
+/// A wrapper around other integrators which multithreads them. Additionally
+/// implements Update, which allows the gui to call it for incremental progress
+/// updates.
 pub struct Multithreader {
     pub threads: Vec<Thread>,
     pub coordinator_to_thread_txs: Vec<Sender<Instructions>>,
@@ -41,12 +42,7 @@ pub struct Multithreader {
     pub film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     pub film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     pub film: Arc<Mutex<Film>>,
-    pub function: Box<
-        dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions>
-            + Send
-            + Sync
-            + 'static,
-    >,
+    pub function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
 }
 
 impl Multithreader {
@@ -54,12 +50,7 @@ impl Multithreader {
         initial_settings: ThreadData,
         num_threads: usize,
         film_tiles: Vec<FilmTile>,
-        function: Box<
-            dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions>
-                + Send
-                + Sync
-                + 'static,
-        >,
+        function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     ) -> Multithreader {
         let resoloution = initial_settings.scene.camera.resoloution;
         let film = Arc::new(Mutex::new(Film::new(resoloution)));
@@ -135,14 +126,7 @@ pub fn run_thread(
     film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     multithreader_to_thread_rx: Receiver<Instructions>,
-    function: Arc<
-        Box<
-            dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions>
-                + Send
-                + Sync
-                + 'static,
-        >,
-    >,
+    function: Arc<Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>>,
 ) {
     let mut terminated = false;
     let mut instructions: Instructions;
@@ -151,14 +135,11 @@ pub fn run_thread(
         let thread_data = *thread_data.read().unwrap();
         let desired_raytracing_samples = thread_data.settings.samples_per_pixel;
         if let Some(tile) = film_tiles_in_progress.pop() {
-            if let Some(instructions) = function(thread_data, &mut tile, multithreader_to_thread_rx)
-            {
+            if let Some(instructions) = function(thread_data, &mut tile, multithreader_to_thread_rx) {
                 match instructions {
                     Instructions::StopTask => {
                         drop(thread_data);
-                        multithreader_to_thread_rx
-                            .recv()
-                            .expect("Main thread has hung up.");
+                        multithreader_to_thread_rx.recv().expect("Main thread has hung up.");
                     }
                     Instructions::Terminate => {
                         terminated = true;
@@ -210,19 +191,11 @@ impl Coordinate for Multithreader {
     fn start_threads(
         &mut self,
         num_threads: usize,
-        function: Box<
-            dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions>
-                + Send
-                + Sync
-                + 'static,
-        >,
+        function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     ) {
         let shareable_function = Arc::new(function);
         for i in 0..num_threads {
-            let (gui_to_thread_tx, multithreader_to_thread_rx): (
-                Sender<Instructions>,
-                Receiver<Instructions>,
-            ) = channel();
+            let (gui_to_thread_tx, multithreader_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
             let thread_data = Arc::clone(&self.thread_data);
             let film_tiles_in_progress = Arc::clone(&self.film_tiles_in_progress);
             let film_tiles_finished = Arc::clone(&self.film_tiles_finished);

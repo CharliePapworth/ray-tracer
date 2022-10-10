@@ -7,9 +7,9 @@ use crate::spectrum::Spectrum;
 use super::{ReflectionModel, Scatter};
 
 #[derive(Copy, Clone, Default)]
-///Specular materials, such as perfectly smooth surfaces, exhibit perfect specular reflection
-/// and transmission: for an incident direction, all light is scattered in
-/// a single outbound direction.
+///Specular materials, such as perfectly smooth surfaces, exhibit perfect
+/// specular reflection and transmission: for an incident direction, all light
+/// is scattered in a single outbound direction.
 pub struct Lambertian {
     color: Spectrum,
 }
@@ -33,11 +33,7 @@ impl Scatter for Lambertian {
         true
     }
 
-    fn scatter(
-        &self,
-        outbound_direction: Vector3<f32>,
-        inbound_direction: Vector3<f32>,
-    ) -> Spectrum {
+    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum {
         self.color * 1.0f32 / PI
     }
 
@@ -53,11 +49,7 @@ impl Scatter for Lambertian {
         self.color
     }
 
-    fn scatter_probability(
-        &self,
-        outbound_direction: Vector3<f32>,
-        inbound_direction: Vector3<f32>,
-    ) -> f32 {
+    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32 {
         todo!()
     }
 }

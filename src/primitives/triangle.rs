@@ -35,7 +35,8 @@ impl Triangle {
     ///oriented line connecting p0 to p1.
     ///
     ///If e0 < 0, the point lies to the left of the line. If e0 > 0, the
-    ///point lies to the right of the line. If e0 = 0, the point lies on the line
+    ///point lies to the right of the line. If e0 = 0, the point lies on the
+    /// line
     pub fn edge_fn(p0: Point3<f32>, p1: Point3<f32>) -> f32 {
         p0[0] * p1[1] - p0[1] * p1[0]
     }
@@ -121,17 +122,11 @@ impl Hit for Triangle {
 
         let norm = (b0 * self.normals[0] + b1 * self.normals[1] + b2 * self.normals[2]).normalize();
 
-        let x_err = (b0 * self.vertices[0][0]).abs()
-            + (b1 * self.vertices[1][0]).abs()
-            + (b2 * self.vertices[2][0]).abs();
+        let x_err = (b0 * self.vertices[0][0]).abs() + (b1 * self.vertices[1][0]).abs() + (b2 * self.vertices[2][0]).abs();
 
-        let y_err = (b0 * self.vertices[0][1]).abs()
-            + (b1 * self.vertices[1][1]).abs()
-            + (b2 * self.vertices[2][1]).abs();
+        let y_err = (b0 * self.vertices[0][1]).abs() + (b1 * self.vertices[1][1]).abs() + (b2 * self.vertices[2][1]).abs();
 
-        let z_err = (b0 * self.vertices[0][2]).abs()
-            + (b1 * self.vertices[1][2]).abs()
-            + (b2 * self.vertices[2][2]).abs();
+        let z_err = (b0 * self.vertices[0][2]).abs() + (b1 * self.vertices[1][2]).abs() + (b2 * self.vertices[2][2]).abs();
 
         let p_err = gamma(7) * Vector3::<f32>::new(x_err, y_err, z_err);
         let p = b0 * self.vertices[0] + b1 * self.vertices[1].coords + b2 * self.vertices[2].coords;
@@ -139,36 +134,15 @@ impl Hit for Triangle {
     }
 
     fn bounding_box(&self) -> Option<Aabb> {
-        let min_x = self.vertices[0][0]
-            .min(self.vertices[1][0])
-            .min(self.vertices[2][0])
-            - 0.001;
-        let min_y = self.vertices[0][1]
-            .min(self.vertices[1][1])
-            .min(self.vertices[2][1])
-            - 0.001;
-        let min_z = self.vertices[0][2]
-            .min(self.vertices[1][2])
-            .min(self.vertices[2][2])
-            - 0.001;
+        let min_x = self.vertices[0][0].min(self.vertices[1][0]).min(self.vertices[2][0]) - 0.001;
+        let min_y = self.vertices[0][1].min(self.vertices[1][1]).min(self.vertices[2][1]) - 0.001;
+        let min_z = self.vertices[0][2].min(self.vertices[1][2]).min(self.vertices[2][2]) - 0.001;
 
-        let max_x = self.vertices[0][0]
-            .max(self.vertices[1][0])
-            .max(self.vertices[2][0])
-            + 0.001;
-        let max_y = self.vertices[0][1]
-            .max(self.vertices[1][1])
-            .max(self.vertices[2][1])
-            + 0.001;
-        let max_z = self.vertices[0][2]
-            .max(self.vertices[1][2])
-            .max(self.vertices[2][2])
-            + 0.001;
+        let max_x = self.vertices[0][0].max(self.vertices[1][0]).max(self.vertices[2][0]) + 0.001;
+        let max_y = self.vertices[0][1].max(self.vertices[1][1]).max(self.vertices[2][1]) + 0.001;
+        let max_z = self.vertices[0][2].max(self.vertices[1][2]).max(self.vertices[2][2]) + 0.001;
 
-        Some(Aabb::new(
-            Point3::<f32>::new(min_x, min_y, min_z),
-            Point3::<f32>::new(max_x, max_y, max_z),
-        ))
+        Some(Aabb::new(Point3::<f32>::new(min_x, min_y, min_z), Point3::<f32>::new(max_x, max_y, max_z)))
     }
 }
 
@@ -197,10 +171,7 @@ mod tests {
         let mat = Material::Lambertian(Lambertian::default());
         let norm = [Vector3::<f32>::new(0.0, -1.0, -1.0).normalize(); 3];
         let mut t = Triangle::new([v0, v1, v2], norm, mat);
-        let r = Ray::new(
-            Point3::<f32>::new(0.5, -1.0, 0.5),
-            Vector3::<f32>::new(1.0, 4.0, 1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.5, -1.0, 0.5), Vector3::<f32>::new(1.0, 4.0, 1.0));
 
         t.shear_xy(&r);
         assert_eq!(t.get_vertex(0), Point3::<f32>::new(0.0, 0.0, 0.0));
@@ -216,10 +187,7 @@ mod tests {
         let mat = Material::Lambertian(Lambertian::default());
         let norm = [Vector3::<f32>::new(0.0, -1.0, -1.0).normalize(); 3];
         let mut t = Triangle::new([v0, v1, v2], norm, mat);
-        let r = Ray::new(
-            Point3::<f32>::new(0.5, -1.0, 0.5),
-            Vector3::<f32>::new(1.0, 4.0, 0.5),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.5, -1.0, 0.5), Vector3::<f32>::new(1.0, 4.0, 0.5));
 
         t.shear_z(&r);
         assert_eq!(t.get_vertex(0), Point3::<f32>::new(0.0, 0.0, 0.0));
@@ -238,10 +206,7 @@ mod tests {
         let t = Triangle::new([v0, v1, v2], norm, mat);
 
         //Case 1: Front-facing intersection
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 3.0, 20.0),
-            Vector3::<f32>::new(0.0, 0.0, -1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 3.0, 20.0), Vector3::<f32>::new(0.0, 0.0, -1.0));
         let result = t.hit(&r, 0.0, 100.0);
         assert!(result.is_some());
         let rec = result.unwrap();
@@ -250,10 +215,7 @@ mod tests {
         assert_eq!(rec.front_face, true);
 
         //Case 2: Back-facing interection
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 3.0, -20.0),
-            Vector3::<f32>::new(0.0, 0.0, 1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 3.0, -20.0), Vector3::<f32>::new(0.0, 0.0, 1.0));
         let result = t.hit(&r, 0.0, 100.0);
         assert!(result.is_some());
         let rec = result.unwrap();
@@ -262,18 +224,12 @@ mod tests {
         assert_eq!(rec.front_face, false);
 
         //Case 3: Edge-on intersection
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 2.0, 0.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 2.0, 0.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let result = t.hit(&r, 0.0, 100.0);
         assert!(result.is_none());
 
         //Case 4: Edge intersection
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 2.0, 10.0),
-            Vector3::<f32>::new(0.0, 0.0, -1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 2.0, 10.0), Vector3::<f32>::new(0.0, 0.0, -1.0));
         let result = t.hit(&r, 0.0, 10.0);
         assert!(result.is_some());
         let rec = result.unwrap();
@@ -282,18 +238,12 @@ mod tests {
         assert_eq!(rec.front_face, true);
 
         //Case 5: Miss (due to timeout)
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 2.0, 10.0),
-            Vector3::<f32>::new(0.0, 0.0, -1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 2.0, 10.0), Vector3::<f32>::new(0.0, 0.0, -1.0));
         let result = t.hit(&r, 0.0, 10.0 - -std::f32::MIN_POSITIVE);
         assert!(result.is_some());
 
         //Case 6: Miss (due to geometry)
-        let r = Ray::new(
-            Point3::<f32>::new(0.5, -1.0, 3.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.5, -1.0, 3.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let result = t.hit(&r, 0.0, 100.0);
         assert!(result.is_none());
     }
@@ -310,10 +260,7 @@ mod tests {
         let bb = result.unwrap();
         assert_eq!(
             bb,
-            Aabb::new(
-                Point3::<f32>::new(-0.001, -0.001, -0.001),
-                Point3::<f32>::new(1.0 + 0.001, 2.0 + 0.001, 2.0 + 0.001)
-            )
+            Aabb::new(Point3::<f32>::new(-0.001, -0.001, -0.001), Point3::<f32>::new(1.0 + 0.001, 2.0 + 0.001, 2.0 + 0.001))
         );
     }
 }

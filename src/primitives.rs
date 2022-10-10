@@ -32,11 +32,7 @@ pub enum GeometricPrimitive {
 }
 
 impl GeometricPrimitive {
-    pub fn new_triangle(
-        vertices: [Point3<f32>; 3],
-        normals: [Vector3<f32>; 3],
-        mat: Material,
-    ) -> GeometricPrimitive {
+    pub fn new_triangle(vertices: [Point3<f32>; 3], normals: [Vector3<f32>; 3], mat: Material) -> GeometricPrimitive {
         GeometricPrimitive::Triangle(Triangle::new(vertices, normals, mat))
     }
 
@@ -53,9 +49,7 @@ impl GeometricPrimitive {
         k: f32,
         mat: Material,
     ) -> GeometricPrimitive {
-        GeometricPrimitive::Rect(Rect::new(
-            axes, axis1_min, axis1_max, axis2_min, axis2_max, k, mat,
-        ))
+        GeometricPrimitive::Rect(Rect::new(axes, axis1_min, axis1_max, axis2_min, axis2_max, k, mat))
     }
 }
 
@@ -67,11 +61,7 @@ pub enum Primitive {
 }
 
 impl Primitive {
-    pub fn new_triangle(
-        vertices: [Point3<f32>; 3],
-        normals: [Vector3<f32>; 3],
-        mat: Material,
-    ) -> Primitive {
+    pub fn new_triangle(vertices: [Point3<f32>; 3], normals: [Vector3<f32>; 3], mat: Material) -> Primitive {
         Primitive::new_geometric_primitive(GeometricPrimitive::new_triangle(vertices, normals, mat))
     }
 
@@ -88,9 +78,7 @@ impl Primitive {
         k: f32,
         mat: Material,
     ) -> Primitive {
-        Primitive::new_geometric_primitive(GeometricPrimitive::new_rect(
-            axes, axis1_min, axis1_max, axis2_min, axis2_max, k, mat,
-        ))
+        Primitive::new_geometric_primitive(GeometricPrimitive::new_rect(axes, axis1_min, axis1_max, axis2_min, axis2_max, k, mat))
     }
 
     pub fn new_geometric_primitive(geometric_primitive: GeometricPrimitive) -> Primitive {
@@ -196,12 +184,7 @@ impl GeometricPrimitives {
         BvhNode::new(self)
     }
 
-    pub fn add_obj(
-        &mut self,
-        models: Vec<tobj::Model>,
-        materials_opt: Option<Vec<tobj::Material>>,
-        spectrum: Spectrum,
-    ) {
+    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, spectrum: Spectrum) {
         for m in models.iter() {
             //if m.name == "wheel_fr_Circle.050_MAIN"{
             let mesh = &m.mesh;
@@ -211,11 +194,8 @@ impl GeometricPrimitives {
             match &materials_opt {
                 Some(mat) => {
                     let mat_id = mesh.material_id.unwrap();
-                    model_color = Color::new(
-                        mat[mat_id].diffuse[0] as f32,
-                        mat[mat_id].diffuse[1] as f32,
-                        mat[mat_id].diffuse[2] as f32,
-                    );
+                    model_color =
+                        Color::new(mat[mat_id].diffuse[0] as f32, mat[mat_id].diffuse[1] as f32, mat[mat_id].diffuse[2] as f32);
                 }
                 None => {
                     model_color = Vector3::<f32>::new(0.5, 0.5, 0.5);
@@ -237,11 +217,7 @@ impl GeometricPrimitives {
                     );
                 }
 
-                let tri = GeometricPrimitive::new_triangle(
-                    tri_vert,
-                    tri_norm,
-                    Material::Lambertian(Lambertian::new(spectrum)),
-                );
+                let tri = GeometricPrimitive::new_triangle(tri_vert, tri_norm, Material::Lambertian(Lambertian::new(spectrum)));
                 self.add(tri);
             }
         }
@@ -371,12 +347,7 @@ impl Primitives {
         }
     }
 
-    pub fn add_obj(
-        &mut self,
-        models: Vec<tobj::Model>,
-        materials_opt: Option<Vec<tobj::Material>>,
-        model_spectrum: Spectrum,
-    ) {
+    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, model_spectrum: Spectrum) {
         for m in models.iter() {
             //if m.name == "wheel_fr_Circle.050_MAIN"{
             let mesh = &m.mesh;
@@ -386,11 +357,8 @@ impl Primitives {
             match &materials_opt {
                 Some(mat) => {
                     let mat_id = mesh.material_id.unwrap();
-                    model_color = Color::new(
-                        mat[mat_id].diffuse[0] as f32,
-                        mat[mat_id].diffuse[1] as f32,
-                        mat[mat_id].diffuse[2] as f32,
-                    );
+                    model_color =
+                        Color::new(mat[mat_id].diffuse[0] as f32, mat[mat_id].diffuse[1] as f32, mat[mat_id].diffuse[2] as f32);
                 }
                 None => {
                     model_color = Vector3::<f32>::new(0.5, 0.5, 0.5);
@@ -412,11 +380,7 @@ impl Primitives {
                     );
                 }
 
-                let tri = Primitive::new_triangle(
-                    tri_vert,
-                    tri_norm,
-                    Material::new_lambertian(model_spectrum),
-                );
+                let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::new_lambertian(model_spectrum));
                 self.add(tri);
             }
         }
@@ -505,10 +469,7 @@ mod tests {
     #[test]
     fn test_hit() {
         let mut list = Primitives::new();
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 0.0, 0.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let t_min = 0.0;
         let t_max = 100.0;
 
@@ -562,10 +523,7 @@ mod tests {
                 Primitive::GeometricPrimitive(shape) => {
                     if let GeometricPrimitive::Sphere(sphere) = shape {
                         let center = sphere.center();
-                        assert_eq!(
-                            sphere.center(),
-                            Point3::<f32>::new(5.0 * (i as f32), 0.0, 0.0)
-                        );
+                        assert_eq!(sphere.center(), Point3::<f32>::new(5.0 * (i as f32), 0.0, 0.0));
                     } else {
                         panic!()
                     }

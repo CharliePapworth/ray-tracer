@@ -22,11 +22,7 @@ pub fn rand_double(min_inc: f32, max_exc: f32) -> f32 {
 }
 
 pub fn rand(min: f32, max: f32) -> Vector3<f32> {
-    Vector3::<f32>::new(
-        rand_double(min, max),
-        rand_double(min, max),
-        rand_double(min, max),
-    )
+    Vector3::<f32>::new(rand_double(min, max), rand_double(min, max), rand_double(min, max))
 }
 
 pub fn rand_in_unit_sphere() -> Vector3<f32> {

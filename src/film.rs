@@ -61,8 +61,9 @@ impl Film {
 
     /// Merges a tile into the film.
     pub fn merge_tile(&self, tile: &FilmTile) {
-        //All pixels in a given tile have the same id. If the id of the tile is not greater than the id of any of the corresponding
-        //pixels in the film, then no update to the film needs to occur.
+        //All pixels in a given tile have the same id. If the id of the tile is not
+        // greater than the id of any of the corresponding pixels in the film,
+        // then no update to the film needs to occur.
         let test_pixel_index = self.get_index(tile.bottom_left.x, tile.bottom_left.y);
         let test_pixel_id = self.pixels[test_pixel_index].id;
         if test_pixel_id < tile.id {
@@ -80,8 +81,8 @@ impl Film {
     }
 }
 
-/// A subset of the film. Multiple threads can work on different tiles at the same time,
-/// allowing for easy parralelism.
+/// A subset of the film. Multiple threads can work on different tiles at the
+/// same time, allowing for easy parralelism.
 #[derive(Clone, Default)]
 pub struct FilmTile {
     /// The (x, y) coordinates corresponding to the bottom-left of the tile.
@@ -92,18 +93,14 @@ pub struct FilmTile {
     pub pixels: Vec<FilmPixel>,
     /// Counts the number of samples integrated into the film tile.
     pub samples: i32,
-    /// Every time the scene changes (e.g. due to camera movement), the id increments.
-    /// Tracking this stops threads from integrating old scenes into the image.
+    /// Every time the scene changes (e.g. due to camera movement), the id
+    /// increments. Tracking this stops threads from integrating old scenes
+    /// into the image.
     pub id: i32,
 }
 
 impl FilmTile {
-    pub fn new(
-        bottom_left: Point2<usize>,
-        top_right: Point2<usize>,
-        samples: i32,
-        id: i32,
-    ) -> FilmTile {
+    pub fn new(bottom_left: Point2<usize>, top_right: Point2<usize>, samples: i32, id: i32) -> FilmTile {
         let number_of_pixels = (top_right.x - bottom_left.x) * (top_right.y - bottom_left.y);
         let film_pixels = vec![FilmPixel::default(); number_of_pixels];
         FilmTile {

@@ -23,15 +23,7 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn new(
-        axes: RectAxes,
-        axis1_min: f32,
-        axis1_max: f32,
-        axis2_min: f32,
-        axis2_max: f32,
-        k: f32,
-        mat: Material,
-    ) -> Rect {
+    pub fn new(axes: RectAxes, axis1_min: f32, axis1_max: f32, axis2_min: f32, axis2_max: f32, k: f32, mat: Material) -> Rect {
         Rect {
             axes,
             corners: [axis1_min, axis1_max, axis2_min, axis2_max],
@@ -40,7 +32,8 @@ impl Rect {
         }
     }
 
-    /// Returns the indices corresponding to the dimensions in which the rectangle has non-zero width
+    /// Returns the indices corresponding to the dimensions in which the
+    /// rectangle has non-zero width
     pub fn axes_indices(&self) -> (usize, usize) {
         match self.axes {
             RectAxes::XY => (0, 1),
@@ -128,15 +121,7 @@ impl Hit for Rect {
         if x < self.corner(0) || x > self.corner(1) || y < self.corner(2) || y > self.corner(3) {
             return None;
         }
-        let rec = HitRecord::new(
-            r.at(t),
-            self.outward_normal(),
-            self.mat,
-            -r.dir,
-            t,
-            *r,
-            Vector3::<f32>::default(),
-        );
+        let rec = HitRecord::new(r.at(t), self.outward_normal(), self.mat, -r.dir, t, *r, Vector3::<f32>::default());
         Some(rec)
     }
 
@@ -182,36 +167,24 @@ mod tests {
         let rect = Box::new(Rect::new(RectAxes::XY, 3.0, 5.0, 1.0, 3.0, 0.0, diff_light));
 
         //Case 1: Collision
-        let r = Ray::new(
-            Point3::<f32>::new(4.0, 2.0, -10.0),
-            Vector3::<f32>::new(0.0, 0.0, 1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(4.0, 2.0, -10.0), Vector3::<f32>::new(0.0, 0.0, 1.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_some());
         let rec = rec_option.unwrap();
         assert_eq!(rec.time, 10.0);
 
         //Case 2: Miss face of rectangle
-        let r = Ray::new(
-            Point3::<f32>::new(5.01, 2.0, -10.0),
-            Vector3::<f32>::new(0.0, 0.0, 1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(5.01, 2.0, -10.0), Vector3::<f32>::new(0.0, 0.0, 1.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_none());
 
         //Case 3: Miss (due to timeout)
-        let r = Ray::new(
-            Point3::<f32>::new(4.0, 2.0, -10.0),
-            Vector3::<f32>::new(0.0, 0.0, 1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(4.0, 2.0, -10.0), Vector3::<f32>::new(0.0, 0.0, 1.0));
         let rec_option = rect.hit(&r, 0.0, 9.99);
         assert!(rec_option.is_none());
 
         //Case 4: Miss on infinitely thin edge
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 2.0, 0.0),
-            Vector3::<f32>::new(1.0, 0.0, 1.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 2.0, 0.0), Vector3::<f32>::new(1.0, 0.0, 1.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_none());
 
@@ -219,36 +192,24 @@ mod tests {
         let rect = Box::new(Rect::new(RectAxes::XZ, 3.0, 5.0, 1.0, 3.0, 0.0, diff_light));
 
         //Case 1: Collision
-        let r = Ray::new(
-            Point3::<f32>::new(4.0, -10.0, 2.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(4.0, -10.0, 2.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_some());
         let rec = rec_option.unwrap();
         assert_eq!(rec.time, 10.0);
 
         //Case 2: Miss face of rectangle
-        let r = Ray::new(
-            Point3::<f32>::new(5.01, -10.0, 2.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(5.01, -10.0, 2.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_none());
 
         //Case 3: Miss (due to timeout)
-        let r = Ray::new(
-            Point3::<f32>::new(4.0, -10.0, 2.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(4.0, -10.0, 2.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 9.99);
         assert!(rec_option.is_none());
 
         //Case 4: Miss on infinitely thin edge
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 0.0, 2.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 0.0, 2.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_none());
 
@@ -256,36 +217,24 @@ mod tests {
         let rect = Box::new(Rect::new(RectAxes::YZ, 3.0, 5.0, 1.0, 3.0, 0.0, diff_light));
 
         //Case 1: Collision
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 4.0, 2.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 4.0, 2.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_some());
         let rec = rec_option.unwrap();
         assert_eq!(rec.time, 10.0);
 
         //Case 2: Miss face of rectangle
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 5.01, 2.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 5.01, 2.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_none());
 
         //Case 3: Miss (due to timeout)
-        let r = Ray::new(
-            Point3::<f32>::new(4.0, -10.0, 2.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(4.0, -10.0, 2.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 9.99);
         assert!(rec_option.is_none());
 
         //Case 4: Miss on infinitely thin edge
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, 0.0, 2.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, 0.0, 2.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let rec_option = rect.hit(&r, 0.0, 100.0);
         assert!(rec_option.is_none());
     }
@@ -294,15 +243,7 @@ mod tests {
     fn test_bounding_box() {
         //XY
         let diff_light = Material::Lambertian(Lambertian::default());
-        let rect = Box::new(Rect::new(
-            RectAxes::XY,
-            -5.0,
-            -3.0,
-            1.0,
-            3.0,
-            0.0,
-            diff_light,
-        ));
+        let rect = Box::new(Rect::new(RectAxes::XY, -5.0, -3.0, 1.0, 3.0, 0.0, diff_light));
         let bb = rect.bounding_box();
         assert!(bb.is_some());
         let bb = bb.unwrap();
@@ -310,15 +251,7 @@ mod tests {
         assert_eq!(bb.max(), Point3::<f32>::new(-3.0, 3.0, 0.0001));
 
         //XZ
-        let rect = Box::new(Rect::new(
-            RectAxes::XZ,
-            -5.0,
-            -3.0,
-            1.0,
-            3.0,
-            0.0,
-            diff_light,
-        ));
+        let rect = Box::new(Rect::new(RectAxes::XZ, -5.0, -3.0, 1.0, 3.0, 0.0, diff_light));
         let bb = rect.bounding_box();
         assert!(bb.is_some());
         let bb = bb.unwrap();
@@ -326,15 +259,7 @@ mod tests {
         assert_eq!(bb.max(), Point3::<f32>::new(-3.0, 0.0001, 3.0));
 
         //YZ
-        let rect = Box::new(Rect::new(
-            RectAxes::YZ,
-            -5.0,
-            -3.0,
-            1.0,
-            3.0,
-            0.0,
-            diff_light,
-        ));
+        let rect = Box::new(Rect::new(RectAxes::YZ, -5.0, -3.0, 1.0, 3.0, 0.0, diff_light));
         let bb = rect.bounding_box();
         assert!(bb.is_some());
         let bb = bb.unwrap();

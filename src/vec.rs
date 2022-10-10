@@ -5,12 +5,7 @@ type Vec3 = Vector3<f64>;
 pub trait VecExtensionMethods {
     fn reflect(&self, normal: &Vector3<f64>) -> Vector3<f64>;
     fn refract(uv: &Vector3<f64>, n: &Vector3<f64>, etai_over_etat: f64) -> Vector3<f64>;
-    fn offset_origin(
-        origin: &Point3<f64>,
-        dir: &Vector3<f64>,
-        p_err: &Vector3<f64>,
-        norm: &Vector3<f64>,
-    ) -> Point3<f64>;
+    fn offset_origin(origin: &Point3<f64>, dir: &Vector3<f64>, p_err: &Vector3<f64>, norm: &Vector3<f64>) -> Point3<f64>;
     fn near_zero(&self) -> bool;
     fn swap(&mut self, i: usize, j: usize);
 }
@@ -27,12 +22,7 @@ impl VecExtensionMethods for Vector3<f64> {
         r_out_perp + r_out_parallel
     }
 
-    fn offset_origin(
-        origin: &Point3<f64>,
-        dir: &Vector3<f64>,
-        p_err: &Vector3<f64>,
-        norm: &Vector3<f64>,
-    ) -> Point3<f64> {
+    fn offset_origin(origin: &Point3<f64>, dir: &Vector3<f64>, p_err: &Vector3<f64>, norm: &Vector3<f64>) -> Point3<f64> {
         let d = norm.abs().dot(&p_err);
         let mut offset = d * p_err;
         if dir.dot(&norm) < 0.0 {

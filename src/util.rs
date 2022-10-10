@@ -21,8 +21,8 @@ pub fn bound_f32(x: f32, min: f32, max: f32) -> f32 {
     x
 }
 
-/// Linearly interpolates between the start and the end. The interpolation time must be between
-/// 0 and 1.
+/// Linearly interpolates between the start and the end. The interpolation time
+/// must be between 0 and 1.
 ///
 /// # Example
 /// ```

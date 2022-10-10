@@ -12,16 +12,15 @@ pub type OutCode = i8;
 
 #[derive(PartialEq, Debug, Copy, Clone, Default)]
 
-/// Represents a 2-dimensional line of finite length. The line is defined by a start point and an end point.
+/// Represents a 2-dimensional line of finite length. The line is defined by a
+/// start point and an end point.
 pub struct Line2 {
     pub points: [Point2<f32>; 2],
 }
 
 impl Line2 {
     pub fn new(start: Point2<f32>, end: Point2<f32>) -> Line2 {
-        Line2 {
-            points: [start, end],
-        }
+        Line2 { points: [start, end] }
     }
 
     /// Returns the start point of the line.
@@ -39,13 +38,14 @@ impl Line2 {
         (self[1] - self[0]).norm()
     }
 
-    /// Scales the line by a constant. Both the start point and the end point are multiplied by the scalar value.
+    /// Scales the line by a constant. Both the start point and the end point
+    /// are multiplied by the scalar value.
     pub fn scale(&self, scale: f32) -> Line2 {
         Line2::new(self.points[0] * scale, self.points[1] * scale)
     }
 
-    // Cohen–Sutherland clipping algorithm clips a line from against a rectangle with
-    // diagonal from (min_x, min_y) to (max_x, max_y).
+    // Cohen–Sutherland clipping algorithm clips a line from against a rectangle
+    // with diagonal from (min_x, min_y) to (max_x, max_y).
     pub fn clip(&self, min_x: f32, max_x: f32, min_y: f32, max_y: f32) -> Option<Line2> {
         let left = 1; // 0001
         let right = 2; // 0010
@@ -54,7 +54,8 @@ impl Line2 {
 
         let mut point_0 = self[0];
         let mut point_1 = self[1];
-        // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
+        // compute outcodes for P0, P1, and whatever point lies outside the clip
+        // rectangle
         let mut outcode_0 = point_0.compute_outcode(min_x, max_x, min_y, max_y);
         let mut outcode_1 = point_1.compute_outcode(min_x, max_x, min_y, max_y);
 
@@ -89,27 +90,19 @@ impl Line2 {
                 // outcode bit being tested guarantees the denominator is non-zero
                 if (outcode_out & top) != 0 {
                     // point is above the clip window
-                    x = point_0[0]
-                        + (point_1[0] - point_0[0]) * (max_y - point_0[1])
-                            / (point_1[1] - point_0[1]);
+                    x = point_0[0] + (point_1[0] - point_0[0]) * (max_y - point_0[1]) / (point_1[1] - point_0[1]);
                     y = max_y;
                 } else if (outcode_out & bottom) != 0 {
                     // point is below the clip window
-                    x = point_0[0]
-                        + (point_1[0] - self[0][0]) * (min_y - point_0[1])
-                            / (point_1[1] - point_0[1]);
+                    x = point_0[0] + (point_1[0] - self[0][0]) * (min_y - point_0[1]) / (point_1[1] - point_0[1]);
                     y = min_y;
                 } else if (outcode_out & right) != 0 {
                     // point is to the right of clip window
-                    y = point_0[1]
-                        + (point_1[1] - point_0[1]) * (max_x - self[0][0])
-                            / (point_1[0] - self[0][0]);
+                    y = point_0[1] + (point_1[1] - point_0[1]) * (max_x - self[0][0]) / (point_1[0] - self[0][0]);
                     x = max_x;
                 } else if (outcode_out & left) != 0 {
                     // point is to the left of clip window
-                    y = point_0[1]
-                        + (point_1[1] - point_0[1]) * (min_x - self[0][0])
-                            / (point_1[0] - self[0][0]);
+                    y = point_0[1] + (point_1[1] - point_0[1]) * (min_x - self[0][0]) / (point_1[0] - self[0][0]);
                     x = min_x;
                 }
 
@@ -129,14 +122,8 @@ impl Line2 {
     }
 
     pub fn bresenham(&self) -> Vec<[usize; 2]> {
-        let line_start = (
-            self.start()[0].round() as isize,
-            self.start()[1].round() as isize,
-        );
-        let line_end = (
-            self.end()[0].round() as isize,
-            self.end()[1].round() as isize,
-        );
+        let line_start = (self.start()[0].round() as isize, self.start()[1].round() as isize);
+        let line_end = (self.end()[0].round() as isize, self.end()[1].round() as isize);
         Bresenham::new(line_start, line_end)
             .map(|(x, y)| [x as usize, y as usize])
             .collect()
@@ -166,16 +153,15 @@ pub enum LinePlaneIntersection {
 
 #[derive(PartialEq, Debug, Copy, Clone, Default)]
 
-/// Represents a 3-dimensional line of finite length. The line is defined by a start point and an end point.
+/// Represents a 3-dimensional line of finite length. The line is defined by a
+/// start point and an end point.
 pub struct Line3 {
     pub points: [Point3<f32>; 2],
 }
 
 impl Line3 {
     pub fn new(start: Point3<f32>, end: Point3<f32>) -> Line3 {
-        Line3 {
-            points: [start, end],
-        }
+        Line3 { points: [start, end] }
     }
 
     /// Returns the length of the line.
@@ -209,8 +195,7 @@ impl Line3 {
         }
 
         //Check if the intersection point lies within the bounds of the line
-        let time_of_intersection =
-            (plane.origin - self[0]).dot(&plane_normal) / (dir.dot(&plane_normal));
+        let time_of_intersection = (plane.origin - self[0]).dot(&plane_normal) / (dir.dot(&plane_normal));
         if time_of_intersection < 0.0 || time_of_intersection > self.length() {
             return LinePlaneIntersection::None;
         }
@@ -224,9 +209,7 @@ impl Line3 {
 
         //Check if the line lies behind the camera
         let dividing_plane = Plane::new(plane.orientation, camera_origin);
-        if !visible_line[0].is_in_front(dividing_plane)
-            || !visible_line[1].is_in_front(dividing_plane)
-        {
+        if !visible_line[0].is_in_front(dividing_plane) || !visible_line[1].is_in_front(dividing_plane) {
             return None;
         }
 
@@ -235,10 +218,8 @@ impl Line3 {
             let ray = Ray::new(camera_origin, self.points[i] - camera_origin);
             if let RayPlaneIntersection::Point(projection_3d) = ray.plane_intersection(plane) {
                 let relative_point = projection_3d - plane.origin;
-                points[i] = Point2::<f32>::new(
-                    relative_point.dot(&plane.orientation.u),
-                    relative_point.dot(&plane.orientation.v),
-                );
+                points[i] =
+                    Point2::<f32>::new(relative_point.dot(&plane.orientation.u), relative_point.dot(&plane.orientation.v));
             }
         }
 
@@ -260,17 +241,11 @@ impl IndexMut<usize> for Line3 {
 
 impl Rasterize for Line3 {
     fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
-        if let Some(projected_line) = self.project(
-            Plane::new(cam.orientation, cam.lower_left_corner),
-            cam.origin,
-        ) {
+        if let Some(projected_line) = self.project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin) {
             let scale = cam.resoloution.1 as f32 / cam.vertical.norm() as f32;
-            if let Some(clipped_line) = projected_line.clip(
-                0.0,
-                cam.horizontal.norm() - 1.0 / scale,
-                0.0,
-                cam.vertical.norm() - 1.0 / scale,
-            ) {
+            if let Some(clipped_line) =
+                projected_line.clip(0.0, cam.horizontal.norm() - 1.0 / scale, 0.0, cam.vertical.norm() - 1.0 / scale)
+            {
                 return Some(clipped_line.scale(scale).bresenham());
             }
         }
@@ -309,15 +284,9 @@ mod tests {
         };
         let cam = Camera::new(camera_settings);
 
-        let line = Line3::new(
-            Point3::<f32>::new(1.0, 1.0, 1.0),
-            Point3::<f32>::new(1.0, 5.0, 4.0),
-        );
+        let line = Line3::new(Point3::<f32>::new(1.0, 1.0, 1.0), Point3::<f32>::new(1.0, 5.0, 4.0));
         let projected_line = line
-            .project(
-                Plane::new(cam.orientation, cam.lower_left_corner),
-                cam.origin,
-            )
+            .project(Plane::new(cam.orientation, cam.lower_left_corner), cam.origin)
             .unwrap();
         assert!((projected_line[0] - Point2::<f32>::new(11.0, 11.0)).norm() < 0.00001);
         assert!((projected_line[1] - Point2::<f32>::new(14.0, 15.0)).norm() < 0.00001);

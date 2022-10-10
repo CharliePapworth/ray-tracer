@@ -13,7 +13,8 @@ pub type Color = Vector3<f32>;
 #[derive(Clone, PartialEq)]
 /// Wraps a color together with an alpha channel.
 ///
-/// An Image consists of a vector of pixels, together with some width and height information.
+/// An Image consists of a vector of pixels, together with some width and height
+/// information.
 pub struct Pixel {
     pub color: Color,
     pub alpha: f32,
@@ -24,12 +25,14 @@ impl Pixel {
     ///
     ///# Arguments
     ///
-    /// * `color` - A color value, representing the color of the pixel. Each of the elements of the color struct
+    /// * `color` - A color value, representing the color of the pixel. Each of
+    ///   the elements of the color struct
     /// should be between `0` and `1`.
     /// * `alpha` - A floating point value between `0` and `1`, representing the
-    /// transparency of the pixel. A value of `0` indicates that the pixel is completely transparent,
-    /// whereas a value of `1` indicates the the pixel is compeltely opaque. This information is used
-    /// when composing multiple images together.
+    /// transparency of the pixel. A value of `0` indicates that the pixel is
+    /// completely transparent, whereas a value of `1` indicates the the
+    /// pixel is compeltely opaque. This information is used when composing
+    /// multiple images together.
     pub fn new(color: Color, alpha: f32) -> Pixel {
         Pixel { color, alpha }
     }
@@ -55,8 +58,7 @@ impl Pixel {
     /// Overlay another pixel with this pixel using alpha blending
     pub fn over(&self, under: &Pixel) -> Pixel {
         let alpha = self.alpha + under.alpha * (1.0 - self.alpha);
-        let color =
-            (self.color * self.alpha + under.color * under.alpha * (1.0 - self.alpha)) / alpha;
+        let color = (self.color * self.alpha + under.color * under.alpha * (1.0 - self.alpha)) / alpha;
         Pixel::new(color, alpha)
     }
 }
@@ -64,7 +66,8 @@ impl Pixel {
 #[derive(Clone, PartialEq)]
 
 /// The base image class. Wrapped by RaytracedImage and Raster to provide basic
-/// image functionality (including compositing images, interfacing with egui and writing to disk).
+/// image functionality (including compositing images, interfacing with egui and
+/// writing to disk).
 ///
 /// Composes a vector of pixels with height and width information.
 pub struct Image {
@@ -120,18 +123,9 @@ impl Image {
 
     /// Saves the image to a PPF file
     pub fn save(&self, path: &str) {
-        let mut file = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(path)
-            .unwrap();
+        let mut file = OpenOptions::new().create(true).write(true).open(path).unwrap();
 
-        write!(
-            file,
-            "P3\n{} {} \n255\n",
-            self.image_width, self.image_height
-        )
-        .unwrap();
+        write!(file, "P3\n{} {} \n255\n", self.image_width, self.image_height).unwrap();
         for pixel in &self.pixels {
             pixel.write_color(&mut file);
         }
@@ -139,8 +133,9 @@ impl Image {
 }
 
 #[derive(Clone, PartialEq)]
-/// An image produced via raytracing. Wraps the Image struct, but also contains some additional
-/// information required to compose multiple raytraced images together.
+/// An image produced via raytracing. Wraps the Image struct, but also contains
+/// some additional information required to compose multiple raytraced images
+/// together.
 pub struct RaytracedImage {
     pub image: Image,
     pub samples: usize,
@@ -179,9 +174,7 @@ impl<'a> Add for &'a RaytracedImage {
     type Output = RaytracedImage;
 
     fn add(self, other: &'a RaytracedImage) -> RaytracedImage {
-        if self.image.image_height != other.image.image_height
-            || self.image.image_width != other.image.image_width
-        {
+        if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
 
@@ -200,9 +193,7 @@ impl<'a> Add for &'a RaytracedImage {
 
 impl AddAssign<&RaytracedImage> for RaytracedImage {
     fn add_assign(&mut self, other: &RaytracedImage) {
-        if self.image.image_height != other.image.image_height
-            || self.image.image_width != other.image.image_width
-        {
+        if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
 
@@ -252,20 +243,16 @@ impl<'a> Add for &'a Raster {
     type Output = Raster;
 
     fn add(self, other: &'a Raster) -> Raster {
-        if self.image.image_height != other.image.image_height
-            || self.image.image_width != other.image.image_width
-        {
+        if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
 
         let mut output = Raster::new(self.image.image_width, self.image.image_height);
         for index in 0..self.image.pixels.len() {
             if self.z_buffer[index] < other.z_buffer[index] {
-                output.image.pixels[index] =
-                    self.image.pixels[index].over(&other.image.pixels[index]);
+                output.image.pixels[index] = self.image.pixels[index].over(&other.image.pixels[index]);
             } else if self.z_buffer[index] > other.z_buffer[index] {
-                output.image.pixels[index] =
-                    other.image.pixels[index].over(&self.image.pixels[index]);
+                output.image.pixels[index] = other.image.pixels[index].over(&self.image.pixels[index]);
             }
         }
         output
@@ -274,19 +261,15 @@ impl<'a> Add for &'a Raster {
 
 impl AddAssign<&Raster> for Raster {
     fn add_assign(&mut self, other: &Raster) {
-        if self.image.image_height != other.image.image_height
-            || self.image.image_width != other.image.image_width
-        {
+        if self.image.image_height != other.image.image_height || self.image.image_width != other.image.image_width {
             panic!("Image dimensions do not match");
         }
 
         for index in 0..self.image.pixels.len() {
             if self.z_buffer[index] < other.z_buffer[index] {
-                self.image.pixels[index] =
-                    self.image.pixels[index].over(&other.image.pixels[index]);
+                self.image.pixels[index] = self.image.pixels[index].over(&other.image.pixels[index]);
             } else if self.z_buffer[index] > other.z_buffer[index] {
-                self.image.pixels[index] =
-                    other.image.pixels[index].over(&self.image.pixels[index]);
+                self.image.pixels[index] = other.image.pixels[index].over(&self.image.pixels[index]);
                 self.z_buffer[index] = other.z_buffer[index];
             }
         }

@@ -16,7 +16,8 @@ pub struct HitRecord {
     pub outbound_ray_direction: Vector3<f32>,
     pub time: f32,
     pub front_face: bool,
-    /// Gives a conservative bound on the error in the position of the ray-surface intersection
+    /// Gives a conservative bound on the error in the position of the
+    /// ray-surface intersection
     pub error_bound: Vector3<f32>,
 }
 
@@ -58,8 +59,8 @@ impl HitRecord {
         }
     }
 
-    /// Spawns a ray from the intersection point in a given direction, accounting for error bounds in the
-    /// intersection.
+    /// Spawns a ray from the intersection point in a given direction,
+    /// accounting for error bounds in the intersection.
     pub fn spawn_ray(&self, direction: Vector3<f32>) -> Ray {
         let offset = Ray::offset_origin(self.error_bound, self.surface_normal, direction);
         Ray::new(self.point_in_scene + offset, direction)
@@ -104,13 +105,10 @@ impl Ray {
         self.orig + self.dir * t
     }
 
-    /// Calculates the offset in the origin of the ray based on the error-bound of the intersection point, the surface normal
-    /// and the direction of the ray.
-    pub fn offset_origin(
-        error_bound: Vector3<f32>,
-        norm: Vector3<f32>,
-        direction: Vector3<f32>,
-    ) -> Vector3<f32> {
+    /// Calculates the offset in the origin of the ray based on the error-bound
+    /// of the intersection point, the surface normal and the direction of
+    /// the ray.
+    pub fn offset_origin(error_bound: Vector3<f32>, norm: Vector3<f32>, direction: Vector3<f32>) -> Vector3<f32> {
         let d = norm.abs().dot(&error_bound);
         let mut offset = d * norm;
         if direction.dot(&norm) < 0.0 {
@@ -133,8 +131,7 @@ impl Ray {
             }
         }
 
-        let time_of_intersection =
-            (plane.origin - self.orig).dot(&plane_normal) / (dir.dot(&plane_normal));
+        let time_of_intersection = (plane.origin - self.orig).dot(&plane_normal) / (dir.dot(&plane_normal));
         let intersection_point = self.orig + time_of_intersection * dir;
         RayPlaneIntersection::Point(intersection_point)
     }

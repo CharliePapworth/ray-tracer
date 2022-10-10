@@ -81,13 +81,9 @@ impl Gui {
     pub fn show_image(&self, ctx: &Context, ui: &mut Ui) {
         let image = self.integrator.output_image();
         let rgbas = image.output(self.image_output, self.outline).output_rgba();
-        let raw_image =
-            ColorImage::from_rgba_unmultiplied([image.image_width, image.image_height], &rgbas);
+        let raw_image = ColorImage::from_rgba_unmultiplied([image.image_width, image.image_height], &rgbas);
         let texture_handle = egui::Context::load_texture(&ctx, "output_image", raw_image);
-        ui.image(
-            texture_handle.id(),
-            [image.image_width as f32, image.image_height as f32],
-        );
+        ui.image(texture_handle.id(), [image.image_width as f32, image.image_height as f32]);
     }
 
     pub fn show_settings_window(&mut self, ctx: &Context, ui: &mut Ui) {
@@ -95,10 +91,8 @@ impl Gui {
         if self.windows.settings {
             ui.horizontal(|ui| {
                 ui.label("Width:");
-                let width_response = ui.add_sized(
-                    egui::Vec2::new(30f32, 20f32),
-                    egui::TextEdit::singleline(&mut self.labels.width),
-                );
+                let width_response =
+                    ui.add_sized(egui::Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.width));
                 if width_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                     match self.labels.width.parse::<usize>() {
                         Ok(num) => {
@@ -106,16 +100,13 @@ impl Gui {
                             self.integrator.update_settings(self.settings.clone());
                         }
                         Err(_) => {
-                            self.labels.width =
-                                self.settings.image_settings.image_width.to_string();
+                            self.labels.width = self.settings.image_settings.image_width.to_string();
                         }
                     }
                 }
                 ui.label("Height:");
-                let height_response = ui.add_sized(
-                    egui::Vec2::new(30f32, 20f32),
-                    egui::TextEdit::singleline(&mut self.labels.height),
-                );
+                let height_response =
+                    ui.add_sized(egui::Vec2::new(30f32, 20f32), egui::TextEdit::singleline(&mut self.labels.height));
                 if height_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                     match self.labels.height.parse::<usize>() {
                         Ok(num) => {
@@ -123,8 +114,7 @@ impl Gui {
                             self.integrator.update_settings(self.settings.clone());
                         }
                         Err(_) => {
-                            self.labels.height =
-                                self.settings.image_settings.image_height.to_string();
+                            self.labels.height = self.settings.image_settings.image_height.to_string();
                         }
                     }
                 }
@@ -138,18 +128,15 @@ impl Gui {
             ui.checkbox(&mut self.outline, "Outline");
             ui.horizontal(|ui| {
                 ui.label("Samples:");
-                let samples_response = ui.add_sized(
-                    egui::Vec2::new(40f32, 20f32),
-                    egui::TextEdit::singleline(&mut self.labels.samples),
-                );
+                let samples_response =
+                    ui.add_sized(egui::Vec2::new(40f32, 20f32), egui::TextEdit::singleline(&mut self.labels.samples));
                 if samples_response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                     match self.labels.samples.parse::<usize>() {
                         Ok(num) => {
                             self.integrator.update_samples(num);
                         }
                         Err(_) => {
-                            self.labels.samples =
-                                self.settings.settings.samples_per_pixel.to_string();
+                            self.labels.samples = self.settings.settings.samples_per_pixel.to_string();
                         }
                     }
                 }
@@ -233,9 +220,11 @@ pub struct Labels {
 }
 
 impl eframe::App for Gui {
-    /// Called each time the UI needs repainting, which may be many times per second.
+    /// Called each time the UI needs repainting, which may be many times per
+    /// second.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        //ctx.set_style(Style{visuals: Visuals {code_bg_color: Color32::from_rgb(200, 200, 200), ,..Default::default()}, ..Default::default()});
+        //ctx.set_style(Style{visuals: Visuals {code_bg_color: Color32::from_rgb(200,
+        // 200, 200), ,..Default::default()}, ..Default::default()});
         self.capture_keyboard_input(ctx);
         let top_frame = egui::Frame {
             inner_margin: Margin::symmetric(5.0, 5.0),
@@ -288,9 +277,7 @@ impl eframe::App for Gui {
             stroke: Stroke::new(1.0, Color32::GRAY),
             ..Default::default()
         });
-        let central_panel_response = central_panel
-            .show(ctx, |ui| self.show_image(ctx, ui))
-            .response;
+        let central_panel_response = central_panel.show(ctx, |ui| self.show_image(ctx, ui)).response;
         self.capture_mouse_input(ctx, central_panel_response);
 
         let completed_samples = self.integrator.get_progress() as f32;
@@ -308,12 +295,7 @@ impl eframe::App for Gui {
                 ui.add(
                     CustomProgressBar::new(progress)
                         .desired_width(200.0)
-                        .text(
-                            completed_samples.to_string()
-                                + "/"
-                                + &requested_samples.to_string()
-                                + " samples",
-                        )
+                        .text(completed_samples.to_string() + "/" + &requested_samples.to_string() + " samples")
                         .animate(true),
                 );
             });

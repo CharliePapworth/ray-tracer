@@ -35,8 +35,9 @@ impl Sphere {
 
     /// Checks whether the sphere is at least partially in front of the plane.
     ///
-    /// A sphere is defined as being in front of the plane if any point on its surface is in front of the plane.
-    /// A point is defined as being in front of the plane if the plane normal points away from it.
+    /// A sphere is defined as being in front of the plane if any point on its
+    /// surface is in front of the plane. A point is defined as being in
+    /// front of the plane if the plane normal points away from it.
     pub fn is_in_front(&self, plane: Plane) -> bool {
         //Check if the sphere is in view
         let mut closest_point = self.center + self.radius * plane.orientation.w.into_inner();
@@ -67,18 +68,11 @@ impl Sphere {
         //Find the horizon of the sphere
         let radius_origin_vector = self.center - cam.origin;
         let radius_origin_distance = (self.center - cam.origin).norm();
-        let horizon_radius = (radius_origin_distance.powi(2) - self.radius.powi(2)).sqrt()
-            * self.radius
-            / radius_origin_distance;
-        let horizon_basis_vector_a =
-            radius_origin_vector.cross(&cam.orientation.w).normalize() * horizon_radius;
-        let horizon_basis_vector_b = horizon_basis_vector_a
-            .cross(&radius_origin_vector)
-            .normalize()
-            * horizon_radius;
+        let horizon_radius = (radius_origin_distance.powi(2) - self.radius.powi(2)).sqrt() * self.radius / radius_origin_distance;
+        let horizon_basis_vector_a = radius_origin_vector.cross(&cam.orientation.w).normalize() * horizon_radius;
+        let horizon_basis_vector_b = horizon_basis_vector_a.cross(&radius_origin_vector).normalize() * horizon_radius;
         let horizon_center_offset = (self.radius.powi(2) - horizon_radius.powi(2)).sqrt();
-        let origin_horizon_center =
-            radius_origin_vector.normalize() * (radius_origin_distance - horizon_center_offset);
+        let origin_horizon_center = radius_origin_vector.normalize() * (radius_origin_distance - horizon_center_offset);
 
         //Approximate the boundary of the horizon with straight lines
         for i in 0..NUMBER_OF_LINES {
@@ -123,15 +117,7 @@ impl Hit for Sphere {
             let t = root;
             let p = r.at(t);
             let outward_normal = (p - self.center) / self.radius;
-            let new_rec = HitRecord::new(
-                p,
-                outward_normal,
-                self.material,
-                -r.dir,
-                root,
-                *r,
-                p.coords * gamma(5),
-            );
+            let new_rec = HitRecord::new(p, outward_normal, self.material, -r.dir, root, *r, p.coords * gamma(5));
             Some(new_rec)
         }
     }
@@ -150,9 +136,7 @@ impl Rasterize for Sphere {
         let camera_plane = Plane::new(cam.orientation, cam.origin);
 
         //Check if the sphere is at least partially in front of the camera window
-        if !self.center.is_in_front(camera_plane)
-            && self.radius < self.center.distance_to_plane(camera_plane)
-        {
+        if !self.center.is_in_front(camera_plane) && self.radius < self.center.distance_to_plane(camera_plane) {
             return None;
         }
 
@@ -186,10 +170,7 @@ mod tests {
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
         let s = Sphere::new(center, radius, mat);
-        let r = Ray::new(
-            Point3::<f32>::new(-10.0, 0.0, 0.0),
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
         let t_min = 0.0;
         let t_max = 100.0;
         let rec_wrapper = s.hit(&r, t_min, t_max);
@@ -201,10 +182,7 @@ mod tests {
         assert_eq!(rec.front_face, true);
 
         //Case 2: Intersection from inside of sphere
-        let r = Ray::new(
-            Point3::<f32>::new(1.0, 0.0, 0.0),
-            Vector3::<f32>::new(-2.0, 0.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(1.0, 0.0, 0.0), Vector3::<f32>::new(-2.0, 0.0, 0.0));
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();
@@ -214,10 +192,7 @@ mod tests {
         assert_eq!(rec.front_face, false);
 
         //Case 3: Intersection tangent to sphere
-        let r = Ray::new(
-            Point3::<f32>::new(-5.0, 5.0, 0.0),
-            Vector3::<f32>::new(0.0, -1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(-5.0, 5.0, 0.0), Vector3::<f32>::new(0.0, -1.0, 0.0));
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();
@@ -228,10 +203,7 @@ mod tests {
 
         //Case 4: Intersection of inverted sphere (negative radius)
         let s = Sphere::new(center, -radius, mat);
-        let r = Ray::new(
-            Point3::<f32>::new(0.0, -10.0, 0.0),
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-        );
+        let r = Ray::new(Point3::<f32>::new(0.0, -10.0, 0.0), Vector3::<f32>::new(0.0, 1.0, 0.0));
         let rec_wrapper = s.hit(&r, t_min, t_max);
         assert!(rec_wrapper.is_some());
         let rec = rec_wrapper.unwrap();

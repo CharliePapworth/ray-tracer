@@ -64,16 +64,9 @@ impl DirectLightingIntegrator {
         //Add contribution to reflected radiance
         match (scattered_radiance.is_black(), light.is_delta_distribution()) {
             (true, _) => return scattered_radiance,
-            (false, false) => {
-                return &scattered_radiance * &emission.radiance / emission.probability_density
-            }
+            (false, false) => return &scattered_radiance * &emission.radiance / emission.probability_density,
             (false, true) => {
-                let weight = DirectLightingIntegrator::power_heuristic(
-                    1,
-                    emission.probability_density,
-                    1,
-                    probability_density,
-                );
+                let weight = DirectLightingIntegrator::power_heuristic(1, emission.probability_density, 1, probability_density);
                 return &scattered_radiance * &emission.radiance / emission.probability_density;
             }
         }
@@ -83,20 +76,25 @@ impl DirectLightingIntegrator {
     where
         L: Emit,
     {
-        // let (mut scattered_radiance, inbound_direction) = record.surface_material.sample_scatter(record.outbound_ray_direction);
+        // let (mut scattered_radiance, inbound_direction) =
+        // record.surface_material.sample_scatter(record.outbound_ray_direction);
         // let mat = record.surface_material;
-        // let material_scatter_probability = mat.scatter_probability(inbound_direction, record.outbound_ray_direction);
-        // scattered_radiance *= inbound_direction.dot(&record.surface_normal).abs();
+        // let material_scatter_probability = mat.scatter_probability(inbound_direction,
+        // record.outbound_ray_direction); scattered_radiance *=
+        // inbound_direction.dot(&record.surface_normal).abs();
         // if mat.reflection_model() != ReflectionModel::Specular {
         //     //Account for light contributions along sampled direction
-        //     let light_scatter_probability = light.emission_probability(record, inbound_direction);
-        //     if light_scatter_probability == 0.0 {
+        //     let light_scatter_probability = light.emission_probability(record,
+        // inbound_direction);     if light_scatter_probability == 0.0 {
         //         return Spectrum::new(0.0);
         //     } else {
-        //         let weight = DirectLightingIntegrator::<S>::power_heuristic(1, material_scatter_probability, 1, light_scatter_probability);
-        //         //Given a direction sampled by the material, we need to find out if the ray along that direction intersects this particular light source
+        //         let weight = DirectLightingIntegrator::<S>::power_heuristic(1,
+        // material_scatter_probability, 1, light_scatter_probability);
+        //         //Given a direction sampled by the material, we need to find out if
+        // the ray along that direction intersects this particular light source
         //         let ray = record.spawn_ray(inbound_direction);
-        //         if let Some(light_intersection) = scene.hit(ray, 0.0, std::f32::MAX) {
+        //         if let Some(light_intersection) = scene.hit(ray, 0.0, std::f32::MAX)
+        // {
 
         //         } else {
         //             scattered_radiance = Spectrum::new(0.0);
@@ -111,8 +109,7 @@ impl DirectLightingIntegrator {
 
     fn trace_ray(light: Light, scene: Scene, record: HitRecord) -> Spectrum {
         //No point sampling the material
-        let light_contribution =
-            DirectLightingIntegrator::sample_light_contribution(light, scene, record);
+        let light_contribution = DirectLightingIntegrator::sample_light_contribution(light, scene, record);
         if light.is_delta_distribution() {}
         todo!();
     }

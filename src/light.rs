@@ -39,13 +39,13 @@ impl EmissionData {
 #[enum_dispatch]
 pub trait Emit {
     /// Samples a point on the light source’s surface and computes the
-    /// radiance arriving at a given point in the scene (as provided by the hit record)
-    /// due to illumination from the light.
+    /// radiance arriving at a given point in the scene (as provided by the hit
+    /// record) due to illumination from the light.
     fn emit(&self, record: HitRecord) -> EmissionData;
     fn power(&self) -> Spectrum;
 
-    /// Returns true if the light is a delta distribution and false otherwise. A light is a delta
-    /// distribution if...
+    /// Returns true if the light is a delta distribution and false otherwise. A
+    /// light is a delta distribution if...
     fn is_delta_distribution(&self) -> bool;
 
     /// Returns the likelihood of the light emitting in a given direction
