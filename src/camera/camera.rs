@@ -1,11 +1,13 @@
 use crate::film::Film;
 use crate::nalgebra::{Point3, Rotation3, Vector3};
 use crate::raytracing::Ray;
-use crate::sampler;
+use crate::sampler::{self, concentrically_sample_from_disk};
 use crate::util::deg_to_rad;
 use core::f32;
-use nalgebra::{Matrix4, Perspective3, Point2, Translation3, Unit};
+use nalgebra::{Matrix4, Perspective3, Point2, Translation3, Unit, UnitVector3};
 use std::f32::consts::PI;
+
+use super::camera_sample::CameraSample;
 
 /// Type representing a perspective camera. Generates rays for use in the
 /// integrator. # Further Reading
@@ -73,12 +75,6 @@ pub struct Orientation {
 }
 
 impl Camera {
-    /// # Arguments
-    ///
-    /// * `camera_to_world` - A transformation from camera space to world space.
-    /// * `film` - The film the camera writes to.
-    ///  * `focus_dist` - The focus distance of the camera.
-
     pub fn new(camera_to_world: Matrix4<f32>, film: Film, focus_dist: f32) {}
 
     pub fn calculate_camera_to_screen(field_of_view: f32, near_z_plane: f32, far_z_plane: f32) -> Matrix4<f32> {
@@ -114,8 +110,35 @@ impl Camera {
         scale_to_raster * rescale_screen * translate
     }
 
-    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
-        todo!()
+    /// Returns a ray emitted from the camera, as well as a floating-point value
+    /// that affects how much the radiance arriving at the film plane along
+    /// the generated ray will contribute to the final image.
+    pub fn get_ray(&self, camera_sample: CameraSample) -> (Ray, f32) {
+        // Elevate the ray-film intersection into 3 dimensions
+        let ray_film_intersection =
+            Point3::new(camera_sample.ray_film_intersection.x, camera_sample.ray_film_intersection.y, 0.0);
+
+        // Transform the intersection into camera space
+        let ray_film_intersection = self.raster_to_camera.transform_vector(ray_film_intersection);
+
+        // In camera space, all rays originate from the origin
+        let ray_position = Point3::<f32>::new(0.0, 0.0, 0.0);
+        let ray_direction = ray_film_intersection.norm();
+        let mut ray = Ray::new(ray_position, ray_direction);
+
+        // Modify ray for depth of field
+        if self.lens_radius > 0.0 {
+            //Sample points on lens
+            let lens_sample = self.lens_radius * concentrically_sample_from_disk(camera_sample.ray_lens_intersection);
+
+            //Compute the intersection point of the ray with the plane of focus
+            let ray_focal_plane_intersection = ray.dir * self.focus_dist / ray.dir.z;
+
+            // Update ray for effect of lens
+            ray.orig = Point3::new(lens_sample.x, lens_sample.y, 0.0);
+            ray.dir = UnitVector3::new_normalize(ray_focal_plane_intersection - ray.orig);
+        }
+        (ray, 1.0)
     }
 
     pub fn translate(&mut self, forward: f32, right: f32, up: f32) {
