@@ -4,7 +4,7 @@ use crate::raytracing::Ray;
 use crate::sampler;
 use crate::util::deg_to_rad;
 use core::f32;
-use nalgebra::{Matrix4, Perspective3, Translation3, Unit, Point2};
+use nalgebra::{Matrix4, Perspective3, Point2, Translation3, Unit};
 use std::f32::consts::PI;
 
 /// Type representing a perspective camera. Generates rays for use in the integrator.
@@ -18,18 +18,24 @@ pub struct Camera {
     camera_to_world: Matrix4<f32>,
     /// The perspective transformation matrix projects points in camera space into screen space.
     /// The `x` and `y` coordinates are first  divided by the `z` coordinate.
-    /// 
+    ///
     /// If the image is square, they're then rescaled such that the `x'` and `y'` coordinates
     /// for all points within the field of view lie between `[-1, 1]`. Otherwise, the direction in which the image is narrower maps to `[-1, 1]`, and the wider
-    /// direction maps to a proportionally larger range of screen space values. 
-    /// 
-    /// The projected `z'` coordinate is computed so that points on the near plane map 
+    /// direction maps to a proportionally larger range of screen space values.
+    ///
+    /// The projected `z'` coordinate is computed so that points on the near plane map
     /// to `z' = 0` and points on the far plane map to `z' = 1`.
     camera_to_screen: Matrix4<f32>,
     /// A screen_to_raster transformation matrix projects points in camera space into raster space. In raster space, depth values are the same as in screen
     /// space, but the origin is in the upper-left hand corner of the image. The bottom right hand corner is defined as `(image_width, image_height)`,
     /// measured in pixels.
     camera_to_raster: Matrix4<f32>,
+    /// The inverse transformation of camera_to_world.
+    world_to_camera: Matrix4<f32>,
+    /// The inverse transformation of camera_to_screen.
+    screen_to_camera: Matrix4<f32>,
+    /// The inverse transformation of camera_to_raster.
+    raster_to_camera: Matrix4<f32>,
     /// The radius of the lens. The larger this is, the greater the defocus blur.
     pub lens_radius: f32,
     /// How far away along the `z`-axis the focal plane is (i.e. the plane on which all objects are perfectly in focus).
@@ -67,11 +73,7 @@ impl Camera {
 
     pub fn new(camera_to_world: Matrix4<f32>, film: Film, focus_dist: f32) {}
 
-    pub fn calculate_camera_to_screen(
-        field_of_view: f32,
-        near_z_plane: f32,
-        far_z_plane: f32,
-    ) -> Matrix4<f32> {
+    pub fn calculate_camera_to_screen(field_of_view: f32, near_z_plane: f32, far_z_plane: f32) -> Matrix4<f32> {
         let m33 = far_z_plane / (far_z_plane - near_z_plane);
         let m34 = -far_z_plane * near_z_plane / (far_z_plane - near_z_plane);
 
@@ -87,12 +89,20 @@ impl Camera {
         perspective_transformation * scale
     }
 
-    pub fn calculate_screen_to_raster(&self, screen_bottom_left_corner: Point2<f32>, screen_top_right_corner: Point2<f32>) -> Matrix4<f32> {
+    pub fn calculate_screen_to_raster(
+        &self,
+        screen_bottom_left_corner: Point2<f32>,
+        screen_top_right_corner: Point2<f32>,
+    ) -> Matrix4<f32> {
         let screen_width = screen_top_right_corner.x - screen_bottom_left_corner.x;
         let screen_height = screen_top_right_corner.y - screen_bottom_left_corner.y;
-        let scale_to_raster = Matrix4::new_nonuniform_scaling(&Vector3::new(self.film.image_width as f32, self.film.image_height as f32, 1.0));
+        let image_width = self.film.image_width as f32;
+        let image_height = self.film.image_height as f32;
+
+        let scale_to_raster = Matrix4::new_nonuniform_scaling(&Vector3::new(image_width, image_height, 1.0));
         let rescale_screen = Matrix4::new_nonuniform_scaling(&Vector3::new(1.0 / screen_width, 1.0 / screen_height, 1.0));
         let translate = Matrix4::new_translation(&Vector3::new(-screen_bottom_left_corner.x, -screen_top_right_corner.y, 0.0));
+
         scale_to_raster * rescale_screen * translate
     }
 
@@ -100,12 +110,18 @@ impl Camera {
         todo!()
     }
 
-    pub fn translate(&mut self, forward: f32, right: f32, up: f32) {}
+    pub fn translate(&mut self, forward: f32, right: f32, up: f32) {
+        let translation = Matrix4::new_translation(&Vector3::new(forward, right, up));
+        self.camera_to_world = translation * self.camera_to_world;
+        // Unwrap the inverse - translations are always invertible.
+        self.world_to_camera = self.world_to_camera * translation.try_inverse().unwrap();
+    }
 
-    pub fn rotate(&mut self, rotation_axis: Unit<Vector3<f32>>, angle: f32) {}
-
-    pub fn vertical_field_of_view(&self) -> f32 {
-        todo!()
+    pub fn rotate(&mut self, rotation_axis: Unit<Vector3<f32>>, angle: f32) {
+        let rotation = Matrix4::new_rotation(rotation_axis.into_inner() * angle);
+        self.camera_to_world = rotation * self.camera_to_world;
+        // Unwrap the inverse - rotations are always invertible.
+        self.world_to_camera = self.world_to_camera * rotation.try_inverse().unwrap();
     }
 }
 
