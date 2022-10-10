@@ -7,16 +7,16 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = "0.18"
-impl_ops = "0.1.1"
-fastrand = "1.7.0"
-tobj = "3.2.0"
-num_cpus = "1.13.1"
+eframe = "0.18"        
+impl_ops = "0.1.1"     
+fastrand = "1.7.0"     
+tobj = "3.2.0"         
+num_cpus = "1.13.1"    
 enum_dispatch = "0.3.8"
-line_drawing = "1"
-delegate = "0.6.2"
-nalgebra = "0.31.0"
-crossbeam = "0.8.2"
+line_drawing = "1"     
+delegate = "0.6.2"     
+nalgebra = "0.31.0"    
+crossbeam = "0.8.2"    
 
 
 [profile.release]
