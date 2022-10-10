@@ -1,4 +1,3 @@
-use crate::film::Film;
 use crate::nalgebra::{Point3, Rotation3, Vector3};
 use crate::raytracing::Ray;
 use crate::sampler::{self, concentrically_sample_from_disk};
@@ -8,8 +7,9 @@ use nalgebra::{Matrix4, Perspective3, Point2, Translation3, Unit, UnitVector3};
 use std::f32::consts::PI;
 
 use super::camera_sample::CameraSample;
+use super::film::Film;
 
-/// Type representing a perspective camera. Generates rays for use in the integrator. 
+/// Type representing a perspective camera. Generates rays for use in the integrator.
 /// # Further Reading
 /// https://pbr-book.org/3ed-2018/Camera_Models/Camera_Model#Camera
 #[derive(Clone)]
@@ -29,7 +29,7 @@ pub struct Camera {
     /// map to `z' = 1`.
     camera_to_screen: Matrix4<f32>,
     /// A screen_to_raster transformation matrix projects points in camera space into raster space. In raster space, depth values
-    ///  are the same as in screen space, but the origin is in the upper-left hand corner of the image. The bottom right hand 
+    ///  are the same as in screen space, but the origin is in the upper-left hand corner of the image. The bottom right hand
     /// corner is defined as `(image_width, image_height)`, measured in pixels.
     camera_to_raster: Matrix4<f32>,
     /// The inverse transformation of camera_to_world.

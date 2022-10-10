@@ -1,6 +1,5 @@
-use crate::camera::Camera;
+use crate::camera::camera::Camera;
 use crate::geometry::lines::*;
-use crate::image::Color;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::primitives::bvh::*;

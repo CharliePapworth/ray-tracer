@@ -1,10 +1,6 @@
 use enum_dispatch::enum_dispatch;
-
 use crate::{film::Film, scenes::Scene, threader::multithreader::Settings};
-
-use self::direct_lighting_integrator::DirectLightingIntegrator;
-
-pub mod direct_lighting_integrator;
+use super::direct_lighting_integrator::DirectLightingIntegrator;
 
 #[enum_dispatch(Integrate)]
 pub enum Integrator {

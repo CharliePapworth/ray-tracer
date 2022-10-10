@@ -9,7 +9,7 @@ use crate::{
     threader::{multithreader::Settings, Coordinate, Threader},
 };
 
-use super::Integrate;
+use super::integrator::Integrate;
 
 pub struct DirectLightingIntegrator {
     max_depth: f32,

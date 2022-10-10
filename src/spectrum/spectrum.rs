@@ -1,16 +1,14 @@
-pub mod constant_spectra;
-pub mod spectrum_factory;
-
 use nalgebra::SVector;
 
 use crate::util::{bound_f32, lerp};
 
-use constant_spectra::*;
 use std::ops::{Div, Mul};
 
-const FIRST_WAVELENGTH: f32 = 400.0;
-const LAST_WAVELENGTH: f32 = 700.0;
-const SPECTRAL_SAMPLES: usize = 60;
+use super::constant_spectra::{ConstantSpectra, CIE_Y_INTEGRAL};
+
+pub const FIRST_WAVELENGTH: f32 = 400.0;
+pub const LAST_WAVELENGTH: f32 = 700.0;
+pub const SPECTRAL_SAMPLES: usize = 60;
 
 pub enum SpectrumType {
     Reflectance,
@@ -174,7 +172,7 @@ impl Spectrum {
 /// wavelengths that each SPD sample is responsible for. The samples (submitted
 /// as two seperate vectors, containing the values for each wavelength)
 /// must be sorted.
-fn average_samples(values: &Vec<f32>, wavelengths: &Vec<f32>, from_wavelength: f32, to_wavelength: f32) -> f32 {
+pub fn average_samples(values: &Vec<f32>, wavelengths: &Vec<f32>, from_wavelength: f32, to_wavelength: f32) -> f32 {
     if to_wavelength <= wavelengths[0] {
         return values[0];
     }

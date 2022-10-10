@@ -1,8 +1,3 @@
-pub mod bvh;
-pub mod rect;
-pub mod sphere;
-pub mod triangle;
-
 use crate::enum_dispatch::*;
 use crate::image::Color;
 use crate::material::lambertian::Lambertian;
@@ -15,7 +10,6 @@ use crate::primitives::triangle::*;
 use crate::rasterizing::Rasterize;
 extern crate fastrand;
 
-use crate::camera::Camera;
 use crate::raytracing::{Hit, HitRecord, Ray};
 use crate::spectrum::Spectrum;
 

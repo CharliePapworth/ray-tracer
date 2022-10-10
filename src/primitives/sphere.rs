@@ -1,6 +1,5 @@
 use std::f32::consts::PI;
-
-use crate::camera::*;
+use crate::camera::camera::Camera;
 use crate::geometry::lines::Line3;
 use crate::geometry::plane::Plane;
 use crate::geometry::points::Point3ExtensionMethods;

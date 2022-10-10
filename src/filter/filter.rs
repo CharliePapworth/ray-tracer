@@ -1,8 +1,7 @@
-pub mod box_filter;
 use enum_dispatch::enum_dispatch;
 use nalgebra::Point2;
 
-use self::box_filter::BoxFilter;
+use super::box_filter::BoxFilter;
 
 #[enum_dispatch(Filters)]
 #[derive(Copy, Clone)]

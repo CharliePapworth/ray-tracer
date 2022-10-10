@@ -1,19 +1,19 @@
-pub mod progress_bar;
-
 use crate::integrator::Integrate;
 use crate::*;
 use crate::{
     image::PrimaryImageType,
     integrator::Integrator,
-    multithreader::{Multithreader, ThreadData},
-    nalgebra::{Point2, Point3, Rotation3, Unit, Vector2, Vector3},
+    multithreader::ThreadData,
+    nalgebra::{Point2, Point3, Rotation3, Unit, Vector3},
 };
+use eframe::egui::Response;
+use eframe::epaint::Stroke;
 use eframe::{
     egui::{self, panel::TopBottomSide, style::Margin, Context, Sense, Ui},
     epaint::{Color32, ColorImage},
 };
 
-use self::progress_bar::CustomProgressBar;
+use super::progress_bar::CustomProgressBar;
 
 pub struct Gui {
     pub integrator: Integrator,

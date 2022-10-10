@@ -1,6 +1,6 @@
 use crate::image::Color;
 
-use super::{constant_spectra::ConstantSpectra, Spectrum, SpectrumType};
+use super::{constant_spectra::ConstantSpectra, spectrum::{Spectrum, SpectrumType}};
 
 pub struct SpectrumFactory {
     pub constant_spectra: ConstantSpectra,

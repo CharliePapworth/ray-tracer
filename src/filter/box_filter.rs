@@ -1,7 +1,5 @@
-use enum_dispatch::enum_dispatch;
+use super::filter::Filters;
 use nalgebra::Point2;
-
-use super::Filters;
 
 #[derive(Copy, Clone, Default)]
 pub struct BoxFilter {

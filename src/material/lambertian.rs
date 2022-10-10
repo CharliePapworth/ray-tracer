@@ -1,10 +1,9 @@
 use std::f32::consts::PI;
-
 use nalgebra::Vector3;
 
-use crate::spectrum::Spectrum;
+use crate::spectrum::spectrum::Spectrum;
 
-use super::{ReflectionModel, Scatter};
+use super::material::{ReflectionModel, Scatter};
 
 #[derive(Copy, Clone, Default)]
 ///Specular materials, such as perfectly smooth surfaces, exhibit perfect

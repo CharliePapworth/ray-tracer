@@ -1,8 +1,9 @@
-pub mod lambertian;
 
-use self::lambertian::Lambertian;
-use crate::spectrum::Spectrum;
 use nalgebra::Vector3;
+
+use crate::spectrum::spectrum::Spectrum;
+
+use super::lambertian::Lambertian;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum ReflectionModel {

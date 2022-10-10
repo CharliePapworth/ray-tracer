@@ -1,4 +1,8 @@
-use crate::*;
+use eframe::{
+    egui::{Response, Sense, TextStyle, Ui, Widget, WidgetText},
+    emath::{lerp, NumExt},
+    epaint::{vec2, Color32, Pos2, Rect, Rgba, Shape, Stroke, Vec2},
+};
 
 enum CustomProgressBarText {
     Custom(WidgetText),
