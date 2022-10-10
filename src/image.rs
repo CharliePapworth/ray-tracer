@@ -25,8 +25,7 @@ impl Pixel {
     ///
     ///# Arguments
     ///
-    /// * `color` - A color value, representing the color of the pixel. Each of
-    ///   the elements of the color struct
+    /// * `color` - A color value, representing the color of the pixel. Each of the elements of the color struct
     /// should be between `0` and `1`.
     /// * `alpha` - A floating point value between `0` and `1`, representing the
     /// transparency of the pixel. A value of `0` indicates that the pixel is

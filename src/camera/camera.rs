@@ -9,34 +9,28 @@ use std::f32::consts::PI;
 
 use super::camera_sample::CameraSample;
 
-/// Type representing a perspective camera. Generates rays for use in the
-/// integrator. # Further Reading
+/// Type representing a perspective camera. Generates rays for use in the integrator. 
+/// # Further Reading
 /// https://pbr-book.org/3ed-2018/Camera_Models/Camera_Model#Camera
 #[derive(Clone)]
 pub struct Camera {
-    /// The camera_to_world transformation matrix projects points in camera
-    /// space into world space. In camera space, the camera reside at the
-    /// origin. The `z`-axis of this coordinate system is mapped to the viewing
-    /// direction, and the `y`-axis points vertically upwards.
+    /// The camera_to_world transformation matrix projects points in camera space into world space. In camera space, the camera
+    /// reside at the origin. The `z`-axis of this coordinate system is mapped to the viewing direction, and the `y`-axis points
+    /// vertically upwards.
     camera_to_world: Matrix4<f32>,
-    /// The perspective transformation matrix projects points in camera space
-    /// into screen space. The `x` and `y` coordinates are first  divided by
-    /// the `z` coordinate.
+    /// The perspective transformation matrix projects points in camera space into screen space. The `x` and `y` coordinates are
+    ///  first  divided by the `z` coordinate.
     ///
-    /// If the image is square, they're then rescaled such that the `x'` and
-    /// `y'` coordinates for all points within the field of view lie between
-    /// `[-1, 1]`. Otherwise, the direction in which the image is narrower maps
-    /// to `[-1, 1]`, and the wider direction maps to a proportionally
-    /// larger range of screen space values.
+    /// If the image is square, they're then rescaled such that the `x'` and `y'` coordinates for all points within the field of
+    /// view lie between `[-1, 1]`. Otherwise, the direction in which the image is narrower maps to `[-1, 1]`, and the wider
+    /// direction maps to a proportionally larger range of screen space values.
     ///
-    /// The projected `z'` coordinate is computed so that points on the near
-    /// plane map to `z' = 0` and points on the far plane map to `z' = 1`.
+    /// The projected `z'` coordinate is computed so that points on the near plane map to `z' = 0` and points on the far plane
+    /// map to `z' = 1`.
     camera_to_screen: Matrix4<f32>,
-    /// A screen_to_raster transformation matrix projects points in camera space
-    /// into raster space. In raster space, depth values are the same as in
-    /// screen space, but the origin is in the upper-left hand corner of the
-    /// image. The bottom right hand corner is defined as `(image_width,
-    /// image_height)`, measured in pixels.
+    /// A screen_to_raster transformation matrix projects points in camera space into raster space. In raster space, depth values
+    ///  are the same as in screen space, but the origin is in the upper-left hand corner of the image. The bottom right hand 
+    /// corner is defined as `(image_width, image_height)`, measured in pixels.
     camera_to_raster: Matrix4<f32>,
     /// The inverse transformation of camera_to_world.
     world_to_camera: Matrix4<f32>,
@@ -47,9 +41,8 @@ pub struct Camera {
     /// The radius of the lens. The larger this is, the greater the defocus
     /// blur.
     pub lens_radius: f32,
-    /// How far away along the `z`-axis the focal plane is (i.e. the plane on
-    /// which all objects are perfectly in focus). The focal plane cuts
-    /// across the `x` and `y` axis.
+    /// How far away along the `z`-axis the focal plane is (i.e. the plane on which all objects are perfectly in focus). The
+    /// focal plane cuts across the `x` and `y` axis.
     pub focus_dist: f32,
     pub film: Film,
     pub field_of_view: f32,
@@ -110,9 +103,8 @@ impl Camera {
         scale_to_raster * rescale_screen * translate
     }
 
-    /// Returns a ray emitted from the camera, as well as a floating-point value
-    /// that affects how much the radiance arriving at the film plane along
-    /// the generated ray will contribute to the final image.
+    /// Returns a ray emitted from the camera, as well as a floating-point value that affects how much the radiance arriving at
+    /// the film plane along the generated ray will contribute to the final image.
     /// # Further Reading
     /// [Thin Lens Model][https://pbr-book.org/3ed-2018/Camera_Models/Projective_Camera_Models#TheThinLensModelandDepthofField]
     pub fn get_ray(&self, camera_sample: CameraSample) -> (Ray, f32) {
