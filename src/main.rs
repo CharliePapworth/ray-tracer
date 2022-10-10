@@ -33,23 +33,11 @@ pub mod vec;
 use eframe::egui::Vec2;
 
 use camera::*;
-use eframe::egui::*;
 use geometry::*;
-use gui::*;
-use nalgebra::Vector3;
-use primitives::*;
-use scenes::*;
 use spectrum::constant_spectra::ConstantSpectra;
-use threader::*;
-
-use std::f32::INFINITY;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::sync::mpsc::*;
-use std::sync::Arc;
 use std::sync::RwLock;
 use std::thread::Thread;
+use threader::*;
 
 fn main() {
     //Image
