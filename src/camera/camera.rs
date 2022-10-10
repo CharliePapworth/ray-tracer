@@ -135,6 +135,7 @@ impl Camera {
         (ray, 1.0)
     }
 
+    /// Translate the camera in world space.
     pub fn translate(&mut self, forward: f32, right: f32, up: f32) {
         let translation = Matrix4::new_translation(&Vector3::new(forward, right, up));
         self.camera_to_world = translation * self.camera_to_world;
@@ -142,6 +143,7 @@ impl Camera {
         self.world_to_camera = self.world_to_camera * translation.try_inverse().unwrap();
     }
 
+    /// Rotate the camera in world space.
     pub fn rotate(&mut self, rotation_axis: Unit<Vector3<f32>>, angle: f32) {
         let rotation = Matrix4::new_rotation(rotation_axis.into_inner() * angle);
         self.camera_to_world = rotation * self.camera_to_world;
