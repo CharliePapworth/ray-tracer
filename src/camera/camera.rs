@@ -113,6 +113,8 @@ impl Camera {
     /// Returns a ray emitted from the camera, as well as a floating-point value
     /// that affects how much the radiance arriving at the film plane along
     /// the generated ray will contribute to the final image.
+    /// # Further Reading
+    /// [Thin Lens Model][https://pbr-book.org/3ed-2018/Camera_Models/Projective_Camera_Models#TheThinLensModelandDepthofField]
     pub fn get_ray(&self, camera_sample: CameraSample) -> (Ray, f32) {
         // Elevate the ray-film intersection into 3 dimensions
         let ray_film_intersection =
