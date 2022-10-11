@@ -1,6 +1,6 @@
 use crate::util::lerp;
 
-use super::spectrum::{Spectrum, SPECTRAL_SAMPLES, FIRST_WAVELENGTH, LAST_WAVELENGTH, average_samples};
+use super::{average_samples, Spectrum, FIRST_WAVELENGTH, LAST_WAVELENGTH, SPECTRAL_SAMPLES};
 
 /// These are referenced by each instance of SampledSpectrum,
 /// and must therefore have a longer lifetime than every instance. Initialising

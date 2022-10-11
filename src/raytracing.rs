@@ -4,7 +4,7 @@ use crate::enum_dispatch::*;
 use crate::geometry::plane::Plane;
 use crate::image::Color;
 use crate::material::*;
-use crate::nalgebra::{Point3, Vector3};
+use crate::nalgebra::{Point3, Vector3, UnitVector3};
 use crate::primitives::bvh::*;
 use crate::primitives::*;
 
@@ -73,10 +73,10 @@ pub trait Hit: Send + Sync {
     fn bounding_box(&self) -> Option<Aabb>;
 }
 
-#[derive(Copy, Clone, Default, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Ray {
     pub orig: Point3<f32>,
-    pub dir: Vector3<f32>,
+    pub dir: UnitVector3<f32>,
 }
 
 pub enum RayPlaneIntersection {
@@ -86,7 +86,7 @@ pub enum RayPlaneIntersection {
 }
 
 impl Ray {
-    pub fn new(origin: Point3<f32>, direction: Vector3<f32>) -> Ray {
+    pub fn new(origin: Point3<f32>, direction: UnitVector3<f32>) -> Ray {
         Ray {
             orig: origin,
             dir: direction,
@@ -97,7 +97,7 @@ impl Ray {
         self.orig
     }
 
-    pub fn direction(&self) -> Vector3<f32> {
+    pub fn direction(&self) -> UnitVector3<f32> {
         self.dir
     }
 

@@ -113,11 +113,11 @@ impl Camera {
             Point3::new(camera_sample.ray_film_intersection.x, camera_sample.ray_film_intersection.y, 0.0);
 
         // Transform the intersection into camera space
-        let ray_film_intersection = self.raster_to_camera.transform_vector(ray_film_intersection);
+        let ray_film_intersection = self.raster_to_camera.transform_vector(&ray_film_intersection.coords);
 
         // In camera space, all rays originate from the origin
         let ray_position = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let ray_direction = ray_film_intersection.norm();
+        let ray_direction = UnitVector3::new_normalize(ray_film_intersection);
         let mut ray = Ray::new(ray_position, ray_direction);
 
         // Modify ray for depth of field
@@ -126,7 +126,7 @@ impl Camera {
             let lens_sample = self.lens_radius * concentrically_sample_from_disk(camera_sample.ray_lens_intersection);
 
             //Compute the intersection point of the ray with the plane of focus
-            let ray_focal_plane_intersection = ray.dir * self.focus_dist / ray.dir.z;
+            let ray_focal_plane_intersection = Point3::from(ray.dir.into_inner() * self.focus_dist / ray.dir.z);
 
             // Update ray for effect of lens
             ray.orig = Point3::new(lens_sample.x, lens_sample.y, 0.0);
