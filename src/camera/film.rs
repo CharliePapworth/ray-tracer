@@ -1,5 +1,15 @@
-use nalgebra::Point2;
-use crate::image::Color;
+
+use crate::util::bound_f32;
+use super::Color;
+
+#[rustfmt::skip]
+use::{
+    std::fs::OpenOptions,
+    nalgebra::Point2,
+    std::io::Write,
+};
+
+
 
 #[derive(Clone, Default)]
 pub struct Film {
@@ -78,6 +88,29 @@ impl Film {
             }
         }
     }
+
+    /// Outputs the image as an array of u8 (traditional RGB)
+    pub fn output_rgba(&self) -> Vec<u8> {
+        let mut rgbas = Vec::<u8>::with_capacity(self.pixels.len() * 4);
+        for pixel in self.pixels.iter() {
+            let rgb = pixel.to_rgb();
+            for color in &rgb {
+                rgbas.push(*color);
+            }
+            rgbas.push(255);
+        }
+        rgbas
+    }
+
+    /// Saves the image to a PPF file
+    pub fn save(&self, path: &str) {
+        let mut file = OpenOptions::new().create(true).write(true).open(path).unwrap();
+
+        write!(file, "P3\n{} {} \n255\n", self.image_width, self.image_height).unwrap();
+        for pixel in &self.pixels {
+            pixel.write_color(&mut file);
+        }
+    }
 }
 
 /// A subset of the film. Multiple threads can work on different tiles at the
@@ -123,4 +156,25 @@ pub struct FilmPixel {
     pub contribution: Color,
     pub weight: usize,
     pub id: i32,
+}
+
+impl FilmPixel {
+    
+    /// Outputs the color as an array of u8 (traditional RGB)
+    pub fn to_rgb(&self) -> [u8; 3] {
+        let r = self.contribution[0].sqrt();
+        let g = self.contribution[1].sqrt();
+        let b = self.contribution[2].sqrt();
+
+        let ir = (256.0 * bound_f32(r, 0.0, 0.999)) as u8;
+        let ig = (256.0 * bound_f32(g, 0.0, 0.999)) as u8;
+        let ib = (256.0 * bound_f32(b, 0.0, 0.999)) as u8;
+
+        [ir, ig, ib]
+    }
+
+    pub fn write_color<T: std::io::Write>(&self, writer: &mut T) {
+        let [ir, ig, ib] = self.to_rgb();
+        writeln!(writer, "{} {} {}", ir, ig, ib).unwrap();
+    }
 }

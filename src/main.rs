@@ -12,26 +12,28 @@ extern crate num_cpus;
 extern crate tobj;
 
 pub mod camera;
+pub mod concurrency;
 pub mod filter;
 pub mod gui;
-pub mod image;
 pub mod integrator;
-pub mod light;
 pub mod material;
+pub mod nalgebra_extensions;
 pub mod primitives;
 pub mod raytracing;
 pub mod sampler;
 pub mod scenes;
-pub mod spectrum;
-pub mod threader;
+pub mod light;
 pub mod util;
-pub mod nalgebra_extensions;
 
 use eframe::egui::Vec2;
 
 use camera::*;
+use concurrency::{
+    multithreader::{Multithreader, Settings, ThreadData},
+    *,
+};
+use gui::gui::Gui;
 use std::thread::Thread;
-use threader::*;
 
 fn main() {
     //Image

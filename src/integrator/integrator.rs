@@ -1,6 +1,14 @@
 use enum_dispatch::enum_dispatch;
-use crate::{film::Film, scenes::Scene, threader::multithreader::Settings};
-use super::direct_lighting_integrator::DirectLightingIntegrator;
+
+use super::{
+    direct_lighting_integrator::DirectLightingIntegrator,
+};
+
+use crate::{
+    light::{Light, Spectrum},
+    raytracing::HitRecord,
+    scenes::Scene,
+};
 
 #[enum_dispatch(Integrate)]
 pub enum Integrator {
@@ -9,8 +17,5 @@ pub enum Integrator {
 
 #[enum_dispatch]
 pub trait Integrate {
-    fn start(&self, num_threads: usize);
-    fn change_scene(&self, new_scene: Scene);
-    fn change_settings(&self, new_settings: Settings);
-    fn output_image(&self) -> Film;
+    fn trace_ray(&self, light: Light, scene: Scene, record: HitRecord) -> Spectrum;
 }

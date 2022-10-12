@@ -6,11 +6,6 @@ pub fn deg_to_rad(deg: f32) -> f32 {
     deg * PI / 180.0
 }
 
-//Generates random numbers between [min_inc, max_exc)
-pub fn rand_double(min_inc: f32, max_exc: f32) -> f32 {
-    fastrand::f32() * (max_exc - min_inc) + min_inc
-}
-
 pub fn bound_f32(x: f32, min: f32, max: f32) -> f32 {
     if x < min {
         return min;

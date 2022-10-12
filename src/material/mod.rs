@@ -1,5 +1,5 @@
-pub mod material;
 pub mod lambertian;
+pub mod material;
 
-pub use material::*;
 pub use lambertian::*;
+pub use material::*;

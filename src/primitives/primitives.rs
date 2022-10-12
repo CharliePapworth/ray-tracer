@@ -1,11 +1,9 @@
 use crate::enum_dispatch::*;
-use crate::image::Color;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::spectrum::spectrum::Spectrum;
 extern crate fastrand;
 use super::*;
-
 use crate::raytracing::{Hit, HitRecord, Ray};
 
 use core::cmp::Ordering;
@@ -13,40 +11,6 @@ use std::convert::TryFrom;
 
 
 
-#[enum_dispatch(Hit)]
-#[derive(Clone)]
-pub enum Primitive<'a> {
-    Triangle(Triangle),
-    Sphere(Sphere),
-    Rect(Rect),
-    Bvh(BvhNode<'a>),
-}
-
-impl<'a> Primitive<'a> {
-    pub fn new_triangle(vertices: [Point3<f32>; 3], normals: [Vector3<f32>; 3], mat: Material) -> Primitive<'a> {
-        Primitive::Triangle((Triangle::new(vertices, normals, mat)))
-    }
-
-    pub fn new_sphere(cen: Point3<f32>, rad: f32, mat: Material) -> Primitive<'a> {
-        Primitive::Sphere(Sphere::new(cen, rad, mat))
-    }
-
-    pub fn new_rect(
-        axes: RectAxes,
-        axis1_min: f32,
-        axis1_max: f32,
-        axis2_min: f32,
-        axis2_max: f32,
-        k: f32,
-        mat: Material,
-    ) -> Primitive<'a> {
-        Primitive::Rect(Rect::new(axes, axis1_min, axis1_max, axis2_min, axis2_max, k, mat))
-    }
-
-    pub fn new_bvh(bvh: BvhNode) -> Primitive {
-        Primitive::Bvh(bvh)
-    }
-}
 
 #[derive(Default, Clone)]
 pub struct Primitives<'a> {
@@ -259,44 +223,44 @@ mod tests {
         assert_eq!(list_clone.len(), 1);
     }
 
-    #[test]
-    fn test_hit() {
-        let mut list = Primitives::new();
-        let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Unit::new_normalize(Vector3::<f32>::new(1.0, 0.0, 0.0)));
-        let t_min = 0.0;
-        let t_max = 100.0;
+    // #[test]
+    // fn test_hit() {
+    //     let mut list = Primitives::new();
+    //     let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Unit::new_normalize(Vector3::<f32>::new(1.0, 0.0, 0.0)));
+    //     let t_min = 0.0;
+    //     let t_max = 100.0;
 
-        //Case 1: No intersections
-        let center = Point3::<f32>::new(0.0, -10.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
-        let hit = list.hit(&r, t_min, t_max);
-        assert!(hit.is_none());
+    //     //Case 1: No intersections
+    //     let center = Point3::<f32>::new(0.0, -10.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
+    //     let hit = list.hit(&r, t_min, t_max);
+    //     assert!(hit.is_none());
 
-        //Case 2: One intersection
-        let center = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
-        let hit = list.hit(&r, t_min, t_max);
-        assert!(hit.is_some());
-        let rec = hit.unwrap();
-        assert_eq!(rec.time, 5.0);
+    //     //Case 2: One intersection
+    //     let center = Point3::<f32>::new(0.0, 0.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
+    //     let hit = list.hit(&r, t_min, t_max);
+    //     assert!(hit.is_some());
+    //     let rec = hit.unwrap();
+    //     assert_eq!(rec.time, 5.0);
 
-        //Case 3: Two intersections
-        let center = Point3::<f32>::new(-2.0, 0.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
-        let hit = list.hit(&r, t_min, t_max);
-        assert!(hit.is_some());
-        let rec = hit.unwrap();
-        assert_eq!(rec.time, 3.0);
-    }
+    //     //Case 3: Two intersections
+    //     let center = Point3::<f32>::new(-2.0, 0.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
+    //     let hit = list.hit(&r, t_min, t_max);
+    //     assert!(hit.is_some());
+    //     let rec = hit.unwrap();
+    //     assert_eq!(rec.time, 3.0);
+    // }
 
     #[test]
     fn test_sort_by() {

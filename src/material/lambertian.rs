@@ -1,5 +1,5 @@
-use std::f32::consts::PI;
 use nalgebra::Vector3;
+use std::f32::consts::PI;
 
 use crate::spectrum::spectrum::Spectrum;
 

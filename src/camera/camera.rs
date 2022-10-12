@@ -1,7 +1,7 @@
 use crate::raytracing::Ray;
-use crate::sampler::{concentrically_sample_from_disk};
+use crate::sampler::concentrically_sample_from_disk;
 use core::f32;
-use nalgebra::{Point3, Vector3, Matrix4, Point2, Unit, UnitVector3};
+use nalgebra::{Matrix4, Point2, Point3, Unit, UnitVector3, Vector3};
 use std::f32::consts::PI;
 
 use super::*;

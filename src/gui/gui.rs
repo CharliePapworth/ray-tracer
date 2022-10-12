@@ -1,15 +1,12 @@
-use crate::integrator::Integrate;
 use crate::*;
 use crate::{
-    image::PrimaryImageType,
-    integrator::Integrator,
     multithreader::ThreadData,
     nalgebra::{Point2, Point3, Rotation3, Unit, Vector3},
 };
 
-use eframe::*;
 use eframe::egui::Response;
 use eframe::epaint::Stroke;
+use eframe::*;
 use eframe::{
     egui::{self, panel::TopBottomSide, style::Margin, Context, Sense, Ui},
     epaint::{Color32, ColorImage},
@@ -17,9 +14,9 @@ use eframe::{
 
 use super::progress_bar::CustomProgressBar;
 
-pub struct Gui {
+pub struct Gui<'a> {
     pub integrator: Integrator,
-    pub settings: ThreadData,
+    pub settings: ThreadData<'a>,
     pub labels: Labels,
     pub camera_speed: f32,
     pub expecting_data: bool,
@@ -40,7 +37,7 @@ pub struct Renderers {
     pub rasterizer: bool,
 }
 
-impl Gui {
+impl<'a> Gui<'a> {
     pub fn new(settings: ThreadData, integrator: Integrator) -> Gui {
         let camera_speed = 0.2;
 
@@ -221,7 +218,7 @@ pub struct Labels {
     camera_speed: String,
 }
 
-impl eframe::App for Gui {
+impl<'a> eframe::App for Gui<'a> {
     /// Called each time the UI needs repainting, which may be many times per
     /// second.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {

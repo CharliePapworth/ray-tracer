@@ -1,10 +1,9 @@
 extern crate fastrand;
 
 use crate::enum_dispatch::*;
-use crate::geometry::plane::Plane;
-use crate::image::Color;
+use crate::camera::Color;
 use crate::material::*;
-use crate::nalgebra::{Point3, Vector3, UnitVector3};
+use crate::nalgebra::{Point3, UnitVector3, Vector3};
 use crate::primitives::bvh::*;
 use crate::primitives::*;
 
@@ -13,7 +12,7 @@ pub struct HitRecord {
     pub point_in_scene: Point3<f32>,
     pub surface_normal: Vector3<f32>,
     pub surface_material: Material,
-    pub outbound_ray_direction: Vector3<f32>,
+    pub outbound_ray_direction: UnitVector3<f32>,
     pub time: f32,
     pub front_face: bool,
     /// Gives a conservative bound on the error in the position of the
@@ -32,7 +31,7 @@ impl HitRecord {
         point_in_scene: Point3<f32>,
         surface_normal: Vector3<f32>,
         surface_material: Material,
-        outbound_ray_direction: Vector3<f32>,
+        outbound_ray_direction: UnitVector3<f32>,
         time: f32,
         r: Ray,
         error_bound: Vector3<f32>,
@@ -61,7 +60,7 @@ impl HitRecord {
 
     /// Spawns a ray from the intersection point in a given direction,
     /// accounting for error bounds in the intersection.
-    pub fn spawn_ray(&self, direction: Vector3<f32>) -> Ray {
+    pub fn spawn_ray(&self, direction: UnitVector3<f32>) -> Ray {
         let offset = Ray::offset_origin(self.error_bound, self.surface_normal, direction);
         Ray::new(self.point_in_scene + offset, direction)
     }
@@ -77,12 +76,6 @@ pub trait Hit: Send + Sync {
 pub struct Ray {
     pub orig: Point3<f32>,
     pub dir: UnitVector3<f32>,
-}
-
-pub enum RayPlaneIntersection {
-    Ray(Ray),
-    Point(Point3<f32>),
-    None,
 }
 
 impl Ray {
@@ -102,38 +95,19 @@ impl Ray {
     }
 
     pub fn at(&self, t: f32) -> Point3<f32> {
-        self.orig + self.dir * t
+        self.orig + self.dir.into_inner() * t
     }
 
     /// Calculates the offset in the origin of the ray based on the error-bound
     /// of the intersection point, the surface normal and the direction of
     /// the ray.
-    pub fn offset_origin(error_bound: Vector3<f32>, norm: Vector3<f32>, direction: Vector3<f32>) -> Vector3<f32> {
+    pub fn offset_origin(error_bound: Vector3<f32>, norm: Vector3<f32>, direction: UnitVector3<f32>) -> Vector3<f32> {
         let d = norm.abs().dot(&error_bound);
         let mut offset = d * norm;
         if direction.dot(&norm) < 0.0 {
             offset = -offset;
         }
         offset
-    }
-
-    pub fn plane_intersection(&self, plane: Plane) -> RayPlaneIntersection {
-        let dir = self.dir;
-        let plane_normal = plane.orientation.w;
-
-        //Check if line is parallel to plane
-        if dir.dot(&plane_normal) == 0.0 {
-            //If so, check if the line lies in the plane.
-            if (plane.origin - self.orig).dot(&plane_normal) == 0.0 {
-                return RayPlaneIntersection::Ray(*self);
-            } else {
-                return RayPlaneIntersection::None;
-            }
-        }
-
-        let time_of_intersection = (plane.origin - self.orig).dot(&plane_normal) / (dir.dot(&plane_normal));
-        let intersection_point = self.orig + time_of_intersection * dir;
-        RayPlaneIntersection::Point(intersection_point)
     }
 }
 

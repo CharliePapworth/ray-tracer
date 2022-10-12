@@ -1,8 +1,7 @@
+use super::{Primitive, Primitives};
 use crate::nalgebra::Point3;
 use crate::raytracing::{Hit, HitRecord, Ray};
 use std::cmp::Ordering;
-use super::{Primitive, Primitives};
-
 
 #[derive(Debug, Copy, Clone, Default, PartialEq)]
 
@@ -25,7 +24,7 @@ pub struct BvhBranch<'a> {
 
 #[derive(Clone)]
 pub struct BvhRoot<'a> {
-    primitive: &'a Primitive,
+    primitive: &'a Primitive<'a>,
     bb: Aabb,
 }
 
@@ -215,7 +214,7 @@ impl<'a> Hit for BvhNode<'a> {
 mod tests {
     use super::*;
     use crate::material::{lambertian::Lambertian, Material};
-    use nalgebra::{Vector3, Unit};
+    use nalgebra::{Unit, Vector3};
 
     #[test]
     fn min() {
@@ -301,8 +300,7 @@ mod tests {
         for _ in 1..100 {
             list.add(s.clone());
         }
-        let list_clone = list.clone();
-        let bvh = list_clone.to_bvh();
+        let bvh = list.to_bvh();
         let hit = bvh.hit(&r, t_min, t_max);
         assert!(hit.is_none());
 
@@ -312,8 +310,7 @@ mod tests {
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
         list.add(s);
-        let list_clone = list.clone();
-        let bvh = list_clone.to_bvh();
+        let bvh = list.to_bvh();
         let hit = bvh.hit(&r, t_min, t_max);
         assert!(hit.is_some());
         let rec = hit.unwrap();
@@ -325,8 +322,7 @@ mod tests {
         let mat = Material::Lambertian(Lambertian::default());
         let s = Primitive::new_sphere(center, radius, mat);
         list.add(s);
-        let list_clone = list.clone();
-        let bvh = list_clone.to_bvh();
+        let bvh = list.to_bvh();
         let hit = bvh.hit(&r, t_min, t_max);
         assert!(hit.is_some());
         let rec = hit.unwrap();

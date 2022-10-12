@@ -1,6 +1,13 @@
 use crate::util::lerp;
 
-use super::{average_samples, Spectrum, FIRST_WAVELENGTH, LAST_WAVELENGTH, SPECTRAL_SAMPLES};
+#[rustfmt::skip]
+use super::{
+    average_samples,
+    Spectrum,
+    FIRST_WAVELENGTH,
+    LAST_WAVELENGTH,
+    SPECTRAL_SAMPLES
+};
 
 /// These are referenced by each instance of SampledSpectrum,
 /// and must therefore have a longer lifetime than every instance. Initialising

@@ -1,7 +1,6 @@
 use crate::film::Film;
 use crate::film::FilmTile;
 use crate::scenes::Scene;
-use crate::threader::Coordinate;
 use crate::*;
 
 use crossbeam::queue::ArrayQueue;
@@ -19,9 +18,9 @@ pub struct Settings {
 }
 
 #[derive(Clone)]
-pub struct ThreadData {
+pub struct ThreadData<'a> {
     pub settings: Settings,
-    pub scene: Scene,
+    pub scene: Scene<'a>,
     pub id: i32,
 }
 
@@ -35,25 +34,27 @@ pub enum Instructions {
 /// A wrapper around other integrators which multithreads them. Additionally
 /// implements Update, which allows the gui to call it for incremental progress
 /// updates.
-pub struct Multithreader {
+pub struct Multithreader<'a> {
     pub threads: Vec<Thread>,
     pub coordinator_to_thread_txs: Vec<Sender<Instructions>>,
-    pub thread_data: Arc<RwLock<ThreadData>>,
+    pub thread_data: Arc<RwLock<ThreadData<'a>>>,
     pub film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     pub film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     pub film: Arc<Mutex<Film>>,
     pub function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
+    pub num_threads: usize,
 }
 
-impl Multithreader {
+impl<'a> Multithreader<'a> {
     pub fn new(
         initial_settings: ThreadData,
         num_threads: usize,
         film_tiles: Vec<FilmTile>,
         function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
-    ) -> Multithreader {
-        let resoloution = initial_settings.scene.camera.resoloution;
-        let film = Arc::new(Mutex::new(Film::new(resoloution)));
+    ) -> Multithreader<'a> {
+        let image_width = initial_settings.scene.camera.film.image_width;
+        let image_height = initial_settings.scene.camera.film.image_width;
+        let film = Arc::new(Mutex::new(Film::new(image_height, image_height)));
         let thread_data = Arc::new(RwLock::new(initial_settings.clone()));
         let gui_to_thread_txs = vec![];
 
@@ -71,6 +72,7 @@ impl Multithreader {
             film_tiles_finished,
             film,
             function,
+            num_threads,
         }
     }
 
@@ -172,8 +174,8 @@ pub fn raytrace<F>(
 where
     F: Fn(ThreadData, &mut FilmTile, (usize, usize)),
 {
-    let image_height = settings.scene.camera.resoloution.1;
-    let image_width = settings.scene.camera.resoloution.0;
+    let image_width = settings.scene.camera.film.image_width;
+    let image_height = settings.scene.camera.film.image_height;
 
     let cam = settings.scene.camera;
     for j in tile.bottom_left.y..tile.top_right.y {
@@ -187,12 +189,12 @@ where
     None
 }
 
-impl Coordinate for Multithreader {
-    fn start_threads(
+impl<'a> RunConcurrently for Multithreader<'a> {
+    fn do_work(
         &mut self,
-        num_threads: usize,
         function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     ) {
+        let num_threads = self.num_threads;
         let shareable_function = Arc::new(function);
         for i in 0..num_threads {
             let (gui_to_thread_tx, multithreader_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();

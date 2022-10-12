@@ -1,12 +1,10 @@
+#[rustfmt::skip]
 use crate::{
-    film::Film,
-    light::{Emit, Light},
+    light::{Emit, Light, Spectrum},
     material::Scatter,
     raytracing::{HitRecord, Ray},
     sampler::Sampler,
     scenes::Scene,
-    spectrum::Spectrum,
-    threader::{multithreader::Settings, Coordinate, Threader},
 };
 
 use super::integrator::Integrate;
@@ -14,16 +12,11 @@ use super::integrator::Integrate;
 pub struct DirectLightingIntegrator {
     max_depth: f32,
     sampler: Sampler,
-    threader: Threader,
 }
 
 impl DirectLightingIntegrator {
-    pub fn new(max_depth: f32, sampler: Sampler, threader: Threader) -> DirectLightingIntegrator {
-        DirectLightingIntegrator {
-            max_depth,
-            sampler,
-            threader,
-        }
+    pub fn new(max_depth: f32, sampler: Sampler) -> DirectLightingIntegrator {
+        DirectLightingIntegrator { max_depth, sampler }
     }
 
     fn power_heuristic(
@@ -106,23 +99,13 @@ impl DirectLightingIntegrator {
         //     todo!()
         Spectrum::new(0.0)
     }
+}
 
+impl Integrate for DirectLightingIntegrator {
     fn trace_ray(light: Light, scene: Scene, record: HitRecord) -> Spectrum {
         //No point sampling the material
         let light_contribution = DirectLightingIntegrator::sample_light_contribution(light, scene, record);
         if light.is_delta_distribution() {}
         todo!();
-    }
-}
-
-impl Integrate for DirectLightingIntegrator {
-    fn start(&self, num_threads: usize) {}
-
-    fn change_scene(&self, new_scene: Scene) {}
-
-    fn change_settings(&self, new_settings: Settings) {}
-
-    fn output_image(&self) -> Film {
-        self.threader.output_image()
     }
 }

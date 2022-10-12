@@ -1,6 +1,12 @@
-use crate::image::Color;
 
-use super::{constant_spectra::ConstantSpectra, spectrum::{Spectrum, SpectrumType}};
+
+use crate::camera::Color;
+
+#[rustfmt::skip]
+use super::{
+    constant_spectra::ConstantSpectra,
+    spectrum::{Spectrum, SpectrumType},
+};
 
 pub struct SpectrumFactory {
     pub constant_spectra: ConstantSpectra,
