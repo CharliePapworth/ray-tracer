@@ -1,13 +1,10 @@
-use crate::nalgebra::{Point3, Rotation3, Vector3};
 use crate::raytracing::Ray;
-use crate::sampler::{self, concentrically_sample_from_disk};
-use crate::util::deg_to_rad;
+use crate::sampler::{concentrically_sample_from_disk};
 use core::f32;
-use nalgebra::{Matrix4, Perspective3, Point2, Translation3, Unit, UnitVector3};
+use nalgebra::{Point3, Vector3, Matrix4, Point2, Unit, UnitVector3};
 use std::f32::consts::PI;
 
-use super::camera_sample::CameraSample;
-use super::film::Film;
+use super::*;
 
 /// Type representing a perspective camera. Generates rays for use in the integrator.
 /// # Further Reading

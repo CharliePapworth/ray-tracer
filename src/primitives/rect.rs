@@ -3,7 +3,6 @@ use crate::geometry::lines::*;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::primitives::bvh::*;
-use crate::rasterizing::Rasterize;
 use crate::raytracing::{Hit, HitRecord, Ray};
 
 #[derive(Copy, Clone)]
@@ -48,48 +47,6 @@ impl Rect {
             RectAxes::XZ => 1,
             RectAxes::YZ => 0,
         }
-    }
-
-    /// Returns the lines bounding the rectangle
-    pub fn get_lines(&self) -> [Line3; 4] {
-        let mut lines: [Line3; 4] = Default::default();
-        let mut corners: [Point3<f32>; 4] = Default::default();
-        let indices = self.axes_indices();
-        let normal_axis = self.unused_axis_index();
-
-        //(min, min)
-        corners[0][indices.0] = self.corner(0);
-        corners[0][indices.1] = self.corner(2);
-        corners[0][normal_axis] = self.k;
-
-        //(max, min)
-        corners[2][indices.0] = self.corner(1);
-        corners[2][indices.1] = self.corner(2);
-        corners[2][normal_axis] = self.k;
-
-        //(min, max)
-        corners[1][indices.0] = self.corner(0);
-        corners[1][indices.1] = self.corner(3);
-        corners[1][normal_axis] = self.k;
-
-        //(max, max)
-        corners[3][indices.0] = self.corner(1);
-        corners[3][indices.1] = self.corner(3);
-        corners[3][normal_axis] = self.k;
-
-        lines[0].points[0] = corners[0];
-        lines[0].points[1] = corners[1];
-
-        lines[1].points[0] = corners[0];
-        lines[1].points[1] = corners[2];
-
-        lines[2].points[0] = corners[3];
-        lines[2].points[1] = corners[1];
-
-        lines[3].points[0] = corners[3];
-        lines[3].points[1] = corners[2];
-
-        lines
     }
 
     /// Returns the normal to the rectangle
@@ -144,16 +101,9 @@ impl Hit for Rect {
     }
 }
 
-impl Rasterize for Rect {
-    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
-        let lines = self.get_lines().to_vec();
-        lines.outline(cam)
-    }
-}
-
+#[cfg(test)]
 mod tests {
-    use crate::{material::lambertian::Lambertian, spectrum::Spectrum};
-
+    use crate::spectrum::*;
     use super::*;
 
     #[test]

@@ -1,9 +1,8 @@
 use crate::nalgebra::Point3;
-use crate::primitives::GeometricPrimitive;
 use crate::raytracing::{Hit, HitRecord, Ray};
 use std::cmp::Ordering;
+use super::{Primitive, Primitives};
 
-use super::GeometricPrimitives;
 
 #[derive(Debug, Copy, Clone, Default, PartialEq)]
 
@@ -13,20 +12,20 @@ pub struct Aabb {
 }
 
 #[derive(Clone)]
-pub enum BvhNode {
-    Branch(BvhBranch),
-    Root(BvhRoot),
+pub enum BvhNode<'a> {
+    Branch(BvhBranch<'a>),
+    Root(BvhRoot<'a>),
 }
 
 #[derive(Clone)]
-pub struct BvhBranch {
-    children: (Box<BvhNode>, Box<BvhNode>),
+pub struct BvhBranch<'a> {
+    children: (Box<BvhNode<'a>>, Box<BvhNode<'a>>),
     bb: Aabb,
 }
 
 #[derive(Clone)]
-pub struct BvhRoot {
-    traceable: GeometricPrimitive,
+pub struct BvhRoot<'a> {
+    primitive: &'a Primitive,
     bb: Aabb,
 }
 
@@ -92,8 +91,8 @@ impl Aabb {
     }
 }
 
-impl BvhBranch {
-    pub fn new(left: GeometricPrimitives, right: GeometricPrimitives, bb: Aabb) -> BvhNode {
+impl<'a> BvhBranch<'a> {
+    pub fn new(left: Primitives, right: Primitives, bb: Aabb) -> BvhNode<'a> {
         BvhNode::Branch(BvhBranch {
             children: (Box::new(BvhNode::new(left)), Box::new(BvhNode::new(right))),
             bb,
@@ -113,22 +112,22 @@ impl BvhBranch {
     }
 }
 
-impl BvhRoot {
-    pub fn new(traceable: GeometricPrimitive, bb: Aabb) -> BvhNode {
-        BvhNode::Root(BvhRoot { traceable, bb })
+impl<'a> BvhRoot<'a> {
+    pub fn new(primitive: &Primitive, bb: Aabb) -> BvhNode<'a> {
+        BvhNode::Root(BvhRoot { primitive, bb })
     }
 }
 
-impl BvhNode {
-    pub fn new(mut objects: GeometricPrimitives) -> BvhNode {
+impl<'a> BvhNode<'a> {
+    pub fn new(mut objects: Primitives) -> BvhNode<'a> {
         let object_span = objects.len();
         match object_span {
             1 => {
-                let traceable = objects.remove(0);
-                let bb = traceable
+                let primitive = objects.remove(0);
+                let bb = primitive
                     .bounding_box()
-                    .expect("A GeometricPrimitive within the TraceableList cannot be bound");
-                BvhRoot::new(traceable, bb)
+                    .expect("A Primitive within the TraceableList cannot be bound");
+                BvhRoot::new(&primitive, bb)
             }
 
             _ => {
@@ -139,10 +138,10 @@ impl BvhNode {
                 let left_objs = objects;
                 let bb_left = left_objs
                     .bounding_box()
-                    .expect("A GeometricPrimitive within the TraceableList cannot be bound");
+                    .expect("A Primitive within the TraceableList cannot be bound");
                 let bb_right = right_objs
                     .bounding_box()
-                    .expect("A GeometricPrimitive within the TraceableList cannot be bound");
+                    .expect("A Primitive within the TraceableList cannot be bound");
                 let bb_surrounding = Aabb::surrounding_box(bb_left, bb_right);
                 BvhBranch::new(left_objs, right_objs, bb_surrounding)
             }
@@ -150,9 +149,9 @@ impl BvhNode {
     }
 }
 
-impl BvhRoot {
+impl<'a> BvhRoot<'a> {
     pub fn hit_debug(&self, r: &Ray, t_min: f32, t_max: f32) -> (i32, Option<HitRecord>) {
-        match self.traceable.hit(r, t_min, t_max) {
+        match self.primitive.hit(r, t_min, t_max) {
             Some(rec) => {
                 let mat = rec.surface_material;
                 (1, Some(rec))
@@ -161,7 +160,7 @@ impl BvhRoot {
         }
     }
 }
-impl Hit for BvhBranch {
+impl<'a> Hit for BvhBranch<'a> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         if !self.bb.hit(r, t_min, t_max) {
             return None;
@@ -188,16 +187,16 @@ impl Hit for BvhBranch {
     }
 }
 
-impl Hit for BvhRoot {
+impl<'a> Hit for BvhRoot<'a> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        self.traceable.hit(r, t_min, t_max)
+        self.primitive.hit(r, t_min, t_max)
     }
     fn bounding_box(&self) -> Option<Aabb> {
         Some(self.bb)
     }
 }
 
-impl Hit for BvhNode {
+impl<'a> Hit for BvhNode<'a> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
             BvhNode::Branch(x) => x.hit(r, t_min, t_max),
@@ -216,7 +215,7 @@ impl Hit for BvhNode {
 mod tests {
     use super::*;
     use crate::material::{lambertian::Lambertian, Material};
-    use nalgebra::Vector3;
+    use nalgebra::{Vector3, Unit};
 
     #[test]
     fn min() {
@@ -241,7 +240,7 @@ mod tests {
         let aabb = Aabb::new(min, max);
 
         //Case 1: Hit
-        let r = Ray::new(Point3::<f32>::new(20.0, 5.0, 5.0), Vector3::<f32>::new(-1.0, 0.4, -0.2));
+        let r = Ray::new(Point3::<f32>::new(20.0, 5.0, 5.0), Unit::new_normalize(Vector3::new(-1.0, 0.4, -0.2)));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, true);
 
@@ -250,7 +249,7 @@ mod tests {
         assert_eq!(rec, false);
 
         //Case 3: Miss (due to geometry)
-        let r = Ray::new(Point3::<f32>::new(-10.0, 10.01, 5.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
+        let r = Ray::new(Point3::<f32>::new(-10.0, 10.01, 5.0), Unit::new_normalize(Vector3::<f32>::new(1.0, 0.0, 0.0)));
         let rec = aabb.hit(&r, 0.0, 100.0);
         assert_eq!(rec, false);
     }
@@ -276,12 +275,12 @@ mod tests {
         let center = Point3::<f32>::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s1 = GeometricPrimitive::new_sphere(center, radius, mat);
+        let s1 = Primitive::new_sphere(center, radius, mat);
 
         let center = Point3::<f32>::new(-20.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s2 = GeometricPrimitive::new_sphere(center, radius, mat);
+        let s2 = Primitive::new_sphere(center, radius, mat);
 
         let sb = Aabb::box_compare(&s1, &s2, 0);
         assert_eq!(sb, Ordering::Greater);
@@ -289,8 +288,8 @@ mod tests {
 
     #[test]
     fn test_bvhnode_hit() {
-        let mut list = GeometricPrimitives::new();
-        let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Vector3::<f32>::new(1.0, 0.0, 0.0));
+        let mut list = Primitives::new();
+        let r = Ray::new(Point3::<f32>::new(-10.0, 0.0, 0.0), Unit::new_normalize(Vector3::<f32>::new(1.0, 0.0, 0.0)));
         let t_min = 0.0;
         let t_max = 100.0;
 
@@ -298,7 +297,7 @@ mod tests {
         let center = Point3::<f32>::new(0.0, -10.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s = GeometricPrimitive::new_sphere(center, radius, mat);
+        let s = Primitive::new_sphere(center, radius, mat);
         for _ in 1..100 {
             list.add(s.clone());
         }
@@ -311,7 +310,7 @@ mod tests {
         let center = Point3::<f32>::new(0.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s = GeometricPrimitive::new_sphere(center, radius, mat);
+        let s = Primitive::new_sphere(center, radius, mat);
         list.add(s);
         let list_clone = list.clone();
         let bvh = list_clone.to_bvh();
@@ -324,7 +323,7 @@ mod tests {
         let center = Point3::<f32>::new(-2.0, 0.0, 0.0);
         let radius = 5.0;
         let mat = Material::Lambertian(Lambertian::default());
-        let s = GeometricPrimitive::new_sphere(center, radius, mat);
+        let s = Primitive::new_sphere(center, radius, mat);
         list.add(s);
         let list_clone = list.clone();
         let bvh = list_clone.to_bvh();

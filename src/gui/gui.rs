@@ -6,6 +6,8 @@ use crate::{
     multithreader::ThreadData,
     nalgebra::{Point2, Point3, Rotation3, Unit, Vector3},
 };
+
+use eframe::*;
 use eframe::egui::Response;
 use eframe::epaint::Stroke;
 use eframe::{

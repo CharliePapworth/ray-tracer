@@ -1,12 +1,8 @@
 use std::f32::consts::PI;
 use crate::camera::camera::Camera;
-use crate::geometry::lines::Line3;
-use crate::geometry::plane::Plane;
-use crate::geometry::points::Point3ExtensionMethods;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::primitives::bvh::*;
-use crate::rasterizing::*;
 use crate::raytracing::{Hit, HitRecord, Ray};
 use crate::util::gamma;
 
@@ -30,67 +26,6 @@ impl Sphere {
     /// Returns the center of the sphere
     pub fn center(&self) -> Point3<f32> {
         self.center
-    }
-
-    /// Checks whether the sphere is at least partially in front of the plane.
-    ///
-    /// A sphere is defined as being in front of the plane if any point on its
-    /// surface is in front of the plane. A point is defined as being in
-    /// front of the plane if the plane normal points away from it.
-    pub fn is_in_front(&self, plane: Plane) -> bool {
-        //Check if the sphere is in view
-        let mut closest_point = self.center + self.radius * plane.orientation.w.into_inner();
-        let origin_in_view = self.center.is_in_front(plane);
-        if !origin_in_view {
-            closest_point = self.center - plane.orientation.w.into_inner();
-        }
-        let closest_point_in_view = closest_point.is_in_front(plane);
-
-        origin_in_view || closest_point_in_view
-    }
-
-    ///Wraps the horizon of the sphere in a mesh of lines
-    //The following links contain useful information:
-    //https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space
-    //https://math.stackexchange.com/questions/1367710/perspective-projection-of-a-sphere-on-a-plane
-    //https://zingl.github.io/Bresenham.pdf
-    pub fn wrap_horizon(&self, cam: &Camera) -> Option<Vec<Line3>> {
-        const NUMBER_OF_LINES: usize = 200;
-        let mut lines = Vec::with_capacity(NUMBER_OF_LINES);
-        let visible_plane = Plane::new(cam.orientation, cam.origin);
-
-        //Check if the sphere is in view
-        if !self.is_in_front(visible_plane) {
-            return None;
-        }
-
-        //Find the horizon of the sphere
-        let radius_origin_vector = self.center - cam.origin;
-        let radius_origin_distance = (self.center - cam.origin).norm();
-        let horizon_radius = (radius_origin_distance.powi(2) - self.radius.powi(2)).sqrt() * self.radius / radius_origin_distance;
-        let horizon_basis_vector_a = radius_origin_vector.cross(&cam.orientation.w).normalize() * horizon_radius;
-        let horizon_basis_vector_b = horizon_basis_vector_a.cross(&radius_origin_vector).normalize() * horizon_radius;
-        let horizon_center_offset = (self.radius.powi(2) - horizon_radius.powi(2)).sqrt();
-        let origin_horizon_center = radius_origin_vector.normalize() * (radius_origin_distance - horizon_center_offset);
-
-        //Approximate the boundary of the horizon with straight lines
-        for i in 0..NUMBER_OF_LINES {
-            let new_angle = (i as f32 + 1.0) * 2.0 * PI / (NUMBER_OF_LINES as f32);
-            let old_angle = (i as f32) * 2.0 * PI / (NUMBER_OF_LINES as f32);
-            let line_start = cam.origin
-                + origin_horizon_center
-                + horizon_basis_vector_a * f32::cos(old_angle)
-                + horizon_basis_vector_b * f32::sin(old_angle);
-
-            let line_end = cam.origin
-                + origin_horizon_center
-                + horizon_basis_vector_a * f32::cos(new_angle)
-                + horizon_basis_vector_b * f32::sin(new_angle);
-            let line = Line3::new(line_start, line_end);
-            lines.push(line);
-        }
-
-        Some(lines)
     }
 }
 
@@ -127,23 +62,6 @@ impl Hit for Sphere {
             self.center + Vector3::<f32>::new(self.radius, self.radius, self.radius),
         );
         Some(output_box)
-    }
-}
-
-impl Rasterize for Sphere {
-    fn outline(&self, cam: &Camera) -> Option<Vec<[usize; 2]>> {
-        let camera_plane = Plane::new(cam.orientation, cam.origin);
-
-        //Check if the sphere is at least partially in front of the camera window
-        if !self.center.is_in_front(camera_plane) && self.radius < self.center.distance_to_plane(camera_plane) {
-            return None;
-        }
-
-        if let Some(lines) = self.wrap_horizon(cam) {
-            lines.outline(cam)
-        } else {
-            None
-        }
     }
 }
 

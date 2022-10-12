@@ -1,5 +1,4 @@
 use nalgebra::Point2;
-
 use crate::image::Color;
 
 #[derive(Clone, Default)]
