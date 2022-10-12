@@ -1,6 +1,6 @@
 
 
-use crate::camera::Color;
+use crate::camera::Rgb;
 
 #[rustfmt::skip]
 use super::{
@@ -35,7 +35,7 @@ impl SpectrumFactory {
     /// coefficients and then converting back  to RGB give a result that is
     /// close to the original RGB coefficients. These spectra were found through
     /// a numerical optimization procedure.
-    pub fn from_rgb(&self, rgb: Color, spectrum_type: SpectrumType) -> Spectrum {
+    pub fn from_rgb(&self, rgb: Rgb, spectrum_type: SpectrumType) -> Spectrum {
         match spectrum_type {
             SpectrumType::Reflectance => {
                 return self.from_rgb_reflectance(rgb);
@@ -46,7 +46,7 @@ impl SpectrumFactory {
         }
     }
 
-    fn from_rgb_reflectance(&self, rgb: Color) -> Spectrum {
+    fn from_rgb_reflectance(&self, rgb: Rgb) -> Spectrum {
         let mut output = Spectrum::new(0.0);
         let rgb = [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32];
         if rgb[0] <= rgb[1] && rgb[0] <= rgb[2] {
@@ -82,7 +82,7 @@ impl SpectrumFactory {
         output
     }
 
-    fn from_rgb_illuminant(&self, rgb: Color) -> Spectrum {
+    fn from_rgb_illuminant(&self, rgb: Rgb) -> Spectrum {
         let mut output = Spectrum::new(0.0);
         let rgb = [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32];
         if rgb[0] <= rgb[1] && rgb[0] <= rgb[2] {

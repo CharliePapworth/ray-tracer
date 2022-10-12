@@ -1,6 +1,6 @@
 
 use crate::util::bound_f32;
-use super::Color;
+use super::Rgb;
 
 #[rustfmt::skip]
 use::{
@@ -153,7 +153,7 @@ impl FilmTile {
 /// Represents a single pixel on the film.
 #[derive(Default, Copy, Clone)]
 pub struct FilmPixel {
-    pub contribution: Color,
+    pub contribution: Rgb,
     pub weight: usize,
     pub id: i32,
 }

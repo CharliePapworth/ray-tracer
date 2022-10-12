@@ -1,7 +1,7 @@
 extern crate fastrand;
 
 use crate::enum_dispatch::*;
-use crate::camera::Color;
+use crate::camera::Rgb;
 use crate::material::*;
 use crate::nalgebra::{Point3, UnitVector3, Vector3};
 use crate::primitives::bvh::*;
@@ -22,8 +22,8 @@ pub struct HitRecord {
 
 pub enum TraceResult {
     Missed,
-    Absorbed(Color),
-    Scattered((Color, Ray)),
+    Absorbed(Rgb),
+    Scattered((Rgb, Ray)),
 }
 
 impl HitRecord {

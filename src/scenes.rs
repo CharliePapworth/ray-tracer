@@ -1,6 +1,6 @@
 #[rustfmt::skip]
 use crate::{
-    camera::{Camera, CameraSettings, Film, Color},
+    camera::{Camera, CameraSettings, Film, Rgb},
     filter::{BoxFilter, Filter},
     primitives::{Primitive, Primitives, Sphere},
     nalgebra::{Point3, Vector3, Matrix4},
@@ -46,13 +46,13 @@ pub fn point_light_test<'a>(image_width: usize, aspect_ratio: f32) -> Scene<'a> 
     let raytracing_primitives = Primitives::new();
     let rasterization_primitives = Primitives::new();
     let spectrum_factory = SpectrumFactory::new();
-    let light_spectrum = spectrum_factory.from_rgb(Color::new(1.0, 1.0, 1.0), SpectrumType::Illuminant);
+    let light_spectrum = spectrum_factory.from_rgb(Rgb::new(1.0, 1.0, 1.0), SpectrumType::Illuminant);
     let light_position = Point3::<f32>::new(10.0, 10.0, 10.0);
 
     // Primitives
     let sphere_center = Point3::<f32>::new(12.0, 1.0, 0.0);
     let sphere_radius = 1.0;
-    let sphere_color = spectrum_factory.from_rgb(Color::new(1.0, 0.0, 0.0), SpectrumType::Reflectance);
+    let sphere_color = spectrum_factory.from_rgb(Rgb::new(1.0, 0.0, 0.0), SpectrumType::Reflectance);
     let sphere_material = Material::new_lambertian(sphere_color);
     let sphere = Primitive::Sphere(Sphere::new(sphere_center, sphere_radius, sphere_material));
 
