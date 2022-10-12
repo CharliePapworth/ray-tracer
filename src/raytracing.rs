@@ -1,5 +1,7 @@
 extern crate fastrand;
 
+use nalgebra::Unit;
+
 use crate::enum_dispatch::*;
 use crate::camera::Rgb;
 use crate::material::*;
@@ -50,7 +52,7 @@ impl HitRecord {
     }
 
     pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vector3<f32>) {
-        self.front_face = r.direction().dot(outward_normal) <= 0.0;
+        self.front_face = r.direction.dot(outward_normal) <= 0.0;
         if self.front_face {
             self.surface_normal = *outward_normal;
         } else {
@@ -74,28 +76,28 @@ pub trait Hit: Send + Sync {
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Ray {
-    pub orig: Point3<f32>,
-    pub dir: UnitVector3<f32>,
+    pub origin: Point3<f32>,
+    pub direction: UnitVector3<f32>,
 }
 
 impl Ray {
     pub fn new(origin: Point3<f32>, direction: UnitVector3<f32>) -> Ray {
         Ray {
-            orig: origin,
-            dir: direction,
+            origin,
+            direction,
         }
     }
 
-    pub fn origin(&self) -> Point3<f32> {
-        self.orig
-    }
-
-    pub fn direction(&self) -> UnitVector3<f32> {
-        self.dir
+    pub fn new_with_normalization(origin: Point3<f32>, unormalized_direction: Vector3<f32>) -> Ray {
+        let direction = Unit::new_normalize(unormalized_direction);
+        Ray {
+            origin,
+            direction,
+        }
     }
 
     pub fn at(&self, t: f32) -> Point3<f32> {
-        self.orig + self.dir.into_inner() * t
+        self.origin + self.direction.into_inner() * t
     }
 
     /// Calculates the offset in the origin of the ray based on the error-bound
@@ -114,36 +116,12 @@ impl Ray {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test_new() {
-        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
-        let ray = Ray::new(orig, dir);
-        assert_eq!(ray.orig, orig);
-        assert_eq!(ray.dir, dir);
-    }
-
-    #[test]
-    fn test_direction() {
-        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
-        let ray = Ray::new(orig, dir);
-        assert_eq!(ray.direction(), dir);
-    }
-
-    #[test]
-    fn test_origin() {
-        let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
-        let ray = Ray::new(orig, dir);
-        assert_eq!(ray.origin(), orig);
-    }
 
     #[test]
     fn test_at() {
         let orig = Point3::<f32>::new(0.0, 0.0, 0.0);
         let dir = Vector3::<f32>::new(1.0, 2.0, 3.0);
-        let ray = Ray::new(orig, dir);
+        let ray = Ray::new_with_normalization(orig, dir);
         let t = 2.0;
         assert_eq!(ray.at(t), orig + 2.0 * dir);
     }

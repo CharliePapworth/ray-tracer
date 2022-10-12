@@ -3,30 +3,36 @@ use crate::util::bound_f32;
 use super::Rgb;
 
 #[rustfmt::skip]
+use crate::{
+    nalgebra::{Point2},
+    filter::{Filter},
+};
+
+#[rustfmt::skip]
 use::{
-    std::fs::OpenOptions,
-    nalgebra::Point2,
-    std::io::Write,
+    std::fs::{OpenOptions},
+    std::io::{Write},
 };
 
 
-
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Film {
     //The number of pixels in the horizontal direction.
     pub image_width: usize,
     //The number of pixels in the vertical direction.
     pub image_height: usize,
     pub pixels: Vec<FilmPixel>,
+    pub filter: Filter,
 }
 
 impl Film {
-    pub fn new(image_width: usize, image_height: usize) -> Film {
+    pub fn new(image_width: usize, image_height: usize, filter: Filter) -> Film {
         let pixels = vec![FilmPixel::default(); image_width * image_height];
         Film {
             image_width,
             image_height,
             pixels,
+            filter
         }
     }
 

@@ -1,7 +1,7 @@
 use crate::enum_dispatch::*;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
-use crate::spectrum::spectrum::Spectrum;
+use crate::light::Spectrum;
 extern crate fastrand;
 use super::*;
 use crate::raytracing::{Hit, HitRecord, Ray};

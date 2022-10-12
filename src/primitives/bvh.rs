@@ -47,8 +47,8 @@ impl Aabb {
 
     pub fn hit(&self, r: &Ray, mut t_min: f32, mut t_max: f32) -> bool {
         for a in 0..3 {
-            let tx0 = (self.min()[a] - r.origin()[a]) / r.direction()[a];
-            let tx1 = (self.max()[a] - r.origin()[a]) / r.direction()[a];
+            let tx0 = (self.min()[a] - r.origin[a]) / r.direction[a];
+            let tx1 = (self.max()[a] - r.origin[a]) / r.direction[a];
 
             let t0 = tx0.min(tx1);
             let t1 = tx0.max(tx1);

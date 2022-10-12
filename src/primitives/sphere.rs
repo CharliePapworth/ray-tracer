@@ -31,9 +31,9 @@ impl Sphere {
 
 impl Hit for Sphere {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let oc = r.origin() - self.center;
-        let a = r.direction().norm_squared();
-        let half_b = oc.dot(&r.direction());
+        let oc = r.origin - self.center;
+        let a = r.direction.norm_squared();
+        let half_b = oc.dot(&r.direction);
         let c = oc.norm_squared() - self.radius * self.radius;
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 {
@@ -51,7 +51,7 @@ impl Hit for Sphere {
             let t = root;
             let p = r.at(t);
             let outward_normal = (p - self.center) / self.radius;
-            let new_rec = HitRecord::new(p, outward_normal, self.material, -r.dir, root, *r, p.coords * gamma(5));
+            let new_rec = HitRecord::new(p, outward_normal, self.material, -r.direction, root, *r, p.coords * gamma(5));
             Some(new_rec)
         }
     }

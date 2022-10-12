@@ -67,16 +67,16 @@ impl Hit for Rect {
         let indices = self.axes_indices();
         let unused = self.unused_axis_index();
 
-        let t = (self.k - r.origin()[unused]) / r.direction()[unused];
+        let t = (self.k - r.origin[unused]) / r.direction[unused];
         if t.is_nan() || t < t_min || t > t_max {
             return None;
         }
-        let x = r.origin()[indices.0] + t * r.direction().index(indices.0);
-        let y = r.origin()[indices.1] + t * r.direction().index(indices.1);
+        let x = r.origin[indices.0] + t * r.direction.index(indices.0);
+        let y = r.origin[indices.1] + t * r.direction.index(indices.1);
         if x < self.corner(0) || x > self.corner(1) || y < self.corner(2) || y > self.corner(3) {
             return None;
         }
-        let rec = HitRecord::new(r.at(t), self.outward_normal(), self.mat, -r.dir, t, *r, Vector3::<f32>::default());
+        let rec = HitRecord::new(r.at(t), self.outward_normal(), self.mat, -r.direction, t, *r, Vector3::<f32>::default());
         Some(rec)
     }
 
@@ -105,7 +105,7 @@ mod tests {
     use nalgebra::Unit;
 
     use super::*;
-    use crate::spectrum::*;
+    use crate::light::*;
 
     #[test]
     fn test_new() {}

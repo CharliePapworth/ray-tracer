@@ -25,7 +25,7 @@ pub struct Scene<'a> {
 
 impl<'a> Scene<'a> {
     pub fn new(
-        raytracing_primitives: Primitives,
+        raytracing_primitives: Primitives<'a>,
         lights: Vec<Light>,
         camera: Camera,
     ) -> Scene {
@@ -43,8 +43,7 @@ impl<'a> Scene<'a> {
 pub fn point_light_test<'a>(image_width: usize, aspect_ratio: f32) -> Scene<'a> {
     // Lights
     let lights = Vec::<Light>::new();
-    let raytracing_primitives = Primitives::new();
-    let rasterization_primitives = Primitives::new();
+    let primitives = Primitives::new();
     let spectrum_factory = SpectrumFactory::new();
     let light_spectrum = spectrum_factory.from_rgb(Rgb::new(1.0, 1.0, 1.0), SpectrumType::Illuminant);
     let light_position = Point3::<f32>::new(10.0, 10.0, 10.0);
@@ -61,16 +60,17 @@ pub fn point_light_test<'a>(image_width: usize, aspect_ratio: f32) -> Scene<'a> 
     let look_from = Point3::<f32>::new(0.0, 0.0, 0.0);
     let look_at = sphere_center;
     let v_up: Vector3<f32> = Vector3::<f32>::new(0.0, 1.0, 0.0);
-    let camera_to_world = Matrix4::<f32>::new_observer_frame(&look_from, &look_at, &v_up);
+    let camera_to_world = Matrix4::<f32>::face_towards(&look_from, &look_at, &v_up);
     let focus_dist = 10.0;
     let aperture = 0.0;
 
     let filter = Filter::from(BoxFilter::new((1.0, 1.0)));
-    let film = Film::new(filter, (image_width, image_height));
+    let film = Film::new(image_width, image_height, filter);
     let camera = Camera::new(camera_to_world, film, focus_dist);
 
-    let image_height = ((image_width as f32) / aspect_ratio) as usize;
     lights.push(Light::PointLight(PointLight::new(light_spectrum, light_position)));
-    raytracing_primitives.add(Primitive::Bvh(rasterization_primitives.to_bvh()));
-    return Scene::new(raytracing_primitives, lights, camera);
+    let exported_primitives = Primitives::new();
+
+    exported_primitives.add(Primitive::Bvh(primitives.to_bvh()));
+    return Scene::new(exported_primitives, lights, camera);
 }

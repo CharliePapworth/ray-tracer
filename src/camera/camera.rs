@@ -65,7 +65,9 @@ pub struct Orientation {
 }
 
 impl Camera {
-    pub fn new(camera_to_world: Matrix4<f32>, film: Film, focus_dist: f32) {}
+    pub fn new(camera_to_world: Matrix4<f32>, film: Film, focus_dist: f32) -> Camera {
+        todo!()
+    }
 
     pub fn calculate_camera_to_screen(field_of_view: f32, near_z_plane: f32, far_z_plane: f32) -> Matrix4<f32> {
         let m33 = far_z_plane / (far_z_plane - near_z_plane);
@@ -123,11 +125,11 @@ impl Camera {
             let lens_sample = self.lens_radius * concentrically_sample_from_disk(camera_sample.ray_lens_intersection);
 
             //Compute the intersection point of the ray with the plane of focus
-            let ray_focal_plane_intersection = Point3::from(ray.dir.into_inner() * self.focus_dist / ray.dir.z);
+            let ray_focal_plane_intersection = Point3::from(ray.direction.into_inner() * self.focus_dist / ray.direction.z);
 
             // Update ray for effect of lens
-            ray.orig = Point3::new(lens_sample.x, lens_sample.y, 0.0);
-            ray.dir = UnitVector3::new_normalize(ray_focal_plane_intersection - ray.orig);
+            ray.origin = Point3::new(lens_sample.x, lens_sample.y, 0.0);
+            ray.direction = UnitVector3::new_normalize(ray_focal_plane_intersection - ray.origin);
         }
         (ray, 1.0)
     }

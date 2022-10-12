@@ -41,8 +41,8 @@ impl Triangle {
 
     /// Shears the x and y dimensions of the triangle
     fn shear_xy(&mut self, r: &Ray) {
-        let sx = -r.direction()[0] / r.direction()[2];
-        let sy = -r.direction()[1] / r.direction()[2];
+        let sx = -r.direction[0] / r.direction[2];
+        let sy = -r.direction[1] / r.direction[2];
 
         for i in 0..3 {
             self.vertices[i] = Point3::<f32>::new(
@@ -55,7 +55,7 @@ impl Triangle {
 
     ///Shears the z-dimension of the triangle
     fn shear_z(&mut self, r: &Ray) {
-        let sz = 1.0 / r.direction()[2];
+        let sz = 1.0 / r.direction[2];
         self.vertices[0][2] *= sz;
         self.vertices[1][2] *= sz;
         self.vertices[2][2] *= sz;
@@ -69,17 +69,17 @@ impl Hit for Triangle {
         let origin = Point3::<f32>::new(0.0, 0.0, 0.0);
 
         //Translate vertices
-        t.vertices[0] = origin + (t.vertices[0] - rc.origin());
-        t.vertices[1] = origin + (t.vertices[1] - rc.origin());
-        t.vertices[2] = origin + (t.vertices[2] - rc.origin());
+        t.vertices[0] = origin + (t.vertices[0] - rc.origin);
+        t.vertices[1] = origin + (t.vertices[1] - rc.origin);
+        t.vertices[2] = origin + (t.vertices[2] - rc.origin);
 
         //swap dimensions
-        let max_dim = r.direction().iamax();
+        let max_dim = r.direction.iamax();
         if max_dim < 2 {
             t.vertices[0].swap(max_dim, 2);
             t.vertices[1].swap(max_dim, 2);
             t.vertices[2].swap(max_dim, 2);
-            rc.dir.swap_rows(max_dim, 2);
+            rc.direction.swap_rows(max_dim, 2);
         }
 
         //Only shear the (x,y) coordinates to minimise computations
@@ -127,7 +127,7 @@ impl Hit for Triangle {
 
         let p_err = gamma(7) * Vector3::<f32>::new(x_err, y_err, z_err);
         let p = b0 * self.vertices[0] + b1 * self.vertices[1].coords + b2 * self.vertices[2].coords;
-        Some(HitRecord::new(p, norm, self.material, -r.dir, t, *r, p_err))
+        Some(HitRecord::new(p, norm, self.material, -r.direction, t, *r, p_err))
     }
 
     fn bounding_box(&self) -> Option<Aabb> {
