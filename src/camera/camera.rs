@@ -41,20 +41,7 @@ pub struct Camera {
     /// How far away along the `z`-axis the focal plane is (i.e. the plane on which all objects are perfectly in focus). The
     /// focal plane cuts across the `x` and `y` axis.
     pub focus_dist: f32,
-    pub film: Film,
     pub field_of_view: f32,
-}
-
-#[derive(Clone)]
-pub struct CameraSettings {
-    pub look_from: Point3<f32>,
-    pub look_at: Point3<f32>,
-    pub v_up: Vector3<f32>,
-    pub v_fov: f32,
-    pub aspect_ratio: f32,
-    pub aperture: f32,
-    pub focus_dist: f32,
-    pub film: Film,
 }
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -92,8 +79,8 @@ impl Camera {
     ) -> Matrix4<f32> {
         let screen_width = screen_top_right_corner.x - screen_bottom_left_corner.x;
         let screen_height = screen_top_right_corner.y - screen_bottom_left_corner.y;
-        let image_width = self.film.image_width as f32;
-        let image_height = self.film.image_height as f32;
+        let image_width = screen_top_right_corner.x - screen_bottom_left_corner.x;
+        let image_height = screen_top_right_corner.y - screen_bottom_left_corner.y;
 
         let scale_to_raster = Matrix4::new_nonuniform_scaling(&Vector3::new(image_width, image_height, 1.0));
         let rescale_screen = Matrix4::new_nonuniform_scaling(&Vector3::new(1.0 / screen_width, 1.0 / screen_height, 1.0));

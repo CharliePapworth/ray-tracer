@@ -49,15 +49,13 @@ impl<'a> Multithreader<'a> {
     pub fn new(
         initial_settings: ThreadData,
         num_threads: usize,
-        film_tiles: Vec<FilmTile>,
+        film: Film,
         function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     ) -> Multithreader<'a> {
-        let image_width = initial_settings.scene.camera.film.image_width;
-        let image_height = initial_settings.scene.camera.film.image_width;
-        let film = Arc::new(Mutex::new(Film::new(image_height, image_height)));
         let thread_data = Arc::new(RwLock::new(initial_settings.clone()));
         let gui_to_thread_txs = vec![];
 
+        let film_tiles = film.get_tiles(16, 16);
         let film_tiles_in_progress = Arc::new(ArrayQueue::<FilmTile>::new(film_tiles.len()));
         let film_tiles_finished = Arc::new(ArrayQueue::<FilmTile>::new(film_tiles.len()));
         let threads = vec![];
@@ -70,7 +68,7 @@ impl<'a> Multithreader<'a> {
             thread_data,
             film_tiles_in_progress,
             film_tiles_finished,
-            film,
+            film: Arc::new(Mutex::new(film)),
             function,
             num_threads,
         }
@@ -174,9 +172,6 @@ pub fn raytrace<F>(
 where
     F: Fn(ThreadData, &mut FilmTile, (usize, usize)),
 {
-    let image_width = settings.scene.camera.film.image_width;
-    let image_height = settings.scene.camera.film.image_height;
-
     let cam = settings.scene.camera;
     for j in tile.bottom_left.y..tile.top_right.y {
         for i in tile.bottom_left.x..tile.top_right.x {
