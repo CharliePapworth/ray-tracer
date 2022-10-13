@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 
 #[derive(Debug, Copy, Clone, Default, PartialEq)]
 
-pub struct Aabb {
+pub struct AxisAlignedBoundingBox {
     min: Point3<f32>,
     max: Point3<f32>,
 }
@@ -19,18 +19,18 @@ pub enum BvhNode<'a> {
 #[derive(Clone)]
 pub struct BvhBranch<'a> {
     children: (Box<BvhNode<'a>>, Box<BvhNode<'a>>),
-    bb: Aabb,
+    bounding_box: AxisAlignedBoundingBox,
 }
 
 #[derive(Clone)]
 pub struct BvhRoot<'a> {
-    primitive: &'a Primitive<'a>,
-    bb: Aabb,
+    primitive: &'a Primitive,
+    bb: AxisAlignedBoundingBox,
 }
 
-impl Aabb {
-    pub fn new(min: Point3<f32>, max: Point3<f32>) -> Aabb {
-        Aabb { min, max }
+impl AxisAlignedBoundingBox {
+    pub fn new(min: Point3<f32>, max: Point3<f32>) -> AxisAlignedBoundingBox {
+        AxisAlignedBoundingBox { min, max }
     }
 
     pub fn min(&self) -> Point3<f32> {
@@ -63,7 +63,7 @@ impl Aabb {
         true
     }
 
-    pub fn surrounding_box(box_0: Aabb, box_1: Aabb) -> Aabb {
+    pub fn surrounding_box(box_0: AxisAlignedBoundingBox, box_1: AxisAlignedBoundingBox) -> AxisAlignedBoundingBox {
         let small = Point3::<f32>::new(
             box_0.min()[0].min(box_1.min()[0]),
             box_0.min()[1].min(box_1.min()[1]),
@@ -76,7 +76,7 @@ impl Aabb {
             box_0.max()[2].max(box_1.max()[2]),
         );
 
-        Aabb::new(small, big)
+        AxisAlignedBoundingBox::new(small, big)
     }
 
     pub fn box_compare<H>(a: &H, b: &H, axis: i8) -> Ordering
@@ -91,10 +91,10 @@ impl Aabb {
 }
 
 impl<'a> BvhBranch<'a> {
-    pub fn new(left: Primitives, right: Primitives, bb: Aabb) -> BvhNode<'a> {
+    pub fn new(left: &'a[Primitive], right: &'a[Primitive], bb: AxisAlignedBoundingBox) -> BvhNode<'a> {
         BvhNode::Branch(BvhBranch {
             children: (Box::new(BvhNode::new(left)), Box::new(BvhNode::new(right))),
-            bb,
+            bounding_box: bb,
         })
     }
 
@@ -112,36 +112,33 @@ impl<'a> BvhBranch<'a> {
 }
 
 impl<'a> BvhRoot<'a> {
-    pub fn new(primitive: &Primitive, bb: Aabb) -> BvhNode<'a> {
+    pub fn new(primitive: &'a Primitive, bb: AxisAlignedBoundingBox) -> BvhNode<'a> {
         BvhNode::Root(BvhRoot { primitive, bb })
     }
 }
 
 impl<'a> BvhNode<'a> {
-    pub fn new(mut objects: Primitives) -> BvhNode<'a> {
+    pub fn new(mut objects: &'a [Primitive]) -> BvhNode<'a> {
         let object_span = objects.len();
         match object_span {
+            // If only 1 object remains, we can get the element within and store it in a root node.
             1 => {
-                let primitive = objects.remove(0);
+                let primitive = objects.get(0).unwrap();
                 let bb = primitive
                     .bounding_box()
                     .expect("A Primitive within the TraceableList cannot be bound");
-                BvhRoot::new(&primitive, bb)
+                BvhRoot::new(primitive, bb)
             }
 
+            // Otherwise, keep splitting the slice.
             _ => {
-                let axis = objects.get_largest_extent().expect("The TraceableList is empty") as i8;
-                objects.sort_by(|a, b| Aabb::box_compare(a, b, axis));
+                let axis = get_largest_extent(objects).expect("The TraceableList is empty") as i8;
+                objects.sort_by(|a, b| AxisAlignedBoundingBox::box_compare(a, b, axis));
                 let mid = object_span / 2;
-                let right_objs = objects.split_off(mid);
-                let left_objs = objects;
-                let bb_left = left_objs
-                    .bounding_box()
-                    .expect("A Primitive within the TraceableList cannot be bound");
-                let bb_right = right_objs
-                    .bounding_box()
-                    .expect("A Primitive within the TraceableList cannot be bound");
-                let bb_surrounding = Aabb::surrounding_box(bb_left, bb_right);
+                let (left_objs, right_objs) = objects.split_at(mid);
+                let bb_left = bounding_box(left_objs).expect("A Primitive within the TraceableList cannot be bound");
+                let bb_right = bounding_box(right_objs).expect("A Primitive within the TraceableList cannot be bound");
+                let bb_surrounding = AxisAlignedBoundingBox::surrounding_box(bb_left, bb_right);
                 BvhBranch::new(left_objs, right_objs, bb_surrounding)
             }
         }
@@ -161,7 +158,7 @@ impl<'a> BvhRoot<'a> {
 }
 impl<'a> Hit for BvhBranch<'a> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        if !self.bb.hit(r, t_min, t_max) {
+        if !self.bounding_box.hit(r, t_min, t_max) {
             return None;
         }
 
@@ -181,8 +178,8 @@ impl<'a> Hit for BvhBranch<'a> {
         }
     }
 
-    fn bounding_box(&self) -> Option<Aabb> {
-        Some(self.bb)
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
+        Some(self.bounding_box)
     }
 }
 
@@ -190,7 +187,7 @@ impl<'a> Hit for BvhRoot<'a> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         self.primitive.hit(r, t_min, t_max)
     }
-    fn bounding_box(&self) -> Option<Aabb> {
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
         Some(self.bb)
     }
 }
@@ -202,11 +199,75 @@ impl<'a> Hit for BvhNode<'a> {
             BvhNode::Root(x) => x.hit(r, t_min, t_max),
         }
     }
-    fn bounding_box(&self) -> Option<Aabb> {
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
         match self {
             BvhNode::Branch(x) => x.bounding_box(),
             BvhNode::Root(x) => x.bounding_box(),
         }
+    }
+}
+
+pub fn get_largest_extent(primitives: &[Primitive]) -> Option<usize> {
+    if primitives.len() == 0 {
+        return None;
+    }
+    let mut largest_index = 1;
+    let mut largest_extent = f32::NEG_INFINITY;
+    for i in 0..3 {
+        let extent_option = measure_extent(primitives, i);
+        match extent_option {
+            None => return None,
+            Some(extent_i) => {
+                if extent_i > largest_extent {
+                    largest_extent = extent_i;
+                    largest_index = i;
+                }
+            }
+        }
+    }
+
+    Some(largest_index)
+}
+
+pub fn measure_extent(primitives: &[Primitive], axis_index: usize) -> Option<f32> {
+    if primitives.len() == 0 {
+        return None;
+    }
+    let mut min_val = f32::INFINITY;
+    let mut max_val = f32::NEG_INFINITY;
+
+    for primitive in primitives {
+        let bb_option = primitive.bounding_box();
+        match bb_option {
+            None => return None,
+            Some(bb) => {
+                min_val = min_val.min(bb.centroid()[axis_index]);
+                max_val = max_val.max(bb.centroid()[axis_index]);
+            }
+        }
+    }
+    Some(max_val - min_val)
+}
+
+fn bounding_box(primitives: &[Primitive]) -> Option<AxisAlignedBoundingBox> {
+    if primitives.len() == 0 {
+        None
+    } else {
+        let mut output_box = AxisAlignedBoundingBox::default();
+        let mut first_box = true;
+        for traceable in primitives {
+            match (traceable.bounding_box(), first_box) {
+                (None, _) => return None,
+                (Some(temp_box), true) => {
+                    output_box = temp_box;
+                    first_box = false;
+                }
+                (Some(temp_box), false) => {
+                    output_box = AxisAlignedBoundingBox::surrounding_box(output_box, temp_box);
+                }
+            }
+        }
+        Some(output_box)
     }
 }
 
@@ -220,7 +281,7 @@ mod tests {
     fn min() {
         let min = Point3::<f32>::new(0.0, -2.0, 1.0);
         let max = Point3::<f32>::new(10.0, 3.0, 4.0);
-        let aabb = Aabb::new(min, max);
+        let aabb = AxisAlignedBoundingBox::new(min, max);
         assert_eq!(aabb.min(), Point3::<f32>::new(0.0, -2.0, 1.0));
     }
 
@@ -228,7 +289,7 @@ mod tests {
     fn max() {
         let min = Point3::<f32>::new(0.0, -2.0, 1.0);
         let max = Point3::<f32>::new(10.0, 3.0, 4.0);
-        let aabb = Aabb::new(min, max);
+        let aabb = AxisAlignedBoundingBox::new(min, max);
         assert_eq!(aabb.max(), Point3::<f32>::new(10.0, 3.0, 4.0));
     }
 
@@ -236,7 +297,7 @@ mod tests {
     fn test_aabb_hit() {
         let min = Point3::<f32>::new(-10.0, -10.0, -10.0);
         let max = Point3::<f32>::new(10.0, 10.0, 10.0);
-        let aabb = Aabb::new(min, max);
+        let aabb = AxisAlignedBoundingBox::new(min, max);
 
         //Case 1: Hit
         let r = Ray::new(Point3::<f32>::new(20.0, 5.0, 5.0), Unit::new_normalize(Vector3::new(-1.0, 0.4, -0.2)));
@@ -257,13 +318,13 @@ mod tests {
     fn test_surrounding_box() {
         let min = Point3::<f32>::new(0.0, 0.0, 0.0);
         let max = Point3::<f32>::new(10.0, 10.0, 10.0);
-        let aabb_a = Aabb::new(min, max);
+        let aabb_a = AxisAlignedBoundingBox::new(min, max);
 
         let min = Point3::<f32>::new(-1.0, 3.0, -2.0);
         let max = Point3::<f32>::new(9.0, 16.0, 10.0);
-        let aabb_b = Aabb::new(min, max);
+        let aabb_b = AxisAlignedBoundingBox::new(min, max);
 
-        let sb = Aabb::surrounding_box(aabb_a, aabb_b);
+        let sb = AxisAlignedBoundingBox::surrounding_box(aabb_a, aabb_b);
 
         assert_eq!(sb.min(), Point3::<f32>::new(-1.0, 0.0, -2.0));
         assert_eq!(sb.max(), Point3::<f32>::new(10.0, 16.0, 10.0));
@@ -281,7 +342,7 @@ mod tests {
         let mat = Material::Lambertian(Lambertian::default());
         let s2 = Primitive::new_sphere(center, radius, mat);
 
-        let sb = Aabb::box_compare(&s1, &s2, 0);
+        let sb = AxisAlignedBoundingBox::box_compare(&s1, &s2, 0);
         assert_eq!(sb, Ordering::Greater);
     }
 

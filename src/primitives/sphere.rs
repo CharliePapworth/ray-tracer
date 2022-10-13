@@ -1,3 +1,5 @@
+use nalgebra::Matrix4;
+
 use crate::camera::camera::Camera;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
@@ -8,24 +10,22 @@ use std::f32::consts::PI;
 
 #[derive(Clone)]
 pub struct Sphere {
-    center: Point3<f32>,
+    object_to_world: Matrix4<f32>,
+    world_to_object: Matrix4<f32>,
     radius: f32,
     material: Material,
 }
 
 impl Sphere {
     ///Initialises a new sphere
-    pub fn new(cen: Point3<f32>, rad: f32, mat: Material) -> Sphere {
+    pub fn new(object_to_world: Matrix4<f32>, radius: f32, material: Material) -> Sphere {
+        let world_to_object = object_to_world.try_inverse().unwrap();
         Sphere {
-            center: cen,
-            radius: rad,
-            material: mat,
+            object_to_world,
+            world_to_object,
+            radius,
+            material,
         }
-    }
-
-    /// Returns the center of the sphere
-    pub fn center(&self) -> Point3<f32> {
-        self.center
     }
 }
 
@@ -56,8 +56,8 @@ impl Hit for Sphere {
         }
     }
 
-    fn bounding_box(&self) -> Option<Aabb> {
-        let output_box = Aabb::new(
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
+        let output_box = AxisAlignedBoundingBox::new(
             self.center - Vector3::<f32>::new(self.radius, self.radius, self.radius),
             self.center + Vector3::<f32>::new(self.radius, self.radius, self.radius),
         );

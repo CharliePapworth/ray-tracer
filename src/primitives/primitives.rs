@@ -9,17 +9,15 @@ use crate::raytracing::{Hit, HitRecord, Ray};
 use core::cmp::Ordering;
 use std::convert::TryFrom;
 
-
-
-
 #[derive(Default, Clone)]
 pub struct Primitives<'a> {
-    list: Vec<Primitive<'a>>,
+    bvh: Option<BvhNode<'a>>,
+    list: Vec<Primitive>,
 }
 
 impl<'a> Primitives<'a> {
     pub fn new() -> Primitives<'a> {
-        Primitives { list: Vec::new() }
+        Primitives { list: Vec::new(), bvh: None}
     }
 
     pub fn add(&mut self, new_traceable: Primitive) {
@@ -49,51 +47,13 @@ impl<'a> Primitives<'a> {
         self.list.sort_by(compare);
     }
 
-    pub fn measure_extent(&self, axis_index: usize) -> Option<f32> {
-        if self.len() == 0 {
-            return None;
-        }
-        let mut min_val = f32::INFINITY;
-        let mut max_val = f32::NEG_INFINITY;
-
-        for primitive in &self.list {
-            let bb_option = primitive.bounding_box();
-            match bb_option {
-                None => return None,
-                Some(bb) => {
-                    min_val = min_val.min(bb.centroid()[axis_index]);
-                    max_val = max_val.max(bb.centroid()[axis_index]);
-                }
-            }
-        }
-        Some(max_val - min_val)
-    }
+    
 
     pub fn to_bvh(self) -> BvhNode<'a> {
         BvhNode::new(self)
     }
 
-    pub fn get_largest_extent(&self) -> Option<usize> {
-        if self.len() == 0 {
-            return None;
-        }
-        let mut largest_index = 1;
-        let mut largest_extent = f32::NEG_INFINITY;
-        for i in 0..3 {
-            let extent_option = self.measure_extent(i);
-            match extent_option {
-                None => return None,
-                Some(extent_i) => {
-                    if extent_i > largest_extent {
-                        largest_extent = extent_i;
-                        largest_index = i;
-                    }
-                }
-            }
-        }
-
-        Some(largest_index)
-    }
+    
 
     pub fn split_off(&mut self, at: usize) -> Primitives {
         Primitives {
@@ -155,27 +115,7 @@ impl<'a> Hit for Primitives<'a> {
         hit_out
     }
 
-    fn bounding_box(&self) -> Option<Aabb> {
-        if self.empty() {
-            None
-        } else {
-            let mut output_box = Aabb::default();
-            let mut first_box = true;
-            for traceable in &self.list {
-                match (traceable.bounding_box(), first_box) {
-                    (None, _) => return None,
-                    (Some(temp_box), true) => {
-                        output_box = temp_box;
-                        first_box = false;
-                    }
-                    (Some(temp_box), false) => {
-                        output_box = Aabb::surrounding_box(output_box, temp_box);
-                    }
-                }
-            }
-            Some(output_box)
-        }
-    }
+    
 }
 
 #[cfg(test)]
@@ -273,7 +213,7 @@ mod tests {
             list.add(s);
         }
 
-        list.sort_by(|a, b| Aabb::box_compare(a, b, 0));
+        list.sort_by(|a, b| AxisAlignedBoundingBox::box_compare(a, b, 0));
 
         for i in 0..101 {
             match list.get(i) {

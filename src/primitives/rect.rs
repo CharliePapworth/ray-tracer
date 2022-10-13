@@ -80,19 +80,19 @@ impl Hit for Rect {
         Some(rec)
     }
 
-    fn bounding_box(&self) -> Option<Aabb> {
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
         //The bounding box must have a non-zero width in each dimension,
         //so pad the missing dimension a small amount
         match self.axes {
-            RectAxes::XY => Some(Aabb::new(
+            RectAxes::XY => Some(AxisAlignedBoundingBox::new(
                 Point3::<f32>::new(self.corner(0), self.corner(2), self.k - 0.0001),
                 Point3::<f32>::new(self.corner(1), self.corner(3), self.k + 0.0001),
             )),
-            RectAxes::XZ => Some(Aabb::new(
+            RectAxes::XZ => Some(AxisAlignedBoundingBox::new(
                 Point3::<f32>::new(self.corner(0), self.k - 0.0001, self.corner(2)),
                 Point3::<f32>::new(self.corner(1), self.k + 0.0001, self.corner(3)),
             )),
-            RectAxes::YZ => Some(Aabb::new(
+            RectAxes::YZ => Some(AxisAlignedBoundingBox::new(
                 Point3::<f32>::new(self.k - 0.0001, self.corner(0), self.corner(2)),
                 Point3::<f32>::new(self.k + 0.0001, self.corner(1), self.corner(3)),
             )),

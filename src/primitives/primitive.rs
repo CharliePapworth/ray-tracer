@@ -6,19 +6,18 @@ use super::*;
 
 #[enum_dispatch(Hit)]
 #[derive(Clone)]
-pub enum Primitive<'a> {
+pub enum Primitive {
     Triangle(Triangle),
     Sphere(Sphere),
     Rect(Rect),
-    Bvh(BvhNode<'a>),
 }
 
-impl<'a> Primitive<'a> {
-    pub fn new_triangle(vertices: [Point3<f32>; 3], normals: [Vector3<f32>; 3], mat: Material) -> Primitive<'a> {
+impl<'a> Primitive {
+    pub fn new_triangle(vertices: [Point3<f32>; 3], normals: [Vector3<f32>; 3], mat: Material) -> Primitive {
         Primitive::Triangle(Triangle::new(vertices, normals, mat))
     }
 
-    pub fn new_sphere(cen: Point3<f32>, rad: f32, mat: Material) -> Primitive<'a> {
+    pub fn new_sphere(cen: Point3<f32>, rad: f32, mat: Material) -> Primitive {
         Primitive::Sphere(Sphere::new(cen, rad, mat))
     }
 
@@ -30,7 +29,7 @@ impl<'a> Primitive<'a> {
         axis2_max: f32,
         k: f32,
         mat: Material,
-    ) -> Primitive<'a> {
+    ) -> Primitive {
         Primitive::Rect(Rect::new(axes, axis1_min, axis1_max, axis2_min, axis2_max, k, mat))
     }
 

@@ -130,7 +130,7 @@ impl Hit for Triangle {
         Some(HitRecord::new(p, norm, self.material, -r.direction, t, *r, p_err))
     }
 
-    fn bounding_box(&self) -> Option<Aabb> {
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
         let min_x = self.vertices[0][0].min(self.vertices[1][0]).min(self.vertices[2][0]) - 0.001;
         let min_y = self.vertices[0][1].min(self.vertices[1][1]).min(self.vertices[2][1]) - 0.001;
         let min_z = self.vertices[0][2].min(self.vertices[1][2]).min(self.vertices[2][2]) - 0.001;
@@ -139,7 +139,7 @@ impl Hit for Triangle {
         let max_y = self.vertices[0][1].max(self.vertices[1][1]).max(self.vertices[2][1]) + 0.001;
         let max_z = self.vertices[0][2].max(self.vertices[1][2]).max(self.vertices[2][2]) + 0.001;
 
-        Some(Aabb::new(Point3::<f32>::new(min_x, min_y, min_z), Point3::<f32>::new(max_x, max_y, max_z)))
+        Some(AxisAlignedBoundingBox::new(Point3::<f32>::new(min_x, min_y, min_z), Point3::<f32>::new(max_x, max_y, max_z)))
     }
 }
 
@@ -246,7 +246,7 @@ mod tests {
         let bb = result.unwrap();
         assert_eq!(
             bb,
-            Aabb::new(Point3::<f32>::new(-0.001, -0.001, -0.001), Point3::<f32>::new(1.0 + 0.001, 2.0 + 0.001, 2.0 + 0.001))
+            AxisAlignedBoundingBox::new(Point3::<f32>::new(-0.001, -0.001, -0.001), Point3::<f32>::new(1.0 + 0.001, 2.0 + 0.001, 2.0 + 0.001))
         );
     }
 }
