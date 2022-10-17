@@ -18,9 +18,9 @@ pub struct Settings {
 }
 
 #[derive(Clone)]
-pub struct ThreadData<'a> {
+pub struct ThreadData {
     pub settings: Settings,
-    pub scene: Scene<'a>,
+    pub scene: Scene,
     pub id: i32,
 }
 
@@ -34,10 +34,10 @@ pub enum Instructions {
 /// A wrapper around other integrators which multithreads them. Additionally
 /// implements Update, which allows the gui to call it for incremental progress
 /// updates.
-pub struct Multithreader<'a> {
+pub struct Multithreader {
     pub threads: Vec<Thread>,
     pub coordinator_to_thread_txs: Vec<Sender<Instructions>>,
-    pub thread_data: Arc<RwLock<ThreadData<'a>>>,
+    pub thread_data: Arc<RwLock<ThreadData>>,
     pub film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     pub film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     pub film: Arc<Mutex<Film>>,
@@ -45,13 +45,13 @@ pub struct Multithreader<'a> {
     pub num_threads: usize,
 }
 
-impl<'a> Multithreader<'a> {
+impl Multithreader {
     pub fn new(
-        settings: ThreadData<'a>,
+        settings: ThreadData,
         num_threads: usize,
         film: Film,
         function: Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
-    ) -> Multithreader<'a> {
+    ) -> Multithreader {
         let thread_data = Arc::new(RwLock::new(settings.clone()));
         let gui_to_thread_txs = vec![];
         let film_tiles = film.get_tiles(16, 16);
@@ -171,7 +171,7 @@ where
     None
 }
 
-impl<'a> RunConcurrently for Multithreader<'a> {
+impl RunConcurrently for Multithreader {
     fn do_work(&mut self) {
         let num_threads = self.num_threads;
         for _ in 0..num_threads {

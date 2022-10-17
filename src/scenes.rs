@@ -16,15 +16,15 @@ use crate::{
 /// improve raytracing performance. The background color is the ambient color of
 /// the scene.
 #[derive(Clone)]
-pub struct Scene<'a> {
-    pub raytracing_primitives: Primitives<'a> ,
+pub struct Scene {
+    pub raytracing_primitives: Primitives ,
     pub lights: Vec<Light>,
     pub camera: Camera,
 }
 
-impl<'a> Scene<'a> {
+impl Scene {
     pub fn new(
-        raytracing_primitives: Primitives<'a>,
+        raytracing_primitives: Primitives,
         lights: Vec<Light>,
         camera: Camera,
     ) -> Scene {
@@ -39,7 +39,7 @@ impl<'a> Scene<'a> {
     }
 }
 
-pub fn point_light_test<'a>(image_width: usize, aspect_ratio: f32) -> Scene<'a> {
+pub fn point_light_test(image_width: usize, aspect_ratio: f32) -> Scene {
     // Lights
     let mut lights = Vec::<Light>::new();
     let mut primitives = Primitives::new();
