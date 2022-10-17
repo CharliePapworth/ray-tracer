@@ -1,5 +1,5 @@
 use enum_dispatch::enum_dispatch;
-use nalgebra::Vector3;
+use nalgebra::UnitVector3;
 use crate::light::{PointLight, Light};
 use crate::raytracing::HitRecord;
 
@@ -20,5 +20,5 @@ pub trait Emit {
     fn is_delta_distribution(&self) -> bool;
 
     /// Returns the likelihood of the light emitting in a given direction
-    fn emission_probability(&self, record: HitRecord, direction: Vector3<f32>) -> f32;
+    fn emission_probability(&self, record: HitRecord, direction: UnitVector3<f32>) -> f32;
 }

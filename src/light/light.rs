@@ -1,5 +1,5 @@
 use enum_dispatch::enum_dispatch;
-use nalgebra::{Point3, Vector3};
+use nalgebra::{Point3, UnitVector3};
 
 #[rustfmt::skip]
 use crate::{
@@ -19,7 +19,7 @@ pub struct EmissionData {
     pub probability_density: f32,
     pub radiance: Spectrum,
     pub origin: Point3<f32>,
-    pub direction: Vector3<f32>,
+    pub direction: UnitVector3<f32>,
     pub time: f32,
 }
 
@@ -28,7 +28,7 @@ impl EmissionData {
         probability_density: f32,
         spectrum: Spectrum,
         origin: Point3<f32>,
-        direction: Vector3<f32>,
+        direction: UnitVector3<f32>,
         time: f32,
     ) -> EmissionData {
         EmissionData {
@@ -60,7 +60,7 @@ impl Emit for PointLight {
         let radiance = self.spectrum / (point_in_scene - self.position).norm_squared();
         let probability_density = 1.0;
         let origin = self.position;
-        let direction = (origin - point_in_scene).normalize();
+        let direction = UnitVector3::new_normalize(origin - point_in_scene);
         let time = record.time + (origin - point_in_scene).norm();
         EmissionData::new(probability_density, radiance, origin, direction, time)
     }
@@ -73,7 +73,7 @@ impl Emit for PointLight {
         true
     }
 
-    fn emission_probability(&self, record: HitRecord, direction: Vector3<f32>) -> f32 {
+    fn emission_probability(&self, record: HitRecord, direction: UnitVector3<f32>) -> f32 {
         todo!()
     }
 }

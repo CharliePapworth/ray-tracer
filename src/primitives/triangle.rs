@@ -3,10 +3,12 @@ use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::nalgebra_extensions::Point3ExtensionMethods;
 use crate::primitives::bvh::*;
-use crate::raytracing::{Hit, HitRecord, Ray};
+use crate::raytracing::{HitRecord, Ray};
 use crate::util::*;
 
-#[derive(Clone)]
+use super::Hit;
+
+#[derive(Copy, Clone)]
 pub struct Triangle {
     vertices: [Point3<f32>; 3],
     normals: [Vector3<f32>; 3],
@@ -79,7 +81,7 @@ impl Hit for Triangle {
             t.vertices[0].swap(max_dim, 2);
             t.vertices[1].swap(max_dim, 2);
             t.vertices[2].swap(max_dim, 2);
-            rc.direction.swap_rows(max_dim, 2);
+            rc.direction.into_inner().swap_rows(max_dim, 2);
         }
 
         //Only shear the (x,y) coordinates to minimise computations

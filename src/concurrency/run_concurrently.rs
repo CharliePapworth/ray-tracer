@@ -5,10 +5,7 @@ use super::multithreader::*;
 
 #[enum_dispatch]
 pub trait RunConcurrently {
-    fn do_work(
-        &mut self,
-        function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
-    ) ;
+    fn do_work(&mut self);
 
     fn output_image(&self) -> Film;
 }

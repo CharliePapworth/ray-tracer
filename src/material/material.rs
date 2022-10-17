@@ -1,6 +1,7 @@
-use nalgebra::Vector3;
+use nalgebra::UnitVector3;
 
-use crate::spectrum::spectrum::Spectrum;
+
+use crate::light::Spectrum;
 
 use super::lambertian::Lambertian;
 
@@ -25,11 +26,11 @@ pub trait Scatter: Clone {
 
     ///Returns the radiance (given by a spectrum) reflected from an incident
     /// ray of light along a given direction.
-    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum;
+    fn scatter(&self, outbound_direction: UnitVector3<f32>, inbound_direction: UnitVector3<f32>) -> Spectrum;
 
     ///Returns the probability that light is reflected in the outbound
     /// direction after arriving at the inbound direction;
-    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32;
+    fn scatter_probability(&self, outbound_direction: UnitVector3<f32>, inbound_direction: UnitVector3<f32>) -> f32;
 
     ///Returns the radiance (given by a spectrum) reflected from an incident
     /// ray of light along a samppled direction. The direction
@@ -37,13 +38,13 @@ pub trait Scatter: Clone {
     /// in cases where the probability of choosing a direction from which
     /// light will be reflected in the desired outbound direction is low (e.g.
     /// as would be the case for a mirror).
-    fn sample_scatter(&self, outbound_direction: Vector3<f32>) -> (Spectrum, Vector3<f32>);
+    fn sample_scatter(&self, outbound_direction: UnitVector3<f32>) -> (Spectrum, UnitVector3<f32>);
 
     ///The hemispherical-directional reflectance is a 2D function that gives
     /// the total reflection in a given direction due to constant
     ///  illumination over the hemisphere, or, equivalently, total reflection
     /// over the hemisphere due to light from a given direction.
-    fn hemispherical_directional_scatter(&self, direction: Vector3<f32>) -> Spectrum;
+    fn hemispherical_directional_scatter(&self, direction: UnitVector3<f32>) -> Spectrum;
 
     ///The hemispherical-hemispherical reflectance of a surface is a spectral
     /// value that gives the fraction of incident light reflected by a
@@ -70,15 +71,15 @@ impl Scatter for Material {
         todo!()
     }
 
-    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum {
+    fn scatter(&self, outbound_direction: UnitVector3<f32>, inbound_direction: UnitVector3<f32>) -> Spectrum {
         todo!()
     }
 
-    fn sample_scatter(&self, outbound_direction: Vector3<f32>) -> (Spectrum, Vector3<f32>) {
+    fn sample_scatter(&self, outbound_direction: UnitVector3<f32>) -> (Spectrum, UnitVector3<f32>) {
         todo!()
     }
 
-    fn hemispherical_directional_scatter(&self, direction: Vector3<f32>) -> Spectrum {
+    fn hemispherical_directional_scatter(&self, direction: UnitVector3<f32>) -> Spectrum {
         todo!()
     }
 
@@ -86,7 +87,7 @@ impl Scatter for Material {
         todo!()
     }
 
-    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32 {
+    fn scatter_probability(&self, outbound_direction: UnitVector3<f32>, inbound_direction: UnitVector3<f32>) -> f32 {
         todo!()
     }
 }

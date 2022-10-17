@@ -3,21 +3,38 @@ use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::light::Spectrum;
 extern crate fastrand;
-use super::*;
-use crate::raytracing::{Hit, HitRecord, Ray};
-
-use core::cmp::Ordering;
+use super::AxisAlignedBoundingBox;
+use super::BvhNode;
+use super::Primitive;
+use super::{Hit};
+use crate::raytracing::{HitRecord, Ray};
 use std::convert::TryFrom;
 
 #[derive(Default, Clone)]
-pub struct Primitives<'a> {
-    bvh: Option<BvhNode<'a>>,
+pub struct Primitives {
     list: Vec<Primitive>,
+    bounding_volume_hierarchy: Option<BvhNode<'static>>
 }
 
-impl<'a> Primitives<'a> {
-    pub fn new() -> Primitives<'a> {
-        Primitives { list: Vec::new(), bvh: None}
+impl Hit for Primitives {
+    fn hit(&self,r: &Ray,t_min:f32,t_max:f32) -> Option<HitRecord> {
+        match &self.bounding_volume_hierarchy {
+            Some(bvh) => bvh.hit(r, t_min, t_max),
+            None => (&self.list).hit(r, t_min, t_max),
+        }
+    }
+
+    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
+        match &self.bounding_volume_hierarchy {
+            Some(bvh)=> bvh.bounding_box(),
+            None => (&self.list).bounding_box(),
+        }
+    }
+}
+
+impl Primitives {
+    pub fn new() -> Primitives {
+        Primitives { list: Vec::new(), bounding_volume_hierarchy: None }
     }
 
     pub fn add(&mut self, new_traceable: Primitive) {
@@ -40,83 +57,52 @@ impl<'a> Primitives<'a> {
         self.list.is_empty()
     }
 
-    pub fn sort_by<F>(&mut self, compare: F)
-    where
-        F: FnMut(&Primitive, &Primitive) -> Ordering,
-    {
-        self.list.sort_by(compare);
+    pub fn construct_acceleration_structures(&mut self) {
+        todo!()
     }
 
     
+    // pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, model_spectrum: Spectrum) {
+    //     for m in models.iter() {
+    //         //if m.name == "wheel_fr_Circle.050_MAIN"{
+    //         let mesh = &m.mesh;
+    //         let pos = &mesh.positions;
+    //         let norms = &mesh.normals;
+    //         let model_color: Color;
+    //         match &materials_opt {
+    //             Some(mat) => {
+    //                 let mat_id = mesh.material_id.unwrap();
+    //                 model_color =
+    //                     Color::new(mat[mat_id].diffuse[0] as f32, mat[mat_id].diffuse[1] as f32, mat[mat_id].diffuse[2] as f32);
+    //             }
+    //             None => {
+    //                 model_color = Vector3::<f32>::new(0.5, 0.5, 0.5);
+    //             }
+    //         }
+    //         for face_indices in mesh.indices.chunks(3) {
+    //             let mut tri_vert = [Point3::<f32>::default(); 3];
+    //             let mut tri_norm = [Vector3::<f32>::default(); 3];
+    //             for vertex in 0..3 {
+    //                 tri_vert[vertex] = Point3::<f32>::new(
+    //                     pos[usize::try_from(face_indices[vertex] * 3).unwrap()].into(),
+    //                     pos[usize::try_from(face_indices[vertex] * 3 + 1).unwrap()].into(),
+    //                     pos[usize::try_from(face_indices[vertex] * 3 + 2).unwrap()].into(),
+    //                 );
+    //                 tri_norm[vertex] = Vector3::<f32>::new(
+    //                     norms[usize::try_from(face_indices[vertex] * 3).unwrap()].into(),
+    //                     norms[usize::try_from(face_indices[vertex] * 3 + 1).unwrap()].into(),
+    //                     norms[usize::try_from(face_indices[vertex] * 3 + 2).unwrap()].into(),
+    //                 );
+    //             }
 
-    pub fn to_bvh(self) -> BvhNode<'a> {
-        BvhNode::new(self)
-    }
-
-    
-
-    pub fn split_off(&mut self, at: usize) -> Primitives {
-        Primitives {
-            list: self.list.split_off(at),
-        }
-    }
-
-    pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, model_spectrum: Spectrum) {
-        for m in models.iter() {
-            //if m.name == "wheel_fr_Circle.050_MAIN"{
-            let mesh = &m.mesh;
-            let pos = &mesh.positions;
-            let norms = &mesh.normals;
-            let model_color: Color;
-            match &materials_opt {
-                Some(mat) => {
-                    let mat_id = mesh.material_id.unwrap();
-                    model_color =
-                        Color::new(mat[mat_id].diffuse[0] as f32, mat[mat_id].diffuse[1] as f32, mat[mat_id].diffuse[2] as f32);
-                }
-                None => {
-                    model_color = Vector3::<f32>::new(0.5, 0.5, 0.5);
-                }
-            }
-            for face_indices in mesh.indices.chunks(3) {
-                let mut tri_vert = [Point3::<f32>::default(); 3];
-                let mut tri_norm = [Vector3::<f32>::default(); 3];
-                for vertex in 0..3 {
-                    tri_vert[vertex] = Point3::<f32>::new(
-                        pos[usize::try_from(face_indices[vertex] * 3).unwrap()].into(),
-                        pos[usize::try_from(face_indices[vertex] * 3 + 1).unwrap()].into(),
-                        pos[usize::try_from(face_indices[vertex] * 3 + 2).unwrap()].into(),
-                    );
-                    tri_norm[vertex] = Vector3::<f32>::new(
-                        norms[usize::try_from(face_indices[vertex] * 3).unwrap()].into(),
-                        norms[usize::try_from(face_indices[vertex] * 3 + 1).unwrap()].into(),
-                        norms[usize::try_from(face_indices[vertex] * 3 + 2).unwrap()].into(),
-                    );
-                }
-
-                let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::new_lambertian(model_spectrum));
-                self.add(tri);
-            }
-        }
-    }
+    //             let tri = Primitive::new_triangle(tri_vert, tri_norm, Material::new_lambertian(model_spectrum));
+    //             self.add(tri);
+    //         }
+    //     }
+    // }
 }
 
-impl<'a> Hit for Primitives<'a> {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let mut closest_so_far = t_max;
-        let mut hit_out: Option<HitRecord> = None;
 
-        for traceable in &self.list {
-            if let Some(hit_temp) = traceable.hit(r, t_min, closest_so_far) {
-                hit_out = Some(hit_temp);
-                closest_so_far = hit_temp.time;
-            }
-        }
-        hit_out
-    }
-
-    
-}
 
 #[cfg(test)]
 mod tests {
@@ -127,41 +113,41 @@ mod tests {
     use crate::material::*;
     use crate::raytracing::Ray;
     
-    #[test]
-    fn test_add() {
-        let mut list = Primitives::new();
-        let center = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
-        assert_eq!(list.len(), 1);
-    }
+    // #[test]
+    // fn test_add() {
+    //     let mut list = Primitives::new();
+    //     let center = Point3::<f32>::new(0.0, 0.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
+    //     assert_eq!(list.len(), 1);
+    // }
 
-    #[test]
-    fn test_remove() {
-        let mut list = Primitives::new();
-        let center = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
-        list.remove(0);
-        assert_eq!(list.len(), 0);
-    }
+    // #[test]
+    // fn test_remove() {
+    //     let mut list = Primitives::new();
+    //     let center = Point3::<f32>::new(0.0, 0.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
+    //     list.remove(0);
+    //     assert_eq!(list.len(), 0);
+    // }
 
-    #[test]
-    fn test_clone() {
-        let mut list = Primitives::new();
-        let center = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
+    // #[test]
+    // fn test_clone() {
+    //     let mut list = Primitives::new();
+    //     let center = Point3::<f32>::new(0.0, 0.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
 
-        let list_clone = list;
-        assert_eq!(list_clone.len(), 1);
-    }
+    //     let list_clone = list;
+    //     assert_eq!(list_clone.len(), 1);
+    // }
 
     // #[test]
     // fn test_hit() {
@@ -202,49 +188,49 @@ mod tests {
     //     assert_eq!(rec.time, 3.0);
     // }
 
-    #[test]
-    fn test_sort_by() {
-        let mut list = Primitives::new();
-        for i in 0..101 {
-            let center = Point3::<f32>::new(500.0 - 5.0 * (i as f32), 0.0, 0.0);
-            let radius = 1.0;
-            let mat = Material::Lambertian(Lambertian::default());
-            let s = Primitive::new_sphere(center, radius, mat);
-            list.add(s);
-        }
+    // #[test]
+    // fn test_sort_by() {
+    //     let mut list = Primitives::new();
+    //     for i in 0..101 {
+    //         let center = Point3::<f32>::new(500.0 - 5.0 * (i as f32), 0.0, 0.0);
+    //         let radius = 1.0;
+    //         let mat = Material::Lambertian(Lambertian::default());
+    //         let s = Primitive::new_sphere(center, radius, mat);
+    //         list.add(s);
+    //     }
 
-        list.sort_by(|a, b| AxisAlignedBoundingBox::box_compare(a, b, 0));
+    //     list.sort_by(|a, b| AxisAlignedBoundingBox::box_compare(a, b, 0));
 
-        for i in 0..101 {
-            match list.get(i) {
-                Primitive::Sphere(sphere) => {
-                    let center = sphere.center();
-                    assert_eq!(sphere.center(), Point3::<f32>::new(5.0 * (i as f32), 0.0, 0.0));
-                } 
-                _ => panic!(),
-            }
-        }
-    }
+    //     for i in 0..101 {
+    //         match list.get(i) {
+    //             Primitive::Sphere(sphere) => {
+    //                 let center = sphere.center();
+    //                 assert_eq!(sphere.center(), Point3::<f32>::new(5.0 * (i as f32), 0.0, 0.0));
+    //             } 
+    //             _ => panic!(),
+    //         }
+    //     }
+    // }
 
-    #[test]
-    fn test_largest_extent() {
-        let mut list = Primitives::new();
-        assert!(list.get_largest_extent().is_none());
+    // #[test]
+    // fn test_largest_extent() {
+    //     let mut list = Primitives::new();
+    //     assert!(list.get_largest_extent().is_none());
 
-        //Sphere 1
-        let center = Point3::<f32>::new(0.0, 0.0, 0.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
+    //     //Sphere 1
+    //     let center = Point3::<f32>::new(0.0, 0.0, 0.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
 
-        //Sphere 2
-        let center = Point3::<f32>::new(-2.0, -10.0, 3.0);
-        let radius = 5.0;
-        let mat = Material::Lambertian(Lambertian::default());
-        let s = Primitive::new_sphere(center, radius, mat);
-        list.add(s);
+    //     //Sphere 2
+    //     let center = Point3::<f32>::new(-2.0, -10.0, 3.0);
+    //     let radius = 5.0;
+    //     let mat = Material::Lambertian(Lambertian::default());
+    //     let s = Primitive::new_sphere(center, radius, mat);
+    //     list.add(s);
 
-        assert_eq!(list.get_largest_extent().unwrap(), 1 as usize)
-    }
+    //     assert_eq!(list.get_largest_extent().unwrap(), 1 as usize)
+    // }
 }

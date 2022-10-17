@@ -163,7 +163,7 @@ impl Spectrum {
         self.coefficients = self.coefficients.map(|a| bound_f32(a, min, max));
     }
 
-    pub fn is_black(&mut self) -> bool {
+    pub fn is_black(&self) -> bool {
         !self.coefficients.iter().any(|x| *x != 0.0f32)
     }
 }

@@ -42,7 +42,7 @@ impl Film {
     }
 
     pub fn get_tiles(&self, columns: usize, rows: usize) -> Vec<FilmTile> {
-        let tiles = vec![];
+        let mut tiles = vec![];
 
         let pixels_per_standard_row = self.image_height / rows;
         let pixels_per_final_row = self.image_height % rows;
@@ -75,7 +75,7 @@ impl Film {
     }
 
     /// Merges a tile into the film.
-    pub fn merge_tile(&self, tile: &FilmTile) {
+    pub fn merge_tile(&mut self, tile: &FilmTile) {
         //All pixels in a given tile have the same id. If the id of the tile is not
         // greater than the id of any of the corresponding pixels in the film,
         // then no update to the film needs to occur.

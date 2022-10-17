@@ -1,15 +1,14 @@
+
 #[rustfmt::skip]
 use crate::{
-    camera::{Camera, CameraSettings, Film, Rgb},
+    camera::{Camera, Film, Rgb},
     filter::{BoxFilter, Filter},
-    primitives::{Primitive, Primitives, Sphere},
-    nalgebra::{Point3, Vector3, Matrix4},
-    raytracing::{Hit, HitRecord, Ray},
+    primitives::{Hit, Primitive, Primitives, Sphere},
+    nalgebra::{Point3, Vector3, Matrix4, Similarity3, Translation3, Isometry3},
+    raytracing::{HitRecord, Ray},
     light::{Light, SpectrumFactory, SpectrumType, PointLight}, 
     material::{Material},
 };
-
-
 
 /// Contains all information regarding the scene. The raytracing_primitives and
 /// the rasterization_primitives contain the same primtitives, but
@@ -18,7 +17,7 @@ use crate::{
 /// the scene.
 #[derive(Clone)]
 pub struct Scene<'a> {
-    pub raytracing_primitives: Primitives<'a>,
+    pub raytracing_primitives: Primitives<'a> ,
     pub lights: Vec<Light>,
     pub camera: Camera,
 }
@@ -42,18 +41,20 @@ impl<'a> Scene<'a> {
 
 pub fn point_light_test<'a>(image_width: usize, aspect_ratio: f32) -> Scene<'a> {
     // Lights
-    let lights = Vec::<Light>::new();
-    let primitives = Primitives::new();
+    let mut lights = Vec::<Light>::new();
+    let mut primitives = Primitives::new();
     let spectrum_factory = SpectrumFactory::new();
     let light_spectrum = spectrum_factory.from_rgb(Rgb::new(1.0, 1.0, 1.0), SpectrumType::Illuminant);
     let light_position = Point3::<f32>::new(10.0, 10.0, 10.0);
 
     // Primitives
-    let sphere_center = Point3::<f32>::new(12.0, 1.0, 0.0);
     let sphere_radius = 1.0;
+    let sphere_center = Point3::<f32>::new(12.0, 1.0, 0.0);
+    let sphere_to_world = Similarity3::new(sphere_center.coords, Vector3::x(), sphere_radius);
     let sphere_color = spectrum_factory.from_rgb(Rgb::new(1.0, 0.0, 0.0), SpectrumType::Reflectance);
     let sphere_material = Material::new_lambertian(sphere_color);
-    let sphere = Primitive::Sphere(Sphere::new(sphere_center, sphere_radius, sphere_material));
+    
+    let sphere = Primitive::from(Sphere::new(sphere_to_world, sphere_material));
 
     //Camera
     let image_height = ((image_width as f32) / aspect_ratio) as usize;
@@ -69,8 +70,6 @@ pub fn point_light_test<'a>(image_width: usize, aspect_ratio: f32) -> Scene<'a> 
     let camera = Camera::new(camera_to_world, film, focus_dist);
 
     lights.push(Light::PointLight(PointLight::new(light_spectrum, light_position)));
-    let exported_primitives = Primitives::new();
-
-    exported_primitives.add(Primitive::Bvh(primitives.to_bvh()));
-    return Scene::new(exported_primitives, lights, camera);
+    primitives.add(sphere);
+    return Scene::new(primitives, lights, camera);
 }

@@ -41,20 +41,19 @@ pub struct Multithreader<'a> {
     pub film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     pub film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     pub film: Arc<Mutex<Film>>,
-    pub function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
+    pub function: Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     pub num_threads: usize,
 }
 
 impl<'a> Multithreader<'a> {
     pub fn new(
-        initial_settings: ThreadData,
+        settings: ThreadData<'a>,
         num_threads: usize,
         film: Film,
-        function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
+        function: Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     ) -> Multithreader<'a> {
-        let thread_data = Arc::new(RwLock::new(initial_settings.clone()));
+        let thread_data = Arc::new(RwLock::new(settings.clone()));
         let gui_to_thread_txs = vec![];
-
         let film_tiles = film.get_tiles(16, 16);
         let film_tiles_in_progress = Arc::new(ArrayQueue::<FilmTile>::new(film_tiles.len()));
         let film_tiles_finished = Arc::new(ArrayQueue::<FilmTile>::new(film_tiles.len()));
@@ -91,28 +90,17 @@ impl<'a> Multithreader<'a> {
         }
     }
 
-    pub fn send_update<F>(&self, update_function: F)
-    where
-        F: Fn(),
-    {
+    pub fn update_samples(&mut self, samples: i32) {
         self.transmit_instructions(Instructions::StopTask);
-        update_function();
-        self.threads.iter().for_each(|thread| thread.unpark());
+        {
+            let mut thread_data = self.thread_data.write().unwrap();
+            thread_data.settings.samples_per_pixel = samples;
+        }
         self.transmit_instructions(Instructions::StartTask);
     }
 
-    pub fn update_samples(&mut self, samples: i32) {
-        self.send_update(|| {
-            let thread_data = self.thread_data.write().unwrap();
-            thread_data.settings.samples_per_pixel = samples;
-        });
-    }
-
-    pub fn update_settings(&mut self, mut new_settings: ThreadData) {
-        self.send_update(|| {
-            let thread_data = self.thread_data.write().unwrap();
-            *thread_data = new_settings;
-        });
+    pub fn update_settings(&mut self, new_settings: ThreadData) {
+        todo!()
     }
 
     pub fn is_done(&self) -> bool {
@@ -126,16 +114,16 @@ pub fn run_thread(
     film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     multithreader_to_thread_rx: Receiver<Instructions>,
-    function: Arc<Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>>,
+    function: Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
 ) {
     let mut terminated = false;
     let mut instructions: Instructions;
 
     while !terminated {
-        let thread_data = *thread_data.read().unwrap();
+        let thread_data = &*thread_data.read().unwrap();
         let desired_raytracing_samples = thread_data.settings.samples_per_pixel;
-        if let Some(tile) = film_tiles_in_progress.pop() {
-            if let Some(instructions) = function(thread_data, &mut tile, multithreader_to_thread_rx) {
+        if let Some(mut tile) = film_tiles_in_progress.pop() {
+            if let Some(instructions) = function(thread_data, &mut tile, &multithreader_to_thread_rx) {
                 match instructions {
                     Instructions::StopTask => {
                         drop(thread_data);
@@ -164,15 +152,14 @@ pub fn run_thread(
 }
 
 pub fn raytrace<F>(
-    settings: ThreadData,
+    settings: &ThreadData,
     gui_to_thread_rx: &Receiver<Instructions>,
     tile: &mut FilmTile,
     function: &F,
 ) -> Option<Instructions>
 where
-    F: Fn(ThreadData, &mut FilmTile, (usize, usize)),
+    F: Fn(&ThreadData, &mut FilmTile, (usize, usize)),
 {
-    let cam = settings.scene.camera;
     for j in tile.bottom_left.y..tile.top_right.y {
         for i in tile.bottom_left.x..tile.top_right.x {
             if let Ok(instructions) = gui_to_thread_rx.try_recv() {
@@ -185,18 +172,15 @@ where
 }
 
 impl<'a> RunConcurrently for Multithreader<'a> {
-    fn do_work(
-        &mut self,
-        function: Box<dyn Fn(ThreadData, &mut FilmTile, Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
-    ) {
+    fn do_work(&mut self) {
         let num_threads = self.num_threads;
-        let shareable_function = Arc::new(function);
-        for i in 0..num_threads {
+        for _ in 0..num_threads {
             let (gui_to_thread_tx, multithreader_to_thread_rx): (Sender<Instructions>, Receiver<Instructions>) = channel();
             let thread_data = Arc::clone(&self.thread_data);
             let film_tiles_in_progress = Arc::clone(&self.film_tiles_in_progress);
             let film_tiles_finished = Arc::clone(&self.film_tiles_finished);
-            let film = self.film;
+            let film = Arc::clone(&self.film);
+            let function = Arc::clone(&self.function);
             self.coordinator_to_thread_txs.push(gui_to_thread_tx);
             thread::spawn(|| {
                 run_thread(
@@ -205,7 +189,7 @@ impl<'a> RunConcurrently for Multithreader<'a> {
                     film_tiles_in_progress,
                     film_tiles_finished,
                     multithreader_to_thread_rx,
-                    Arc::clone(&shareable_function),
+                    function,
                 )
             });
         }

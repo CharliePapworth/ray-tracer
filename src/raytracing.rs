@@ -68,12 +68,6 @@ impl HitRecord {
     }
 }
 
-#[enum_dispatch]
-pub trait Hit: Send + Sync {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<(HitRecord)>;
-    fn bounding_box(&self) -> Option<AxisAlignedBoundingBox>;
-}
-
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Ray {
     pub origin: Point3<f32>,

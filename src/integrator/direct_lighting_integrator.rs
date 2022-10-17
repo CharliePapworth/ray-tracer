@@ -31,38 +31,39 @@ impl DirectLightingIntegrator {
     }
 
     fn sample_light_contribution(light: Light, scene: Scene, record: HitRecord) -> Spectrum {
-        let emission = light.emit(record);
-        let mut scattered_radiance: Spectrum;
-        let probability_density: f32;
+        todo!()
+        // let emission = light.emit(record);
+        // let mut scattered_radiance: Spectrum;
+        // let probability_density: f32;
 
-        if emission.probability_density > 0.0 && !emission.radiance.is_black() {
-            scattered_radiance = record
-                .surface_material
-                .scatter(record.outbound_ray_direction, emission.direction)
-                * f32::abs(emission.direction.dot(&record.surface_normal.cast::<f32>()));
-            probability_density = record
-                .surface_material
-                .scatter_probability(record.outbound_ray_direction, emission.direction)
-                * f32::abs(emission.direction.dot(&record.surface_normal.cast::<f32>()));
-        }
+        // if emission.probability_density > 0.0 && !emission.radiance.is_black() {
+        //     scattered_radiance = record
+        //         .surface_material
+        //         .scatter(record.outbound_ray_direction, emission.direction)
+        //         * f32::abs(emission.direction.dot(&record.surface_normal.cast::<f32>()));
+        //     probability_density = record
+        //         .surface_material
+        //         .scatter_probability(record.outbound_ray_direction, emission.direction)
+        //         * f32::abs(emission.direction.dot(&record.surface_normal.cast::<f32>()));
 
-        if !scattered_radiance.is_black() {
-            //Check the light source is visible. If not, set the radiance to be black.
-            let ray = Ray::new(emission.origin, emission.direction);
-            if scene.hit(ray, 0.0, emission.time - record.time).is_some() {
-                scattered_radiance = Spectrum::new(0.0);
-            }
-        }
+        //         if !scattered_radiance.is_black() {
+        //             //Check the light source is visible. If not, set the radiance to be black.
+        //             let ray = Ray::new(emission.origin, emission.direction);
+        //             if scene.hit(ray, 0.0, emission.time - record.time).is_some() {
+        //                 scattered_radiance = Spectrum::new(0.0);
+        //             }
+        //         }
+        // }
 
-        //Add contribution to reflected radiance
-        match (scattered_radiance.is_black(), light.is_delta_distribution()) {
-            (true, _) => return scattered_radiance,
-            (false, false) => return &scattered_radiance * &emission.radiance / emission.probability_density,
-            (false, true) => {
-                let weight = DirectLightingIntegrator::power_heuristic(1, emission.probability_density, 1, probability_density);
-                return &scattered_radiance * &emission.radiance / emission.probability_density;
-            }
-        }
+        // //Add contribution to reflected radiance
+        // match (scattered_radiance.is_black(), light.is_delta_distribution()) {
+        //     (true, _) => return scattered_radiance,
+        //     (false, false) => return &scattered_radiance * &emission.radiance / emission.probability_density,
+        //     (false, true) => {
+        //         let weight = DirectLightingIntegrator::power_heuristic(1, emission.probability_density, 1, probability_density);
+        //         return &scattered_radiance * &emission.radiance / emission.probability_density;
+        //     }
+        // }
     }
 
     fn sample_material_contribution<L>(light: L, scene: Scene, record: HitRecord) -> Spectrum
@@ -102,7 +103,7 @@ impl DirectLightingIntegrator {
 }
 
 impl Integrate for DirectLightingIntegrator {
-    fn trace_ray(light: Light, scene: Scene, record: HitRecord) -> Spectrum {
+    fn trace_ray(&self, light: Light, scene: Scene, record: HitRecord) -> Spectrum {
         //No point sampling the material
         let light_contribution = DirectLightingIntegrator::sample_light_contribution(light, scene, record);
         if light.is_delta_distribution() {}

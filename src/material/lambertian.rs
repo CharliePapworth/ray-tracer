@@ -1,7 +1,8 @@
-use nalgebra::Vector3;
+use nalgebra::UnitVector3;
 use std::f32::consts::PI;
 
-use crate::spectrum::spectrum::Spectrum;
+
+use crate::light::Spectrum;
 
 use super::material::{ReflectionModel, Scatter};
 
@@ -32,15 +33,15 @@ impl Scatter for Lambertian {
         true
     }
 
-    fn scatter(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> Spectrum {
+    fn scatter(&self, outbound_direction: UnitVector3<f32>, inbound_direction: UnitVector3<f32>) -> Spectrum {
         self.color * 1.0f32 / PI
     }
 
-    fn sample_scatter(&self, outbound_direction: Vector3<f32>) -> (Spectrum, Vector3<f32>) {
+    fn sample_scatter(&self, outbound_direction: UnitVector3<f32>) -> (Spectrum, UnitVector3<f32>) {
         todo!()
     }
 
-    fn hemispherical_directional_scatter(&self, direction: Vector3<f32>) -> Spectrum {
+    fn hemispherical_directional_scatter(&self, direction: UnitVector3<f32>) -> Spectrum {
         self.color
     }
 
@@ -48,7 +49,7 @@ impl Scatter for Lambertian {
         self.color
     }
 
-    fn scatter_probability(&self, outbound_direction: Vector3<f32>, inbound_direction: Vector3<f32>) -> f32 {
+    fn scatter_probability(&self, outbound_direction: UnitVector3<f32>, inbound_direction: UnitVector3<f32>) -> f32 {
         todo!()
     }
 }

@@ -29,10 +29,9 @@ use eframe::egui::Vec2;
 
 use camera::*;
 use concurrency::{
-    multithreader::{Multithreader, Settings, ThreadData},
+    //multithreader::{Multithreader, Settings, ThreadData},
     *,
 };
-use gui::gui::Gui;
 use std::thread::Thread;
 
 fn main() {
@@ -42,7 +41,7 @@ fn main() {
     let image_height = ((image_width as f32) / aspect_ratio) as usize;
 
     //Scene
-    let scene = scenes::point_light_test(image_width, aspect_ratio);
+    //let scene = scenes::point_light_test(image_width, aspect_ratio);
 
     //Integrator
     let samples_per_pixel = 1000;
@@ -50,28 +49,28 @@ fn main() {
 
     //Camera
 
-    //Package data
-    let raytrace_settings = Settings {
-        max_depth,
-        samples_per_pixel,
-    };
-    let settings = ThreadData {
-        settings: raytrace_settings,
-        scene,
-        id: 1,
-    };
+    // //Package data
+    // let raytrace_settings = Settings {
+    //     max_depth,
+    //     samples_per_pixel,
+    // };
+    // let settings = ThreadData {
+    //     settings: raytrace_settings,
+    //     scene,
+    //     id: 1,
+    // };
 
-    //Threading
-    let mut thread_coordinator = Multithreader::new(settings.clone());
-    thread_coordinator.spin_up(3);
+    // //Threading
+    // let mut thread_coordinator = Multithreader::new(settings.clone());
+    // thread_coordinator.spin_up(3);
 
-    //Gui
-    let app = Gui::new(settings.clone(), thread_coordinator);
-    let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
-    let native_options = eframe::NativeOptions {
-        initial_window_size,
-        decorated: false,
-        ..Default::default()
-    };
-    eframe::run_native("Raytracer", native_options, Box::new(|_cc| Box::new(app)));
+    // //Gui
+    // let app = Gui::new(settings.clone(), thread_coordinator);
+    // let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
+    // let native_options = eframe::NativeOptions {
+    //     initial_window_size,
+    //     decorated: false,
+    //     ..Default::default()
+    // };
+    // eframe::run_native("Raytracer", native_options, Box::new(|_cc| Box::new(app)));
 }

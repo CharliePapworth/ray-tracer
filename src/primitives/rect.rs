@@ -2,7 +2,9 @@ use crate::camera::camera::Camera;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
 use crate::primitives::bvh::*;
-use crate::raytracing::{Hit, HitRecord, Ray};
+use crate::raytracing::{HitRecord, Ray};
+
+use super::Hit;
 
 #[derive(Copy, Clone)]
 pub enum RectAxes {
