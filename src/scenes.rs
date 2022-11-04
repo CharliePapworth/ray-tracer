@@ -1,4 +1,3 @@
-
 #[rustfmt::skip]
 use crate::{
     camera::{Camera, Film, Rgb},
@@ -17,17 +16,13 @@ use crate::{
 /// the scene.
 #[derive(Clone)]
 pub struct Scene {
-    pub raytracing_primitives: Primitives ,
+    pub raytracing_primitives: Primitives,
     pub lights: Vec<Light>,
     pub camera: Camera,
 }
 
 impl Scene {
-    pub fn new(
-        raytracing_primitives: Primitives,
-        lights: Vec<Light>,
-        camera: Camera,
-    ) -> Scene {
+    pub fn new(raytracing_primitives: Primitives, lights: Vec<Light>, camera: Camera) -> Scene {
         Scene {
             raytracing_primitives,
             lights,
@@ -53,7 +48,7 @@ pub fn point_light_test(image_width: usize, aspect_ratio: f32) -> Scene {
     let sphere_to_world = Similarity3::new(sphere_center.coords, Vector3::x(), sphere_radius);
     let sphere_color = spectrum_factory.from_rgb(Rgb::new(1.0, 0.0, 0.0), SpectrumType::Reflectance);
     let sphere_material = Material::new_lambertian(sphere_color);
-    
+
     let sphere = Primitive::from(Sphere::new(sphere_to_world, sphere_material));
 
     //Camera

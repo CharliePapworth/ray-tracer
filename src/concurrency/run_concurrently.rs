@@ -1,7 +1,7 @@
-use std::sync::mpsc::Receiver;
-use enum_dispatch::enum_dispatch;
 use crate::camera::*;
-use super::multithreader::*;
+use enum_dispatch::enum_dispatch;
+use super::multithreader::{Multithreader};
+use crate::ConcurrentIntegrator;
 
 #[enum_dispatch]
 pub trait RunConcurrently {

@@ -2,8 +2,8 @@ extern crate fastrand;
 
 use nalgebra::Unit;
 
-use crate::enum_dispatch::*;
 use crate::camera::Rgb;
+use crate::enum_dispatch::*;
 use crate::material::*;
 use crate::nalgebra::{Point3, UnitVector3, Vector3};
 use crate::primitives::bvh::*;
@@ -76,18 +76,12 @@ pub struct Ray {
 
 impl Ray {
     pub fn new(origin: Point3<f32>, direction: UnitVector3<f32>) -> Ray {
-        Ray {
-            origin,
-            direction,
-        }
+        Ray { origin, direction }
     }
 
     pub fn new_with_normalization(origin: Point3<f32>, unormalized_direction: Vector3<f32>) -> Ray {
         let direction = Unit::new_normalize(unormalized_direction);
-        Ray {
-            origin,
-            direction,
-        }
+        Ray { origin, direction }
     }
 
     pub fn at(&self, t: f32) -> Point3<f32> {

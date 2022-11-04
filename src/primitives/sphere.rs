@@ -1,6 +1,6 @@
 use crate::camera::camera::Camera;
 use crate::material::*;
-use crate::nalgebra::{Point3, Vector3, Similarity3};
+use crate::nalgebra::{Point3, Similarity3, Vector3};
 use crate::primitives::bvh::*;
 use crate::raytracing::{HitRecord, Ray};
 use crate::util::gamma;

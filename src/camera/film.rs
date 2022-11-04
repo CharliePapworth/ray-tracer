@@ -1,6 +1,5 @@
-
-use crate::util::bound_f32;
 use super::Rgb;
+use crate::util::bound_f32;
 
 #[rustfmt::skip]
 use crate::{
@@ -13,7 +12,6 @@ use::{
     std::fs::{OpenOptions},
     std::io::{Write},
 };
-
 
 #[derive(Clone)]
 pub struct Film {
@@ -32,7 +30,7 @@ impl Film {
             image_width,
             image_height,
             pixels,
-            filter
+            filter,
         }
     }
 
@@ -165,7 +163,6 @@ pub struct FilmPixel {
 }
 
 impl FilmPixel {
-    
     /// Outputs the color as an array of u8 (traditional RGB)
     pub fn to_rgb(&self) -> [u8; 3] {
         let r = self.contribution[0].sqrt();

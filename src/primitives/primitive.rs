@@ -1,8 +1,8 @@
 use crate::enum_dispatch::*;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
-use crate::raytracing::Ray;
 use crate::raytracing::HitRecord;
+use crate::raytracing::Ray;
 extern crate fastrand;
 use super::*;
 

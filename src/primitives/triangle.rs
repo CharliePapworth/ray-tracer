@@ -248,7 +248,10 @@ mod tests {
         let bb = result.unwrap();
         assert_eq!(
             bb,
-            AxisAlignedBoundingBox::new(Point3::<f32>::new(-0.001, -0.001, -0.001), Point3::<f32>::new(1.0 + 0.001, 2.0 + 0.001, 2.0 + 0.001))
+            AxisAlignedBoundingBox::new(
+                Point3::<f32>::new(-0.001, -0.001, -0.001),
+                Point3::<f32>::new(1.0 + 0.001, 2.0 + 0.001, 2.0 + 0.001)
+            )
         );
     }
 }

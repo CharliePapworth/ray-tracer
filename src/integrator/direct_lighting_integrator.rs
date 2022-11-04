@@ -60,8 +60,8 @@ impl DirectLightingIntegrator {
         //     (true, _) => return scattered_radiance,
         //     (false, false) => return &scattered_radiance * &emission.radiance / emission.probability_density,
         //     (false, true) => {
-        //         let weight = DirectLightingIntegrator::power_heuristic(1, emission.probability_density, 1, probability_density);
-        //         return &scattered_radiance * &emission.radiance / emission.probability_density;
+        //         let weight = DirectLightingIntegrator::power_heuristic(1, emission.probability_density, 1,
+        // probability_density);         return &scattered_radiance * &emission.radiance / emission.probability_density;
         //     }
         // }
     }

@@ -1,7 +1,6 @@
 use nalgebra::UnitVector3;
 use std::f32::consts::PI;
 
-
 use crate::light::Spectrum;
 
 use super::material::{ReflectionModel, Scatter};

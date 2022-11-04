@@ -1,7 +1,7 @@
+use crate::light::{Light, PointLight};
+use crate::raytracing::HitRecord;
 use enum_dispatch::enum_dispatch;
 use nalgebra::UnitVector3;
-use crate::light::{PointLight, Light};
-use crate::raytracing::HitRecord;
 
 use super::{EmissionData, Spectrum};
 

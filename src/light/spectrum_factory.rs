@@ -1,5 +1,3 @@
-
-
 use crate::camera::Rgb;
 
 #[rustfmt::skip]

@@ -1,4 +1,4 @@
-use super::{Primitive, Primitives, Hit};
+use super::{Hit, Primitive, Primitives};
 use crate::nalgebra::Point3;
 use crate::raytracing::{HitRecord, Ray};
 use std::cmp::Ordering;
@@ -91,7 +91,7 @@ impl AxisAlignedBoundingBox {
 }
 
 impl<'a> BvhBranch<'a> {
-    pub fn new(left: &'a mut [Primitive], right: &'a mut[Primitive], bb: AxisAlignedBoundingBox) -> BvhNode<'a> {
+    pub fn new(left: &'a mut [Primitive], right: &'a mut [Primitive], bb: AxisAlignedBoundingBox) -> BvhNode<'a> {
         BvhNode::Branch(BvhBranch {
             children: (Box::new(BvhNode::new(left)), Box::new(BvhNode::new(right))),
             bounding_box: bb,
@@ -136,8 +136,14 @@ impl<'a> BvhNode<'a> {
                 objects.sort_by(|a, b| AxisAlignedBoundingBox::box_compare(a, b, axis));
                 let mid = object_span / 2;
                 let (left_objs, right_objs) = objects.split_at_mut(mid);
-                let bb_left = left_objs.as_ref().bounding_box().expect("A Primitive within the TraceableList cannot be bound");
-                let bb_right = right_objs.as_ref().bounding_box().expect("A Primitive within the TraceableList cannot be bound");
+                let bb_left = left_objs
+                    .as_ref()
+                    .bounding_box()
+                    .expect("A Primitive within the TraceableList cannot be bound");
+                let bb_right = right_objs
+                    .as_ref()
+                    .bounding_box()
+                    .expect("A Primitive within the TraceableList cannot be bound");
                 let bb_surrounding = AxisAlignedBoundingBox::surrounding_box(bb_left, bb_right);
                 BvhBranch::new(left_objs, right_objs, bb_surrounding)
             }
@@ -145,17 +151,6 @@ impl<'a> BvhNode<'a> {
     }
 }
 
-impl<'a> BvhRoot<'a> {
-    pub fn hit_debug(&self, r: &Ray, t_min: f32, t_max: f32) -> (i32, Option<HitRecord>) {
-        match self.primitive.hit(r, t_min, t_max) {
-            Some(rec) => {
-                let mat = rec.surface_material;
-                (1, Some(rec))
-            }
-            None => (1, (None)),
-        }
-    }
-}
 impl<'a> Hit for BvhBranch<'a> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         if !self.bounding_box.hit(r, t_min, t_max) {
@@ -248,8 +243,6 @@ fn measure_extent(primitives: &[Primitive], axis_index: usize) -> Option<f32> {
     }
     Some(max_val - min_val)
 }
-
-
 
 #[cfg(test)]
 mod tests {

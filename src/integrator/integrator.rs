@@ -1,8 +1,6 @@
 use enum_dispatch::enum_dispatch;
 
-use super::{
-    direct_lighting_integrator::DirectLightingIntegrator,
-};
+use super::direct_lighting_integrator::DirectLightingIntegrator;
 
 use crate::{
     light::{Light, Spectrum},

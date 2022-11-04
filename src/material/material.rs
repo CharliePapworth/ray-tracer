@@ -1,6 +1,5 @@
 use nalgebra::UnitVector3;
 
-
 use crate::light::Spectrum;
 
 use super::lambertian::Lambertian;

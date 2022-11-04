@@ -41,7 +41,8 @@ pub struct Multithreader {
     pub film_tiles_in_progress: Arc<ArrayQueue<FilmTile>>,
     pub film_tiles_finished: Arc<ArrayQueue<FilmTile>>,
     pub film: Arc<Mutex<Film>>,
-    pub function: Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
+    pub function:
+        Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
     pub num_threads: usize,
 }
 
@@ -50,7 +51,9 @@ impl Multithreader {
         settings: ThreadData,
         num_threads: usize,
         film: Film,
-        function: Arc<dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static>,
+        function: Arc<
+            dyn Fn(&ThreadData, &mut FilmTile, &Receiver<Instructions>) -> Option<Instructions> + Send + Sync + 'static,
+        >,
     ) -> Multithreader {
         let thread_data = Arc::new(RwLock::new(settings.clone()));
         let gui_to_thread_txs = vec![];
@@ -183,14 +186,7 @@ impl RunConcurrently for Multithreader {
             let function = Arc::clone(&self.function);
             self.coordinator_to_thread_txs.push(gui_to_thread_tx);
             thread::spawn(|| {
-                run_thread(
-                    thread_data,
-                    film,
-                    film_tiles_in_progress,
-                    film_tiles_finished,
-                    multithreader_to_thread_rx,
-                    function,
-                )
+                run_thread(thread_data, film, film_tiles_in_progress, film_tiles_finished, multithreader_to_thread_rx, function)
             });
         }
     }

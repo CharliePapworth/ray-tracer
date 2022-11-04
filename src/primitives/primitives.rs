@@ -1,23 +1,23 @@
 use crate::enum_dispatch::*;
+use crate::light::Spectrum;
 use crate::material::*;
 use crate::nalgebra::{Point3, Vector3};
-use crate::light::Spectrum;
 extern crate fastrand;
 use super::AxisAlignedBoundingBox;
 use super::BvhNode;
+use super::Hit;
 use super::Primitive;
-use super::{Hit};
 use crate::raytracing::{HitRecord, Ray};
 use std::convert::TryFrom;
 
 #[derive(Default, Clone)]
 pub struct Primitives {
     list: Vec<Primitive>,
-    bounding_volume_hierarchy: Option<BvhNode<'static>>
+    bounding_volume_hierarchy: Option<BvhNode<'static>>,
 }
 
 impl Hit for Primitives {
-    fn hit(&self,r: &Ray,t_min:f32,t_max:f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match &self.bounding_volume_hierarchy {
             Some(bvh) => bvh.hit(r, t_min, t_max),
             None => (&self.list).hit(r, t_min, t_max),
@@ -26,7 +26,7 @@ impl Hit for Primitives {
 
     fn bounding_box(&self) -> Option<AxisAlignedBoundingBox> {
         match &self.bounding_volume_hierarchy {
-            Some(bvh)=> bvh.bounding_box(),
+            Some(bvh) => bvh.bounding_box(),
             None => (&self.list).bounding_box(),
         }
     }
@@ -34,7 +34,10 @@ impl Hit for Primitives {
 
 impl Primitives {
     pub fn new() -> Primitives {
-        Primitives { list: Vec::new(), bounding_volume_hierarchy: None }
+        Primitives {
+            list: Vec::new(),
+            bounding_volume_hierarchy: None,
+        }
     }
 
     pub fn add(&mut self, new_traceable: Primitive) {
@@ -61,7 +64,6 @@ impl Primitives {
         todo!()
     }
 
-    
     // pub fn add_obj(&mut self, models: Vec<tobj::Model>, materials_opt: Option<Vec<tobj::Material>>, model_spectrum: Spectrum) {
     //     for m in models.iter() {
     //         //if m.name == "wheel_fr_Circle.050_MAIN"{
@@ -73,8 +75,8 @@ impl Primitives {
     //             Some(mat) => {
     //                 let mat_id = mesh.material_id.unwrap();
     //                 model_color =
-    //                     Color::new(mat[mat_id].diffuse[0] as f32, mat[mat_id].diffuse[1] as f32, mat[mat_id].diffuse[2] as f32);
-    //             }
+    //                     Color::new(mat[mat_id].diffuse[0] as f32, mat[mat_id].diffuse[1] as f32, mat[mat_id].diffuse[2] as
+    // f32);             }
     //             None => {
     //                 model_color = Vector3::<f32>::new(0.5, 0.5, 0.5);
     //             }
@@ -102,17 +104,15 @@ impl Primitives {
     // }
 }
 
-
-
 #[cfg(test)]
 mod tests {
+    use crate::material::*;
+    use crate::primitives::*;
+    use crate::raytracing::Ray;
     use nalgebra::Point3;
     use nalgebra::Unit;
     use nalgebra::Vector3;
-    use crate::primitives::*;
-    use crate::material::*;
-    use crate::raytracing::Ray;
-    
+
     // #[test]
     // fn test_add() {
     //     let mut list = Primitives::new();
@@ -206,7 +206,7 @@ mod tests {
     //             Primitive::Sphere(sphere) => {
     //                 let center = sphere.center();
     //                 assert_eq!(sphere.center(), Point3::<f32>::new(5.0 * (i as f32), 0.0, 0.0));
-    //             } 
+    //             }
     //             _ => panic!(),
     //         }
     //     }
