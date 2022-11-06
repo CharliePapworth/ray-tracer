@@ -4,31 +4,60 @@ use eframe::{
     epaint::{Color32, ColorImage},
 };
 
-use super::labels::{Label, ImageHeight, ImageWidth, SamplesPerPixel, CameraSpeed};
+use crate::settings::Settings;
 
-pub struct SettingsWindows {
+use super::validated_text_input::{ValidatedTextInput, self};
+
+pub struct SettingsWindow {
     pub open: bool,
-    pub image_height: ImageHeight,
-    pub image_width: ImageWidth,
-    pub samples_per_pixel: SamplesPerPixel,
-    pub camera_speed: CameraSpeed,
+    pub validated_text_inputs: ValidatedTextInputs
 }
 
-impl SettingsWindows {
-    pub fn AddWindow(&mut self, ctx: &Context, ui: &mut Ui) -> Window {
+pub struct ValidatedTextInputs {
+    pub image_height: ValidatedTextInput,
+    pub image_width: ValidatedTextInput,
+    pub samples_per_pixel: ValidatedTextInput,
+    pub camera_speed: ValidatedTextInput,
+}
+
+impl SettingsWindow {
+
+    pub fn new(settings: &mut Settings) -> Self {
+        let open = false;
+        let image_height = ValidatedTextInput::new(String::from("Image Height"), settings.get_image_height());
+        let image_width = ValidatedTextInput::new(String::from("Image Width"), settings.get_image_width());
+        let samples_per_pixel = ValidatedTextInput::new(String::from("Samples Per Pixel"), settings.get_samples_per_pixel());
+        let camera_speed = ValidatedTextInput::new(String::from("Camera Speed"), settings.get_camera_speed());
+        
+        let validated_text_inputs = ValidatedTextInputs {
+            image_height,
+            image_width,
+            samples_per_pixel,
+            camera_speed,
+        };
+        
+        Self {
+            open,
+            validated_text_inputs
+            
+        }
+    }
+
+    pub fn add_window(&mut self, ctx: &Context, settings: &mut Settings) -> Option<InnerResponse<Option<InnerResponse<()>>>> {
+        let validated_text_inputs = &mut self.validated_text_inputs;
         Window::new("🔧 Settings")
             .open(&mut self.open)
             .collapsible(false)
             .fixed_size(egui::Vec2::new(100.0, 100.0))
-            .show(ctx, |ui| self.AddLabels(ctx, ui))
+            .show(ctx, |ui| Self::add_labels(validated_text_inputs, ui, settings))
     }
 
-    fn AddLabels(&self, ctx: &Context, ui: &mut Ui) -> InnerResponse<()> {
+    fn add_labels(validated_text_inputs: &mut ValidatedTextInputs, ui: &mut Ui, settings: &mut Settings) -> InnerResponse<()> {
         ui.vertical(|ui| {
-            self.image_height.AddLabel(ctx, ui);
-            self.image_width.AddLabel(ctx, ui);
-            self.samples_per_pixel.AddLabel(ctx, ui);
-            self.camera_speed.AddLabel(ctx, ui);
+            validated_text_inputs.image_height.add(settings, ui, |height, settings| settings.update_image_height(height), |settings| settings.get_image_height());
+            validated_text_inputs.image_width.add(settings, ui, |width, settings| settings.update_image_width(width), |settings| settings.get_image_width());
+            validated_text_inputs.samples_per_pixel.add(settings, ui, |samples, settings| settings.update_samples_per_pixel(samples), |settings| settings.get_samples_per_pixel());
+            validated_text_inputs.camera_speed.add(settings, ui, |speed, settings| settings.update_camera_speed(speed), |settings| settings.get_camera_speed());
         })
     }
 }

@@ -15,6 +15,7 @@ pub mod camera;
 pub mod concurrency;
 pub mod filter;
 pub mod gui;
+pub mod settings;
 pub mod integrator;
 pub mod light;
 pub mod material;

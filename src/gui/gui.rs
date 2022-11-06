@@ -5,7 +5,7 @@
 //     nalgebra::{Point2, Point3, Rotation3, Unit, Vector3},
 // };
 
-// use crate::gui::settings_window::SettingsWindows;
+// use crate::gui::settings_window::SettingsWindow;
 // use eframe::egui::Response;
 // use eframe::epaint::Stroke;
 // use eframe::*;
@@ -14,24 +14,20 @@
 //     epaint::{Color32, ColorImage},
 // };
 
-// use super::gui_settings::GuiSettings;
-// use super::gui_state::GuiState;
+
+// use super::file_drop_down::FileDropDown;
 // use super::progress_bar::CustomProgressBar;
 
 // pub struct Gui {
 //     pub concurrent_integrator: ConcurrentIntegrator,
-//     pub settings: GuiSettings,
-//     pub state: GuiState,
-//     pub windows: Windows,
+//     pub settings: SettingsWindow,
+//     pub file_drop_down: FileDropDown,
 // }
 
-// pub struct Windows {
-//     pub settings: SettingsWindows,
-// }
 
 // impl Gui {
 //     pub fn new(settings: GuiSettings, state: GuiState, concurrent_integrator: ConcurrentIntegrator) -> Gui {
-//         let windows = Windows { settings: SettingsWindows::new() };
+//         let windows = Windows { settings: SettingsWindow::new() };
 //         let labels = settings.get_labels();
 //         Gui { concurrent_integrator, settings, state, windows }
 //     }
@@ -45,7 +41,7 @@
 //     }
 
 //     pub fn show_settings_window(&mut self, ctx: &Context, ui: &mut Ui) {
-//         //Image Settings
+//         Image Settings
 //         if self.windows.settings {
 //             ui.horizontal(|ui| {
 //                 ui.label("Width:");
@@ -163,11 +159,11 @@
 // }
 
 // impl eframe::App for Gui {
-//     /// Called each time the UI needs repainting, which may be many times per
-//     /// second.
+//     / Called each time the UI needs repainting, which may be many times per
+//     / second.
 //     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-//         //ctx.set_style(Style{visuals: Visuals {code_bg_color: Color32::from_rgb(200,
-//         // 200, 200), ,..Default::default()}, ..Default::default()});
+//         ctx.set_style(Style{visuals: Visuals {code_bg_color: Color32::from_rgb(200,
+//         200, 200), ,..Default::default()}, ..Default::default()});
 //         self.capture_keyboard_input(ctx);
 //         let top_frame = egui::Frame {
 //             inner_margin: Margin::symmetric(5.0, 5.0),
@@ -179,32 +175,20 @@
 //             .frame(top_frame)
 //             .show(ctx, |ui| {
 //                 egui::menu::bar(ui, |ui| {
-//                     ui.menu_button("File", |ui| {
-//                         if ui.button("Save Image").clicked() {
-//                             let path = "results.ppm";
-//                             self.integrator
-//                                 .output_image()
-//                                 .output(PrimaryImageType::Raytrace, true)
-//                                 .save(path);
-//                         }
-//                     });
-
-//                     if ui.button("Settings").clicked() {
-//                         self.windows.settings = !self.windows.settings;
-//                     };
+//                     self.file_drop_down.Add(ctx, ui, &self.concurrent_integrator, &mut self.settings);
+//                     self.settings.AddButton(ctx, ui);
 
 //                     ui.with_layout(egui::Layout::right_to_left(), |ui| {
 //                         if ui.button("🗙").clicked() {
 //                             frame.quit();
 //                         }
 //                     });
-//                     self.windows.settings.AddWindow(ctx, ui)
 //                 });
 //             });
 
-//         // if top_frame_response.response.interact(Sense::drag()).dragged() {
-//         //     frame.drag_window();
-//         // };
+//         if top_frame_response.response.interact(Sense::drag()).dragged() {
+//             frame.drag_window();
+//         };
 
 //         let central_panel = egui::CentralPanel::default().frame(egui::Frame {
 //             outer_margin: Margin::same(0.0),

@@ -7,45 +7,36 @@ use eframe::{
 
 use crate::concurrency::concurrent_integrator::ConcurrentIntegrator;
 
-pub struct TopFrame<'a> {
+use super::file_drop_down::{FileDropDown, self};
+use super::settings_window::SettingsWindow;
+
+pub struct TopFrame {
     frame: Frame,
-    concurrent_integrator: &'a ConcurrentIntegrator
+    file_drop_down: FileDropDown
 }
 
+impl TopFrame {
+    pub fn new(&mut self, ctx: &Context, ui: &mut Ui) -> TopFrame {
+            
+        let frame = egui::Frame {
+            inner_margin: Margin::symmetric(5.0, 5.0),
+            fill: Color32::WHITE,
+            stroke: Stroke::new(1.0, Color32::GRAY),
+            ..Default::default()
+        };
 
+        let file_drop_down = FileDropDown::new();
 
-impl<'a> TopFrame<'a> {
-    pub fn new(&mut self, ctx: &Context, ui: &mut Ui) -> Frame {
-            egui::Frame {
-                inner_margin: Margin::symmetric(5.0, 5.0),
-                fill: Color32::WHITE,
-                stroke: Stroke::new(1.0, Color32::GRAY),
-                ..Default::default()
-        }
+        Self { frame, file_drop_down }
     }
 
-    pub fn show(&mut self, ctx: &Context, ui: &mut Ui) -> Response {
-        let top_frame_response = egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel")
+    pub fn show(&mut self, ctx: &Context, ui: &mut Ui, settings_window: &mut SettingsWindow, concurrent_integrator: &ConcurrentIntegrator) -> InnerResponse<()> {
+        egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel")
         .frame(self.frame)
         .show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Save Image").clicked() {
-                        let path = "results.ppm";
-                    }
-                });
-
-                if ui.button("Settings").clicked() {
-                    self.windows.settings = !self.windows.settings;
-                };
-
-                ui.with_layout(egui::Layout::right_to_left(), |ui| {
-                    if ui.button("🗙").clicked() {
-                        self.frame.quit();
-                    }
-                });
-                self.windows.settings.AddWindow(ctx, ui)
+                self.file_drop_down.add(ctx, ui, concurrent_integrator, settings_window);
             });
-        });
+        })
     }
 }
