@@ -10,10 +10,10 @@ use super::validated_text_input::{ValidatedTextInput, self};
 
 pub struct SettingsWindow {
     pub open: bool,
-    pub validated_text_inputs: ValidatedTextInputs
+    pub validated_text_inputs: SettingsWindowValidatedTextInputs
 }
 
-pub struct ValidatedTextInputs {
+pub struct SettingsWindowValidatedTextInputs {
     pub image_height: ValidatedTextInput,
     pub image_width: ValidatedTextInput,
     pub samples_per_pixel: ValidatedTextInput,
@@ -29,7 +29,7 @@ impl SettingsWindow {
         let samples_per_pixel = ValidatedTextInput::new(String::from("Samples Per Pixel"), settings.get_samples_per_pixel());
         let camera_speed = ValidatedTextInput::new(String::from("Camera Speed"), settings.get_camera_speed());
         
-        let validated_text_inputs = ValidatedTextInputs {
+        let validated_text_inputs = SettingsWindowValidatedTextInputs {
             image_height,
             image_width,
             samples_per_pixel,
@@ -52,7 +52,7 @@ impl SettingsWindow {
             .show(ctx, |ui| Self::add_labels(validated_text_inputs, ui, settings))
     }
 
-    fn add_labels(validated_text_inputs: &mut ValidatedTextInputs, ui: &mut Ui, settings: &mut Settings) -> InnerResponse<()> {
+    fn add_labels(validated_text_inputs: &mut SettingsWindowValidatedTextInputs, ui: &mut Ui, settings: &mut Settings) -> InnerResponse<()> {
         ui.vertical(|ui| {
             validated_text_inputs.image_height.add(settings, ui, |height, settings| settings.update_image_height(height), |settings| settings.get_image_height());
             validated_text_inputs.image_width.add(settings, ui, |width, settings| settings.update_image_width(width), |settings| settings.get_image_width());
