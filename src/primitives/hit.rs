@@ -1,4 +1,4 @@
-use std::{primitive, ops::Deref, borrow::Borrow};
+use std::{borrow::Borrow, ops::Deref, primitive};
 
 use enum_dispatch::enum_dispatch;
 

@@ -1,7 +1,7 @@
+use super::multithreader::Multithreader;
 use crate::camera::*;
-use enum_dispatch::enum_dispatch;
-use super::multithreader::{Multithreader};
 use crate::ConcurrentIntegrator;
+use enum_dispatch::enum_dispatch;
 
 #[enum_dispatch]
 pub trait RunConcurrently {

@@ -15,7 +15,6 @@ pub mod camera;
 pub mod concurrency;
 pub mod filter;
 pub mod gui;
-pub mod settings;
 pub mod integrator;
 pub mod light;
 pub mod material;
@@ -24,6 +23,7 @@ pub mod primitives;
 pub mod raytracing;
 pub mod sampler;
 pub mod scenes;
+pub mod settings;
 pub mod util;
 
 use eframe::egui::Vec2;

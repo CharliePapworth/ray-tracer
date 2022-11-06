@@ -1,16 +1,16 @@
-use eframe::egui::{Context, Ui, TextEdit, Response, InnerResponse, Window};
+use eframe::egui::{Context, InnerResponse, Response, TextEdit, Ui, Window};
 use eframe::{
-    egui::{self, panel::TopBottomSide, style::Margin, Sense,},
+    egui::{self, panel::TopBottomSide, style::Margin, Sense},
     epaint::{Color32, ColorImage},
 };
 
 use crate::settings::Settings;
 
-use super::validated_text_input::{ValidatedTextInput, self};
+use super::validated_text_input::{self, ValidatedTextInput};
 
 pub struct SettingsWindow {
     pub open: bool,
-    pub validated_text_inputs: SettingsWindowValidatedTextInputs
+    pub validated_text_inputs: SettingsWindowValidatedTextInputs,
 }
 
 pub struct SettingsWindowValidatedTextInputs {
@@ -21,25 +21,23 @@ pub struct SettingsWindowValidatedTextInputs {
 }
 
 impl SettingsWindow {
-
     pub fn new(settings: &mut Settings) -> Self {
         let open = false;
         let image_height = ValidatedTextInput::new(String::from("Image Height"), settings.get_image_height());
         let image_width = ValidatedTextInput::new(String::from("Image Width"), settings.get_image_width());
         let samples_per_pixel = ValidatedTextInput::new(String::from("Samples Per Pixel"), settings.get_samples_per_pixel());
         let camera_speed = ValidatedTextInput::new(String::from("Camera Speed"), settings.get_camera_speed());
-        
+
         let validated_text_inputs = SettingsWindowValidatedTextInputs {
             image_height,
             image_width,
             samples_per_pixel,
             camera_speed,
         };
-        
+
         Self {
             open,
-            validated_text_inputs
-            
+            validated_text_inputs,
         }
     }
 
@@ -52,12 +50,36 @@ impl SettingsWindow {
             .show(ctx, |ui| Self::add_labels(validated_text_inputs, ui, settings))
     }
 
-    fn add_labels(validated_text_inputs: &mut SettingsWindowValidatedTextInputs, ui: &mut Ui, settings: &mut Settings) -> InnerResponse<()> {
+    fn add_labels(
+        validated_text_inputs: &mut SettingsWindowValidatedTextInputs,
+        ui: &mut Ui,
+        settings: &mut Settings,
+    ) -> InnerResponse<()> {
         ui.vertical(|ui| {
-            validated_text_inputs.image_height.add(settings, ui, |height, settings| settings.update_image_height(height), |settings| settings.get_image_height());
-            validated_text_inputs.image_width.add(settings, ui, |width, settings| settings.update_image_width(width), |settings| settings.get_image_width());
-            validated_text_inputs.samples_per_pixel.add(settings, ui, |samples, settings| settings.update_samples_per_pixel(samples), |settings| settings.get_samples_per_pixel());
-            validated_text_inputs.camera_speed.add(settings, ui, |speed, settings| settings.update_camera_speed(speed), |settings| settings.get_camera_speed());
+            validated_text_inputs.image_height.add(
+                settings,
+                ui,
+                |height, settings| settings.update_image_height(height),
+                |settings| settings.get_image_height(),
+            );
+            validated_text_inputs.image_width.add(
+                settings,
+                ui,
+                |width, settings| settings.update_image_width(width),
+                |settings| settings.get_image_width(),
+            );
+            validated_text_inputs.samples_per_pixel.add(
+                settings,
+                ui,
+                |samples, settings| settings.update_samples_per_pixel(samples),
+                |settings| settings.get_samples_per_pixel(),
+            );
+            validated_text_inputs.camera_speed.add(
+                settings,
+                ui,
+                |speed, settings| settings.update_camera_speed(speed),
+                |settings| settings.get_camera_speed(),
+            );
         })
     }
 }

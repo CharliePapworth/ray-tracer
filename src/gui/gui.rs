@@ -14,7 +14,6 @@
 //     epaint::{Color32, ColorImage},
 // };
 
-
 // use super::file_drop_down::FileDropDown;
 // use super::progress_bar::CustomProgressBar;
 
@@ -23,7 +22,6 @@
 //     pub settings: SettingsWindow,
 //     pub file_drop_down: FileDropDown,
 // }
-
 
 // impl Gui {
 //     pub fn new(settings: GuiSettings, state: GuiState, concurrent_integrator: ConcurrentIntegrator) -> Gui {

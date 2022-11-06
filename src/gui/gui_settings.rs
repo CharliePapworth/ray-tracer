@@ -19,13 +19,12 @@
 
 //     pub fn validate_label(&self, label: Label) {
 //         match label.name {
-//             "Image Height" => 
+//             "Image Height" =>
 //         }
 //     }
 
 //     pub fn validate_image_height(&self, label: &mut Label) {
-        
+
 //     }
 
-    
 // }

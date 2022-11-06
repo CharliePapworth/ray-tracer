@@ -1,6 +1,5 @@
 use super::SettingsPatch;
 
-
 pub struct Settings {
     camera_speed: f32,
     samples_per_pixel: u32,
@@ -10,7 +9,6 @@ pub struct Settings {
 }
 
 impl Settings {
-
     pub fn get_patch(&mut self) -> SettingsPatch {
         let returned_patch = self.settings_patch.clone();
         self.settings_patch = SettingsPatch::default();
@@ -25,7 +23,7 @@ impl Settings {
     }
 
     pub fn get_camera_speed(&self) -> f32 {
-        return self.camera_speed
+        return self.camera_speed;
     }
 
     pub fn update_samples_per_pixel(&mut self, new_samples_per_pixel: u32) {
@@ -56,13 +54,12 @@ impl Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { 
+        Self {
             camera_speed: 1.0,
             samples_per_pixel: 10,
             image_height: 10,
             image_width: 10,
-            settings_patch: Default::default()
-            }
+            settings_patch: Default::default(),
+        }
     }
 }
-
