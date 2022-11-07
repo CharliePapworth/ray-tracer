@@ -4,51 +4,56 @@ use eframe::egui::{self, Context, Image, Response, Ui};
 
 use crate::settings::Settings;
 
-pub struct ValidatedTextInput {
+pub struct ValidatedTextInput<V>
+where
+    V: FromStr + Display,
+{
     pub name: String,
     pub text: String,
+    update_settings: Box<dyn FnMut(V, &mut Settings)>,
+    get_settings: Box<dyn Fn(&Settings) -> V>,
 }
 
-impl ValidatedTextInput {
-    pub fn new<V>(name: String, initial_value: V) -> Self
+impl<V> ValidatedTextInput<V>
+where
+    V: FromStr + Display,
+{
+    pub fn new(
+        name: String,
+        settings: &Settings,
+        update_settings: impl FnMut(V, &mut Settings) + 'static,
+        get_settings: impl Fn(&Settings) -> V + 'static,
+    ) -> Self
     where
         V: FromStr + Display,
     {
         Self {
             name,
-            text: initial_value.to_string(),
+            text: get_settings(settings).to_string(),
+            update_settings: Box::new(update_settings),
+            get_settings: Box::new(get_settings),
         }
     }
     /// Validates the user inputted value. If it's fine,
     /// updates the settings. If not, reverts to the previous state.
-    fn try_update<V>(
-        &mut self,
-        settings: &mut Settings,
-        update_settings: impl FnOnce(V, &mut Settings),
-        get_settings: impl Fn(&mut Settings) -> V,
-    ) where
+    fn try_update(&mut self, settings: &mut Settings)
+    where
         V: FromStr + Display,
     {
         if let Ok(parsed_input) = self.text.parse::<V>() {
-            update_settings(parsed_input, settings);
+            (self.update_settings)(parsed_input, settings);
         }
-        self.text = get_settings(settings).to_string();
+        self.text = (self.get_settings)(settings).to_string();
     }
 
-    pub fn add<V>(
-        &mut self,
-        settings: &mut Settings,
-        ui: &mut Ui,
-        update_settings: impl FnOnce(V, &mut Settings),
-        get_settings: impl Fn(&mut Settings) -> V,
-    ) -> Response
+    pub fn add(&mut self, settings: &mut Settings, ui: &mut Ui) -> Response
     where
         V: FromStr + Display,
     {
         ui.label(&self.text);
         let response = ui.add(egui::TextEdit::singleline(&mut self.text));
         if response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-            self.try_update(settings, update_settings, get_settings);
+            self.try_update(settings);
         }
 
         response
