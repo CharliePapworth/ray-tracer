@@ -1,6 +1,6 @@
 use super::multithreader::Multithreader;
 use crate::camera::*;
-use crate::ConcurrentIntegrator;
+use super::*;
 use enum_dispatch::enum_dispatch;
 
 #[enum_dispatch]

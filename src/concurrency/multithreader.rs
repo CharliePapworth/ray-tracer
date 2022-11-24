@@ -11,6 +11,8 @@ use std::sync::RwLock;
 use std::thread;
 use std::thread::park;
 
+use super::RunConcurrently;
+
 #[derive(Copy, Clone)]
 pub struct Settings {
     pub max_depth: i32,

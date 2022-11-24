@@ -40,7 +40,7 @@ impl TopFrame {
             .frame(self.frame)
             .show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
-                    self.file_drop_down.add(ctx, ui, concurrent_integrator, settings_window);
+                    self.file_drop_down.add(ctx, ui,  settings_window);
                 });
             })
     }

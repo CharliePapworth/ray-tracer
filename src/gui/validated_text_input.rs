@@ -50,7 +50,7 @@ where
     where
         V: FromStr + Display,
     {
-        ui.label(&self.text);
+        ui.label(&self.name);
         let response = ui.add(egui::TextEdit::singleline(&mut self.text));
         if response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
             self.try_update(settings);

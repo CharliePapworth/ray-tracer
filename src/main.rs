@@ -10,6 +10,7 @@ extern crate line_drawing;
 extern crate nalgebra;
 extern crate num_cpus;
 extern crate tobj;
+extern crate mockall;
 
 pub mod camera;
 pub mod concurrency;
@@ -29,7 +30,9 @@ pub mod util;
 use eframe::egui::Vec2;
 
 use camera::*;
-use concurrency::*;
+use gui::Gui;
+use mockall::mock;
+use settings::Settings;
 use std::thread::Thread;
 
 fn main() {
@@ -62,13 +65,14 @@ fn main() {
     // let mut thread_coordinator = Multithreader::new(settings.clone());
     // thread_coordinator.spin_up(3);
 
-    // //Gui
-    // let app = Gui::new(settings.clone(), thread_coordinator);
-    // let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
-    // let native_options = eframe::NativeOptions {
-    //     initial_window_size,
-    //     decorated: false,
-    //     ..Default::default()
-    // };
-    // eframe::run_native("Raytracer", native_options, Box::new(|_cc| Box::new(app)));
+    //Gui
+
+    let app = Gui::new(Settings::default());
+    let initial_window_size = Some(Vec2::new(image_width as f32, image_height as f32));
+    let native_options = eframe::NativeOptions {
+        initial_window_size,
+        decorated: false,
+        ..Default::default()
+    };
+    eframe::run_native("Raytracer", native_options, Box::new(|_cc| Box::new(app)));
 }
